@@ -1,3 +1,26 @@
 {
-  "shares": []
+  "shares": [
+    {
+      "id": "share_1789119928503_ddgtl",
+      "fromUser": "matt",
+      "senderAvatar": "data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\" viewBox=\"0 0 100 100\"><rect width=\"100\" height=\"100\" fill=\"%230284c7\"/><text x=\"50\" y=\"62\" font-size=\"44\" font-family=\"Arial,sans-serif\" font-weight=\"bold\" fill=\"white\" text-anchor=\"middle\">M</text></svg>",
+      "senderBio": "",
+      "toUser": "esteban",
+      "sentAt": "2026-09-11T09:45:28.503Z",
+      "course": {
+        "subject": "CIEL - Réseaux & Informatique",
+        "title": "tst",
+        "content": "tst",
+        "attachments": [
+          {
+            "name": "~$eation d'un compte Github.docx",
+            "path": "uploads/matt/1789119300397___eation_d_un_compte_Github.docx",
+            "downloadUrl": "https://raw.githubusercontent.com/Fazerdino1/revision-bac-pro-Tciel/main/uploads/matt/1789119300397___eation_d_un_compte_Github.docx",
+            "isImage": false,
+            "size": 162
+          }
+        ]
+      }
+    }
+  ]
 }
