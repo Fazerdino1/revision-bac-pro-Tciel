@@ -49,6 +49,7 @@
       flex-direction: column;
       line-height: 1.5;
       padding-bottom: calc(var(--nav-mobile-h) + 24px);
+      overflow-x: hidden;
     }
     @media (min-width: 850px) { body { padding-bottom: 40px; } }
 
@@ -120,10 +121,29 @@
       gap: 0.6rem;
     }
 
+    /* Avatar stylisé */
+    .avatar-circle {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      font-weight: 700;
+      color: #fff;
+      text-transform: uppercase;
+      user-select: none;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .avatar-img {
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
     .user-pill {
       display: inline-flex;
       align-items: center;
-      gap: 0.45rem;
+      gap: 0.5rem;
       background: var(--bg-card-elevated);
       padding: 0.25rem 0.75rem 0.25rem 0.35rem;
       border-radius: var(--radius-full);
@@ -134,14 +154,6 @@
       transition: border-color 0.2s;
     }
     .user-pill:hover { border-color: var(--primary); }
-
-    .user-avatar-small {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      object-fit: cover;
-      background: var(--primary);
-    }
 
     .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #64748b; }
     .sync-dot.synced { background: var(--accent-green); box-shadow: 0 0 8px var(--accent-green); }
@@ -543,9 +555,7 @@
       margin-bottom: 0.5rem;
     }
 
-    /* ==========================================================
-       NOUVEAUX SYSTÈMES : TOASTS ET BOÎTE CONFIRM PERSONNALISÉE
-       ========================================================== */
+    /* Toasts personnalisés */
     .toast-container {
       position: fixed;
       top: 1.25rem;
@@ -581,7 +591,7 @@
     .toast-info { border-color: var(--primary); color: #38bdf8; }
     @keyframes slideToast { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Boîte de confirmation personnalisée */
+    /* Modal de confirmation personnalisée */
     .confirm-dialog-card {
       background: #0f172a;
       border: 1px solid var(--border-light);
@@ -593,22 +603,13 @@
       text-align: center;
     }
 
-    /* Photo de profil et Avatar */
+    /* Profil & Upload Avatar */
     .avatar-upload-wrap {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 0.75rem;
       margin-bottom: 1.25rem;
-    }
-    .avatar-preview-lg {
-      width: 90px;
-      height: 90px;
-      border-radius: 50%;
-      border: 3px solid var(--primary);
-      object-fit: cover;
-      background: var(--bg-card-elevated);
-      box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
     }
     .avatar-upload-btn {
       background: var(--bg-card-elevated);
@@ -620,14 +621,29 @@
       font-weight: 600;
       cursor: pointer;
     }
+
+    /* Ligne destinataire dans la boîte de partage */
+    .recipient-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.65rem 0.5rem;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      border-radius: var(--radius-sm);
+      transition: background 0.15s;
+    }
+    .recipient-row:hover {
+      background: rgba(255, 255, 255, 0.04);
+    }
   </style>
 </head>
 <body>
 
-  <!-- CONTENEUR DES TOASTS PERSONNALISÉS (REMPLACE ALERT) -->
+  <!-- TOASTS NOTIFICATIONS -->
   <div class="toast-container" id="toastContainer"></div>
 
-  <!-- MODALE DE CONFIRMATION PERSONNALISÉE (REMPLACE CONFIRM) -->
+  <!-- MODALE CONFIRMATION PERSONNALISÉE -->
   <div class="modal-backdrop" id="customConfirmModal">
     <div class="confirm-dialog-card" onclick="event.stopPropagation()">
       <div style="font-size: 2.2rem; color: var(--accent-orange); margin-bottom: 0.75rem;">
@@ -694,9 +710,8 @@
       </nav>
 
       <div class="header-right">
-        <!-- Pilule utilisateur avec photo de profil cliquable -->
-        <div class="user-pill" onclick="openProfileModal()" title="Modifier mon profil">
-          <img src="" id="headerAvatarImg" class="user-avatar-small" alt="Avatar" />
+        <div class="user-pill" onclick="openProfileModal()" title="Mon profil">
+          <div id="headerAvatarContainer"></div>
           <span class="sync-dot" id="syncDot"></span>
           <span id="currentUserLabel">Invité</span>
         </div>
@@ -711,7 +726,7 @@
     <!-- ONGLET 1 : COURS -->
     <section id="tab-courses" class="tab-view active">
       
-      <!-- Switcher : Mes cours / Cours reçus d'autres élèves -->
+      <!-- Switcher Mes Cours / Cours Reçus -->
       <div class="view-switcher">
         <button class="switcher-btn active" id="btnViewMine" onclick="switchCourseSubView('mine')">
           <i class="fa-solid fa-folder-closed"></i>
@@ -734,7 +749,7 @@
         </button>
       </div>
 
-      <!-- Filtres par matière avec toutes les matières au programme -->
+      <!-- Filtres par matière avec clés strictes -->
       <div class="category-scroll" id="filterShelf">
         <span class="cat-chip active" data-cat="all" onclick="setFilter('all')">Toutes les matières</span>
         <span class="cat-chip" data-cat="reseaux" onclick="setFilter('reseaux')">Réseaux</span>
@@ -851,7 +866,7 @@
   <!-- Bouton mobile (+) -->
   <button class="fab-add" onclick="openCourseModal()" title="Ajouter un cours"><i class="fa-solid fa-plus"></i></button>
 
-  <!-- Barre de navigation mobile inférieure -->
+  <!-- Barre de navigation mobile -->
   <nav class="mobile-bar">
     <button class="mobile-tab active" onclick="showTab('tab-courses')">
       <i class="fa-solid fa-book-open"></i>
@@ -871,7 +886,7 @@
     </button>
   </nav>
 
-  <!-- MODAL DE PROFIL PERSONNEL (PHOTO & BIO) -->
+  <!-- MODAL DE PROFIL PERSONNEL -->
   <div class="modal-backdrop" id="profileModal" onclick="closeProfileModal()">
     <div class="modal-sheet" onclick="event.stopPropagation()" style="max-width: 500px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
@@ -880,7 +895,7 @@
       </div>
 
       <div class="avatar-upload-wrap">
-        <img src="" id="profileModalAvatarImg" class="avatar-preview-lg" alt="Mon Avatar" />
+        <div id="profileModalAvatarContainer"></div>
         <label class="avatar-upload-btn">
           <i class="fa-solid fa-camera"></i> Changer ma photo
           <input type="file" id="profileAvatarInput" accept="image/*" style="display: none;" onchange="handleAvatarChange(event)" />
@@ -894,7 +909,7 @@
 
       <div class="form-row">
         <label>Description / Bio</label>
-        <textarea class="form-input" id="profileBioInput" style="min-height: 90px;" placeholder="Ex: Élève en Terminale CIEL. Option Cybersécurité et Réseaux Cisco..."></textarea>
+        <textarea class="form-input" id="profileBioInput" style="min-height: 90px;" placeholder="Ex: Élève en Terminale CIEL. Option Cybersécurité et Réseaux..."></textarea>
       </div>
 
       <button class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;" onclick="saveUserProfile()">
@@ -942,7 +957,7 @@
       </div>
 
       <div class="form-row">
-        <label>Schémas et Fichiers (Stockés sur GitHub)</label>
+        <label>Schémas et Fichiers (Stockés sur GitHub uploads/)</label>
         <div style="border: 2px dashed var(--border-light); border-radius: var(--radius-sm); padding: 1.25rem; text-align: center; cursor: pointer;" onclick="document.getElementById('mFileInput').click()">
           <i class="fa-solid fa-cloud-arrow-up" style="font-size: 1.6rem; color: var(--primary); margin-bottom: 0.4rem;"></i>
           <p style="font-size: 0.85rem; color: var(--text-muted);">Joindre des schémas (PNG, JPG) ou TP (PDF, PKT)</p>
@@ -971,7 +986,7 @@
 
       <div class="form-row">
         <label>Sélectionnez les élèves destinataires :</label>
-        <div id="recipientsList" style="max-height: 220px; overflow-y: auto; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem;"></div>
+        <div id="recipientsList" style="max-height: 240px; overflow-y: auto; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.5rem;"></div>
       </div>
 
       <button class="btn btn-primary" id="btnConfirmShare" style="width: 100%;" onclick="confirmSendShare()">
@@ -980,7 +995,7 @@
     </div>
   </div>
 
-  <!-- LIGHTBOX SCHÉMAS (FOND BLANC) -->
+  <!-- LIGHTBOX SCHÉMAS -->
   <div class="lightbox-modal" id="lightboxModal" onclick="closeLightbox()">
     <div style="position: absolute; top: 1rem; right: 1rem;">
       <button class="btn" onclick="closeLightbox()" style="border-radius: 50%; width: 44px; height: 44px;"><i class="fa-solid fa-xmark"></i></button>
@@ -992,8 +1007,34 @@
 
   <script>
     /* ==========================================================
-       1. SYSTÈME DE TOASTS ET DIALOGUES PERSONNALISÉS
+       1. FONCTIONS UTILITAIRES & AVATARS ROBUSTES
        ========================================================== */
+    function escapeHtml(text) {
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+      return (text || '').replace(/[&<>"']/g, m => map[m]);
+    }
+
+    // Génère une couleur moderne déterministe basée sur le nom d'utilisateur
+    function getUserColor(username) {
+      const colors = ['#0284c7', '#6366f1', '#a855f7', '#10b981', '#f59e0b', '#ec4899', '#14b8a6', '#8b5cf6'];
+      let hash = 0;
+      const str = username || 'u';
+      for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      return colors[Math.abs(hash) % colors.length];
+    }
+
+    // Rendu d'avatar sans aucun risque de guillemet cassé
+    function renderAvatarHTML(username, avatarUrl, size = 28) {
+      const u = username || 'U';
+      if (avatarUrl && typeof avatarUrl === 'string' && avatarUrl.startsWith('data:image/')) {
+        return `<img src="${avatarUrl}" class="avatar-img" style="width:${size}px; height:${size}px;" alt="${escapeHtml(u)}" />`;
+      }
+      const initial = u.charAt(0).toUpperCase();
+      const color = getUserColor(u);
+      const fontSize = Math.max(11, Math.round(size * 0.44));
+      return `<div class="avatar-circle" style="width:${size}px; height:${size}px; background:${color}; font-size:${fontSize}px;">${initial}</div>`;
+    }
+
     function showToast(message, type = 'info') {
       const container = document.getElementById('toastContainer');
       const toast = document.createElement('div');
@@ -1038,7 +1079,7 @@
     }
 
     /* ==========================================================
-       2. CRYPTOGRAPHIE AES-256 ET SESSION
+       2. CRYPTOGRAPHIE AES-256 ET ENCODAGE UTF-8 PUR
        ========================================================== */
     let currentSession = { username: null, aesKey: null, saltHex: null };
     let userVault = { courses: [], flashcards: [], todos: [], profile: { avatar: '', bio: '' }, lastUpdated: null };
@@ -1062,6 +1103,14 @@
     let courseToShare = null;
     let fcCursor = 0;
     let fcFlipped = false;
+
+    // Encodage Base64 UTF-8 infaillible (supporte tous les accents français et caractères spéciaux)
+    function utf8ToB64(str) {
+      return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1)));
+    }
+    function b64ToUtf8(str) {
+      return decodeURIComponent(Array.prototype.map.call(atob(str), c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+    }
 
     function bufToHex(buf) { return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join(''); }
     function hexToBuf(hex) {
@@ -1102,14 +1151,8 @@
       return JSON.parse(new TextDecoder().decode(decrypted));
     }
 
-    /* Générateur SVG d'avatar par défaut */
-    function getDefaultAvatar(username) {
-      const letter = (username || 'U').charAt(0).toUpperCase();
-      return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%230284c7"/><text x="50" y="62" font-size="44" font-family="Arial,sans-serif" font-weight="bold" fill="white" text-anchor="middle">${letter}</text></svg>`;
-    }
-
     /* ==========================================================
-       3. INITIALISATION & AUTHENTIFICATION
+       3. INITIALISATION & CONNEXION
        ========================================================== */
     window.onload = () => {
       document.getElementById('cfgOwner').value = ghConfig.owner;
@@ -1145,10 +1188,15 @@
     async function handleAuthSubmit(e) {
       e.preventDefault();
       document.getElementById('authAlert').style.display = 'none';
-      const username = document.getElementById('authUsername').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+      const rawUser = document.getElementById('authUsername').value.trim();
+      const username = rawUser.toLowerCase().replace(/[^a-z0-9_-]/g, '');
       const password = document.getElementById('authPassword').value;
 
-      if (!username || !password) return;
+      if (!username || !password) {
+        document.getElementById('authAlert').innerText = "Veuillez renseigner un nom d'utilisateur et un mot de passe.";
+        document.getElementById('authAlert').style.display = 'block';
+        return;
+      }
 
       const submitBtn = document.getElementById('authSubmitBtn');
       submitBtn.disabled = true;
@@ -1171,7 +1219,7 @@
           registry.users[username] = {
             salt: saltHex,
             verifier: verifier,
-            avatar: getDefaultAvatar(username),
+            avatar: '',
             bio: 'Élève Bac Pro CIEL',
             createdAt: new Date().toISOString()
           };
@@ -1183,7 +1231,7 @@
             courses: [],
             flashcards: [],
             todos: [],
-            profile: { avatar: getDefaultAvatar(username), bio: 'Élève Bac Pro CIEL' },
+            profile: { avatar: '', bio: 'Élève Bac Pro CIEL' },
             lastUpdated: new Date().toISOString()
           };
           await saveEncryptedVaultToGitHub();
@@ -1260,24 +1308,24 @@
       userVault = { courses: [], flashcards: [], todos: [], profile: { avatar: '', bio: '' }, lastUpdated: null };
       document.getElementById('authOverlay').style.display = 'flex';
       document.getElementById('currentUserLabel').innerText = "Invité";
-      document.getElementById('headerAvatarImg').src = getDefaultAvatar('Invité');
+      document.getElementById('headerAvatarContainer').innerHTML = renderAvatarHTML('Invité', '', 28);
       setSync('', 'Déconnecté');
       showToast("Vous avez été déconnecté.", "info");
     }
 
     /* ==========================================================
-       4. GESTION DU PROFIL (PHOTO & BIO)
+       4. GESTION DU PROFIL (AVATAR SÉCURISÉ & BIO)
        ========================================================== */
     function updateHeaderProfileUI() {
-      const avatarSrc = (userVault.profile && userVault.profile.avatar) ? userVault.profile.avatar : getDefaultAvatar(currentSession.username);
-      document.getElementById('headerAvatarImg').src = avatarSrc;
+      const avatarSrc = (userVault.profile && userVault.profile.avatar) ? userVault.profile.avatar : '';
+      document.getElementById('headerAvatarContainer').innerHTML = renderAvatarHTML(currentSession.username, avatarSrc, 28);
     }
 
     function openProfileModal() {
       if (!currentSession.username) return;
       document.getElementById('profileUsernameDisplay').value = currentSession.username;
-      const avatarSrc = (userVault.profile && userVault.profile.avatar) ? userVault.profile.avatar : getDefaultAvatar(currentSession.username);
-      document.getElementById('profileModalAvatarImg').src = avatarSrc;
+      const avatarSrc = (userVault.profile && userVault.profile.avatar) ? userVault.profile.avatar : '';
+      document.getElementById('profileModalAvatarContainer').innerHTML = renderAvatarHTML(currentSession.username, avatarSrc, 80);
       document.getElementById('profileBioInput').value = (userVault.profile && userVault.profile.bio) ? userVault.profile.bio : '';
       document.getElementById('profileModal').classList.add('active');
     }
@@ -1286,7 +1334,6 @@
       document.getElementById('profileModal').classList.remove('active');
     }
 
-    // Redimensionnement de l'avatar en 120x120 via Canvas pour garantir un poids plume (< 15 Ko)
     function handleAvatarChange(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -1302,39 +1349,34 @@
           ctx.drawImage(img, 0, 0, 120, 120);
           const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
 
-          document.getElementById('profileModalAvatarImg').src = compressedDataUrl;
+          document.getElementById('profileModalAvatarContainer').innerHTML = renderAvatarHTML(currentSession.username, compressedDataUrl, 80);
           if (!userVault.profile) userVault.profile = {};
           userVault.profile.avatar = compressedDataUrl;
         };
         img.src = event.target.result;
       };
       reader.readAsDataURL(file);
+      e.target.value = '';
     }
 
     async function saveUserProfile() {
       if (!userVault.profile) userVault.profile = {};
       userVault.profile.bio = document.getElementById('profileBioInput').value.trim();
 
-      // Mettre à jour l'avatar si déjà défini
-      if (!userVault.profile.avatar) {
-        userVault.profile.avatar = getDefaultAvatar(currentSession.username);
-      }
-
       updateHeaderProfileUI();
       closeProfileModal();
       autoSaveUserVault();
 
-      // Mise à jour publique du profil dans le registre pour les partages
       try {
         const registry = await fetchUsersRegistry();
         if (registry.users && registry.users[currentSession.username]) {
-          registry.users[currentSession.username].avatar = userVault.profile.avatar;
-          registry.users[currentSession.username].bio = userVault.profile.bio;
+          registry.users[currentSession.username].avatar = userVault.profile.avatar || '';
+          registry.users[currentSession.username].bio = userVault.profile.bio || '';
           await pushUsersRegistry(registry);
         }
         showToast("Profil enregistré et synchronisé !", "success");
       } catch (err) {
-        showToast("Profil enregistré en local (erreur registre).", "info");
+        showToast("Profil enregistré localement.", "info");
       }
     }
 
@@ -1354,7 +1396,8 @@
         const res = await fetch(url, { headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github.v3+json' } });
         if (res.status === 404) return { users: {} };
         const data = await res.json();
-        usersRegistryCache = JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\n/g, '')))));
+        const decoded = b64ToUtf8(data.content.replace(/\n/g, ''));
+        usersRegistryCache = JSON.parse(decoded);
         return usersRegistryCache;
       } catch (e) { return { users: {} }; }
     }
@@ -1369,7 +1412,7 @@
 
       const payload = {
         message: "Mise à jour registre élèves",
-        content: btoa(unescape(encodeURIComponent(JSON.stringify(registryObj, null, 2)))),
+        content: utf8ToB64(JSON.stringify(registryObj, null, 2)),
         branch: ghConfig.branch
       };
       if (sha) payload.sha = sha;
@@ -1389,7 +1432,7 @@
             courses: [],
             flashcards: [],
             todos: [],
-            profile: { avatar: getDefaultAvatar(currentSession.username), bio: '' },
+            profile: { avatar: '', bio: '' },
             lastUpdated: new Date().toISOString()
           };
           setSync('synced', 'Nouveau');
@@ -1397,9 +1440,9 @@
         }
         const data = await res.json();
         currentVaultSha = data.sha;
-        const decoded = JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\n/g, '')))));
+        const decoded = JSON.parse(b64ToUtf8(data.content.replace(/\n/g, '')));
         userVault = await decryptData(decoded, currentSession.aesKey);
-        if (!userVault.profile) userVault.profile = { avatar: getDefaultAvatar(currentSession.username), bio: '' };
+        if (!userVault.profile) userVault.profile = { avatar: '', bio: '' };
         setSync('synced', 'À jour');
       } catch (err) {
         setSync('error', 'Erreur coffre');
@@ -1418,7 +1461,7 @@
 
         const body = {
           message: `Update vault [${currentSession.username}]`,
-          content: btoa(unescape(encodeURIComponent(JSON.stringify(encryptedPayload)))),
+          content: utf8ToB64(JSON.stringify(encryptedPayload)),
           branch: ghConfig.branch
         };
         if (currentVaultSha) body.sha = currentVaultSha;
@@ -1447,11 +1490,11 @@
       renderFlashcards();
       renderTodos();
       updateReceivedBadge();
-      if (!silent) showToast("Coffre et partages synchronisés avec GitHub !", "success");
+      if (!silent) showToast("Données synchronisées !", "success");
     }
 
     /* ==========================================================
-       6. SYSTÈME DE PARTAGE AVEC AVATAR & BIO
+       6. SYSTÈME DE PARTAGE CORRIGÉ (SANS GUILLEMETS CASSÉS ET SANS SOI-MÊME)
        ========================================================== */
     async function fetchSharedCourses() {
       if (!ghConfig.token) return;
@@ -1461,7 +1504,7 @@
         if (res.status === 404) { allSharedCourses = []; return; }
         const data = await res.json();
         sharesFileSha = data.sha;
-        const decoded = JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\n/g, '')))));
+        const decoded = JSON.parse(b64ToUtf8(data.content.replace(/\n/g, '')));
         allSharedCourses = decoded.shares || [];
       } catch (e) { allSharedCourses = []; }
     }
@@ -1475,7 +1518,7 @@
 
       const payload = {
         message: "Mise à jour des partages CIEL",
-        content: btoa(unescape(encodeURIComponent(JSON.stringify({ shares: sharesList }, null, 2)))),
+        content: utf8ToB64(JSON.stringify({ shares: sharesList }, null, 2)),
         branch: ghConfig.branch
       };
       if (sharesFileSha) payload.sha = sharesFileSha;
@@ -1507,33 +1550,42 @@
 
       document.getElementById('shareCourseTitle').innerText = course.title;
       const listEl = document.getElementById('recipientsList');
-      listEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Chargement des élèves...';
+      listEl.innerHTML = '<div style="padding:1rem; text-align:center; color:var(--text-sub);"><i class="fa-solid fa-spinner fa-spin"></i> Chargement des élèves...</div>';
       document.getElementById('shareModal').classList.add('active');
 
       const registry = await fetchUsersRegistry();
-      const otherUsers = Object.keys(registry.users || {}).filter(u => u !== currentSession.username);
+      const myCleanName = (currentSession.username || '').toLowerCase().trim();
+
+      // FILTRE INFAILLIBLE : Exclure strictement soi-même de la liste de partage
+      const otherUsers = Object.keys(registry.users || {}).filter(u => u.toLowerCase().trim() !== myCleanName);
 
       if (otherUsers.length === 0) {
-        listEl.innerHTML = `<p style="font-size:0.85rem; color:var(--text-sub);">Aucun autre compte élève inscrit pour le moment.</p>`;
+        listEl.innerHTML = `<p style="font-size:0.85rem; color:var(--text-sub); padding:1rem; text-align:center;">Aucun autre élève inscrit pour le moment.</p>`;
         return;
       }
 
       listEl.innerHTML = '';
       otherUsers.forEach(u => {
-        const uData = registry.users[u];
-        const avatar = (uData && uData.avatar) ? uData.avatar : getDefaultAvatar(u);
-        const bio = (uData && uData.bio) ? uData.bio : 'Élève';
+        const uData = registry.users[u] || {};
+        const avatarHTML = renderAvatarHTML(u, uData.avatar, 34);
+        const bioText = uData.bio ? escapeHtml(uData.bio) : 'Élève CIEL';
 
-        const row = document.createElement('label');
-        row.style = 'display:flex; align-items:center; gap:0.75rem; padding:0.5rem 0; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05);';
+        const row = document.createElement('div');
+        row.className = 'recipient-row';
         row.innerHTML = `
-          <input type="checkbox" value="${u}" class="share-recipient-cb" />
-          <img src="${avatar}" style="width:26px; height:26px; border-radius:50%; object-fit:cover;" />
-          <div style="display:flex; flex-direction:column; line-height:1.2;">
-            <span style="font-size:0.88rem; font-weight:700; color:#fff;">@${u}</span>
-            <span style="font-size:0.72rem; color:var(--text-muted);">${escapeHtml(bio)}</span>
+          <input type="checkbox" value="${escapeHtml(u)}" class="share-recipient-cb" id="cb_${escapeHtml(u)}" style="width:18px; height:18px; cursor:pointer;" />
+          ${avatarHTML}
+          <div style="flex:1; line-height:1.2;">
+            <div style="font-weight:700; color:#fff; font-size:0.9rem;">@${escapeHtml(u)}</div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">${bioText}</div>
           </div>
         `;
+        row.onclick = (e) => {
+          if (e.target.tagName !== 'INPUT') {
+            const cb = row.querySelector('.share-recipient-cb');
+            cb.checked = !cb.checked;
+          }
+        };
         listEl.appendChild(row);
       });
     }
@@ -1559,7 +1611,7 @@
       try {
         await fetchSharedCourses();
 
-        const senderAvatar = (userVault.profile && userVault.profile.avatar) ? userVault.profile.avatar : getDefaultAvatar(currentSession.username);
+        const senderAvatar = (userVault.profile && userVault.profile.avatar) ? userVault.profile.avatar : '';
         const senderBio = (userVault.profile && userVault.profile.bio) ? userVault.profile.bio : '';
 
         selected.forEach(recipient => {
@@ -1730,16 +1782,16 @@
           card.style.borderColor = 'rgba(99, 102, 241, 0.4)';
 
           let attachmentsHTML = buildAttachmentsHTML(s.course.attachments);
-          const senderAvatar = s.senderAvatar || getDefaultAvatar(s.fromUser);
+          const avatarHTML = renderAvatarHTML(s.fromUser, s.senderAvatar, 36);
           const senderBio = s.senderBio ? ` • ${escapeHtml(s.senderBio)}` : '';
 
           card.innerHTML = `
             <div class="course-card-top">
-              <div style="display:flex; align-items:flex-start; gap:0.6rem;">
-                <img src="${senderAvatar}" style="width:34px; height:34px; border-radius:50%; object-fit:cover; margin-top:2px;" />
+              <div style="display:flex; align-items:flex-start; gap:0.65rem;">
+                ${avatarHTML}
                 <div>
                   <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
-                    <span style="font-weight:700; color:#fff; font-size:0.85rem;">@${escapeHtml(s.fromUser)}</span>
+                    <span style="font-weight:700; color:#fff; font-size:0.88rem;">@${escapeHtml(s.fromUser)}</span>
                     <span class="badge-sub" style="background: rgba(99, 102, 241, 0.15); color: #a5b4fc; border-color: #6366f1;">
                       ${escapeHtml(s.course.subject)}
                     </span>
@@ -1918,7 +1970,7 @@
     }
 
     /* ==========================================================
-       9. LIGHTBOX SCHÉMAS (CONTRASTE FOND BLANC)
+       9. LIGHTBOX SCHÉMAS (FOND BLANC)
        ========================================================== */
     function openLightbox(src) {
       document.getElementById('lightboxImg').src = src;
@@ -2050,7 +2102,7 @@
     }
 
     /* ==========================================================
-       11. NAVIGATION ET CONFIGURATION
+       11. NAVIGATION ET PARAMÈTRES
        ========================================================== */
     function showTab(tabId) {
       document.querySelectorAll('.tab-view').forEach(t => t.classList.remove('active'));
@@ -2072,11 +2124,6 @@
 
       localStorage.setItem('ciel_gh_config', JSON.stringify(ghConfig));
       showToast("Configuration GitHub enregistrée !", "success");
-    }
-
-    function escapeHtml(text) {
-      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-      return (text || '').replace(/[&<>"']/g, m => map[m]);
     }
   </script>
 </body>
