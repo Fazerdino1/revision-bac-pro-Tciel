@@ -23,12 +23,15 @@ function getEmbeddedToken() {
 }
 
 // Configuration GitHub verrouillée (utilise exclusivement votre token chiffré)
-const ghConfig = Object.freeze({
+var ghConfig = Object.freeze({
   owner: 'fazerdino1',
   repo: 'revision-bac-pro-Tciel',
   branch: 'main',
   token: getEmbeddedToken()
 });
+if (typeof window !== 'undefined') {
+  window.ghConfig = ghConfig;
+}
 
 /* ==========================================================
    2. HELPERS DE COMMUNICATION API GITHUB
