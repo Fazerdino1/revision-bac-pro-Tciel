@@ -37,21 +37,39 @@ if (typeof window !== 'undefined') {
    2. HELPERS DE COMMUNICATION API GITHUB
    ========================================================== */
 
-// Helper GitHub : lecture avec anti-cache strict (?t=...)
+// Helper GitHub : lecture avec anti-cache strict (?t=...) et fallback direct haute disponibilité
 async function ghGetFile(filePath) {
   if (!ghConfig.token) return null;
   const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/${filePath}?t=${Date.now()}&ref=${ghConfig.branch}`;
-  const res = await fetch(url, {
-    headers: {
-      'Authorization': `Bearer ${ghConfig.token}`,
-      'Accept': 'application/vnd.github.v3+json'
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      mode: 'cors',
+      credentials: 'omit',
+      headers: {
+        'Authorization': `Bearer ${ghConfig.token}`,
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+    if (res.status === 404) return null;
+    if (res.ok) {
+      const json = await res.json();
+      const content = b64ToUtf8(json.content);
+      return { sha: json.sha, data: JSON.parse(content) };
     }
-  });
-  if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`Code HTTP ${res.status}`);
-  const json = await res.json();
-  const content = b64ToUtf8(json.content);
-  return { sha: json.sha, data: JSON.parse(content) };
+    throw new Error(`Code HTTP ${res.status}`);
+  } catch (err) {
+    try {
+      const rawUrl = `https://raw.githubusercontent.com/${ghConfig.owner}/${ghConfig.repo}/${ghConfig.branch}/${filePath}?t=${Date.now()}`;
+      const rawRes = await fetch(rawUrl, { mode: 'cors' });
+      if (rawRes.status === 404) return null;
+      if (rawRes.ok) {
+        const rawData = await rawRes.json();
+        return { sha: null, data: rawData };
+      }
+    } catch (_) {}
+    throw err;
+  }
 }
 
 // Helper GitHub : écriture avec auto-résolution du SHA et retry en cas d'erreur 409
