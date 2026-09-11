@@ -3,20 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bac Pro CIEL Hub | Plateforme de Révision</title>
+  <title>Bac Pro CIEL | Espace Personnel de Révision</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <!-- Parser Markdown léger -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <style>
     :root {
       --bg-dark: #090d16;
       --bg-card: #111827;
-      --bg-card-hover: #1b253b;
+      --bg-card-alt: #0d121f;
       --border-color: #1f293d;
       --primary: #38bdf8;
-      --primary-glow: rgba(56, 189, 248, 0.15);
+      --primary-glow: rgba(56, 189, 248, 0.2);
       --accent: #6366f1;
       --accent-green: #10b981;
       --accent-orange: #f59e0b;
@@ -27,12 +29,7 @@
       --font-mono: 'JetBrains Mono', monospace;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background-color: var(--bg-dark);
       color: var(--text-main);
@@ -40,12 +37,11 @@
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      line-height: 1.6;
     }
 
-    /* Header & Navigation */
+    /* En-tête */
     header {
-      background: rgba(17, 24, 39, 0.85);
+      background: rgba(17, 24, 39, 0.9);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border-color);
       position: sticky;
@@ -67,1283 +63,799 @@
     .brand {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.6rem;
       font-weight: 800;
-      font-size: 1.25rem;
-      letter-spacing: -0.5px;
+      font-size: 1.2rem;
     }
 
-    .brand i {
-      color: var(--primary);
-      text-shadow: 0 0 12px var(--primary);
+    .brand i { color: var(--primary); text-shadow: 0 0 10px var(--primary); }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
     }
 
-    .badge-ciel {
-      background: linear-gradient(135deg, var(--accent), var(--primary));
-      padding: 0.2rem 0.6rem;
-      font-size: 0.72rem;
-      font-weight: 700;
-      border-radius: 9999px;
-      color: #fff;
-      text-transform: uppercase;
+    .sync-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.78rem;
+      font-family: var(--font-mono);
+      background: var(--bg-card-alt);
+      padding: 0.4rem 0.8rem;
+      border-radius: 999px;
+      border: 1px solid var(--border-color);
     }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #64748b; }
+    .status-dot.synced { background: var(--accent-green); box-shadow: 0 0 8px var(--accent-green); }
+    .status-dot.unsaved { background: var(--accent-orange); box-shadow: 0 0 8px var(--accent-orange); }
+    .status-dot.error { background: var(--accent-rose); box-shadow: 0 0 8px var(--accent-rose); }
 
+    /* Navigation */
     .nav-tabs {
       display: flex;
       gap: 0.5rem;
       flex-wrap: wrap;
+      margin: 1rem 0;
     }
 
     .tab-btn {
-      background: transparent;
-      border: 1px solid transparent;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
       color: var(--text-muted);
-      padding: 0.5rem 1rem;
+      padding: 0.55rem 1.1rem;
       border-radius: 8px;
       font-weight: 600;
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      transition: all 0.2s ease;
+      transition: all 0.2s;
     }
-
-    .tab-btn:hover {
-      color: var(--text-main);
-      background: var(--bg-card);
-    }
-
+    .tab-btn:hover { color: #fff; background: #1e293b; }
     .tab-btn.active {
       color: var(--primary);
-      background: var(--bg-card);
-      border-color: var(--border-color);
-      box-shadow: 0 0 15px var(--primary-glow);
+      border-color: var(--primary);
+      background: rgba(56, 189, 248, 0.08);
     }
 
-    /* Container */
+    /* Conteneur principal */
     main {
       max-width: 1400px;
       margin: 0 auto;
-      padding: 1.5rem;
+      padding: 0 1.5rem 2rem 1.5rem;
       flex: 1;
       width: 100%;
     }
 
-    .tab-content {
-      display: none;
-      animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
+    .tab-content { display: none; animation: fadeIn 0.2s ease-in-out; }
+    .tab-content.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
-    .tab-content.active {
-      display: block;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Hero / Countdown */
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.25rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 1.25rem;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    }
-
-    .card-title {
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.75rem;
-    }
-
-    .countdown-display {
-      display: flex;
-      gap: 0.75rem;
-      margin-top: 0.5rem;
-    }
-
-    .countdown-unit {
-      background: #0d121f;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 0.5rem;
-      min-width: 60px;
-      text-align: center;
-    }
-
-    .countdown-number {
-      font-family: var(--font-mono);
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: var(--primary);
-    }
-
-    .countdown-label {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      text-transform: uppercase;
-    }
-
-    /* Quick stats */
-    .stat-val {
-      font-size: 2rem;
-      font-weight: 800;
-      color: var(--text-main);
-      font-family: var(--font-mono);
-    }
-
-    .progress-bar-bg {
-      background: #1f293d;
-      height: 8px;
-      border-radius: 999px;
-      overflow: hidden;
-      margin-top: 0.75rem;
-    }
-
-    .progress-bar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--accent), var(--accent-green));
-      width: 0%;
-      transition: width 0.4s ease;
-    }
-
-    /* Section Headers */
-    .section-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1rem;
-      margin-top: 1.5rem;
-    }
-
-    .section-head h2 {
-      font-size: 1.3rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-    }
-
-    /* Fiches de révisions */
-    .subject-nav {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1.25rem;
-      overflow-x: auto;
-      padding-bottom: 0.5rem;
-    }
-
-    .sub-btn {
-      background: #0d121f;
-      border: 1px solid var(--border-color);
-      color: var(--text-muted);
-      padding: 0.5rem 1rem;
-      border-radius: 9999px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: 0.2s ease;
-    }
-
-    .sub-btn.active, .sub-btn:hover {
-      background: var(--accent);
-      color: #fff;
-      border-color: var(--accent);
-    }
-
-    .revision-cards-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-      gap: 1.25rem;
-    }
-
-    .fiche-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      padding: 1.25rem;
-      transition: border-color 0.2s, transform 0.2s;
-    }
-
-    .fiche-card:hover {
-      border-color: var(--primary);
-      transform: translateY(-2px);
-    }
-
-    .fiche-tag {
-      font-size: 0.7rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      padding: 0.2rem 0.5rem;
-      border-radius: 4px;
-      background: rgba(56, 189, 248, 0.1);
-      color: var(--primary);
-      display: inline-block;
-      margin-bottom: 0.75rem;
-    }
-
-    .fiche-title {
-      font-size: 1.1rem;
-      font-weight: 700;
-      margin-bottom: 0.6rem;
-      color: var(--text-main);
-    }
-
-    .fiche-content {
-      font-size: 0.9rem;
-      color: #cbd5e1;
-    }
-
-    .code-block {
-      background: #060911;
-      border: 1px solid #1e293b;
-      border-radius: 6px;
-      padding: 0.75rem;
-      font-family: var(--font-mono);
-      font-size: 0.8rem;
-      color: #38bdf8;
-      margin: 0.5rem 0;
-      overflow-x: auto;
-    }
-
-    /* Flashcards */
-    .flashcard-wrapper {
-      max-width: 650px;
-      margin: 2rem auto;
-      perspective: 1000px;
-    }
-
-    .flashcard {
-      background: var(--bg-card);
-      border: 2px solid var(--border-color);
-      border-radius: 16px;
-      min-height: 280px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: 2rem;
-      cursor: pointer;
-      text-align: center;
-      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s;
-      transform-style: preserve-3d;
-      position: relative;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
-    }
-
-    .flashcard.is-flipped {
-      transform: rotateY(180deg);
-      border-color: var(--accent);
-    }
-
-    .card-face {
-      backface-visibility: hidden;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .card-front-title {
-      font-size: 1.3rem;
-      font-weight: 700;
-      color: var(--text-main);
-    }
-
-    .card-back {
-      transform: rotateY(180deg);
-      position: absolute;
-      top: 0;
-      left: 0;
-      padding: 2rem;
-      box-sizing: border-box;
-      color: #38bdf8;
-      font-size: 1.15rem;
-      font-weight: 600;
-    }
-
-    .card-hint {
-      margin-top: 1rem;
-      font-size: 0.8rem;
-      color: var(--text-muted);
-    }
-
-    .flashcard-controls {
-      display: flex;
-      justify-content: center;
-      gap: 1rem;
-      margin-top: 1.5rem;
-    }
-
+    /* Boutons et éléments */
     .btn {
       background: var(--bg-card);
       color: var(--text-main);
       border: 1px solid var(--border-color);
-      padding: 0.65rem 1.25rem;
+      padding: 0.6rem 1.1rem;
       border-radius: 8px;
       font-weight: 600;
+      font-size: 0.85rem;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
       transition: 0.2s;
     }
+    .btn:hover { background: #1f293d; border-color: var(--primary); }
+    .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .btn-primary:hover { background: #4f46e5; border-color: #4f46e5; }
+    .btn-success { background: rgba(16, 185, 129, 0.15); border-color: var(--accent-green); color: #34d399; }
+    .btn-success:hover { background: var(--accent-green); color: #000; }
+    .btn-danger { background: rgba(244, 63, 94, 0.15); border-color: var(--accent-rose); color: #fda4af; }
+    .btn-danger:hover { background: var(--accent-rose); color: #fff; }
 
-    .btn:hover {
-      background: var(--bg-card-hover);
-      border-color: var(--primary);
-    }
-
-    .btn-primary {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
-    }
-
-    .btn-primary:hover {
-      background: #4f46e5;
-    }
-
-    .btn-success {
-      background: rgba(16, 185, 129, 0.2);
-      border-color: var(--accent-green);
-      color: #34d399;
-    }
-
-    /* Timetable layout */
-    .timetable-wrapper {
-      overflow-x: auto;
+    /* Cartes & Grilles */
+    .card {
+      background: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: 12px;
-      background: var(--bg-card);
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
     }
 
-    .timetable {
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 800px;
-    }
-
-    .timetable th, .timetable td {
-      border: 1px solid var(--border-color);
-      padding: 0.75rem;
-      text-align: left;
-      vertical-align: top;
-    }
-
-    .timetable th {
-      background: #090e1a;
-      color: var(--primary);
-      font-size: 0.85rem;
-      text-transform: uppercase;
-      font-weight: 700;
-    }
-
-    .slot-card {
-      background: #0a101f;
-      border-left: 3px solid var(--primary);
-      padding: 0.5rem;
-      border-radius: 4px;
-      margin-bottom: 0.5rem;
-      font-size: 0.8rem;
-    }
-
-    .slot-card.ciel { border-color: #38bdf8; background: rgba(56, 189, 248, 0.05); }
-    .slot-card.general { border-color: #a855f7; background: rgba(168, 85, 247, 0.05); }
-    .slot-card.sciences { border-color: #f59e0b; background: rgba(245, 158, 11, 0.05); }
-    .slot-card.sport { border-color: #10b981; background: rgba(16, 185, 129, 0.05); }
-
-    .slot-title { font-weight: 700; color: #fff; margin-bottom: 0.15rem; }
-    .slot-prof { color: var(--text-muted); font-size: 0.72rem; }
-    .slot-room { font-family: var(--font-mono); color: var(--primary); font-size: 0.72rem; }
-
-    /* Pomodoro & Todo Grid */
-    .tools-grid {
+    .grid-2 {
       display: grid;
-      grid-template-columns: 1fr 1.3fr;
-      gap: 1.5rem;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
     }
+    @media (max-width: 850px) { .grid-2 { grid-template-columns: 1fr; } }
 
-    @media (max-width: 850px) {
-      .tools-grid { grid-template-columns: 1fr; }
-    }
-
-    .pomo-timer {
-      font-family: var(--font-mono);
-      font-size: 4rem;
-      font-weight: 800;
-      text-align: center;
-      margin: 1.5rem 0;
-      color: var(--primary);
-      letter-spacing: -2px;
-    }
-
-    .todo-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.65rem 0.75rem;
-      border-radius: 6px;
-      background: #090e1a;
-      border: 1px solid var(--border-color);
-      margin-bottom: 0.5rem;
-      font-size: 0.9rem;
-    }
-
-    .todo-item.done span {
-      text-decoration: line-through;
-      color: var(--text-muted);
-    }
-
-    .todo-input-group {
-      display: flex;
-      gap: 0.5rem;
+    /* Formulaires */
+    .form-group {
       margin-bottom: 1rem;
     }
-
-    .todo-input-group input {
-      flex: 1;
-      background: #090e1a;
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 0.4rem;
+    }
+    .form-control {
+      width: 100%;
+      background: var(--bg-card-alt);
       border: 1px solid var(--border-color);
-      padding: 0.6rem 0.8rem;
       border-radius: 8px;
+      padding: 0.65rem 0.85rem;
       color: #fff;
       font-family: var(--font-main);
+      font-size: 0.9rem;
     }
+    .form-control:focus { outline: none; border-color: var(--primary); }
+    textarea.form-control { resize: vertical; min-height: 180px; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
 
-    .todo-input-group input:focus {
-      outline: none;
-      border-color: var(--primary);
+    /* Liste de cours */
+    .course-item {
+      background: var(--bg-card-alt);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1rem;
+      margin-bottom: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      transition: border-color 0.2s;
     }
+    .course-item:hover { border-color: var(--primary); }
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.7rem;
+      font-weight: 700;
+      border-radius: 999px;
+      text-transform: uppercase;
+      background: rgba(56, 189, 248, 0.1);
+      color: var(--primary);
+    }
+    .course-title { font-size: 1.1rem; font-weight: 700; margin: 0.35rem 0; }
+    .course-body {
+      font-size: 0.9rem;
+      color: #cbd5e1;
+      line-height: 1.6;
+      margin-top: 0.6rem;
+    }
+    .course-body code { background: #000; padding: 0.15rem 0.35rem; border-radius: 4px; font-family: var(--font-mono); color: var(--primary); }
+    .course-body pre { background: #050811; padding: 0.75rem; border-radius: 6px; overflow-x: auto; margin: 0.6rem 0; }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--text-muted);
+    }
+    .empty-state i { font-size: 2.8rem; margin-bottom: 1rem; opacity: 0.4; }
+
+    /* Flashcards */
+    .fc-box {
+      max-width: 600px;
+      margin: 1.5rem auto;
+      background: var(--bg-card-alt);
+      border: 2px solid var(--border-color);
+      border-radius: 14px;
+      min-height: 240px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.3s;
+    }
+    .fc-box:hover { border-color: var(--primary); }
   </style>
 </head>
 <body>
 
-  <!-- Navigation -->
+  <!-- Header -->
   <header>
     <div class="nav-container">
       <div class="brand">
-        <i class="fa-solid fa-microchip"></i>
-        <span>BAC PRO CIEL REVISE</span>
-        <span class="badge-ciel">G. Cisson</span>
+        <i class="fa-solid fa-graduation-cap"></i>
+        <span>BAC PRO CIEL HUB</span>
       </div>
-      <div class="nav-tabs">
-        <button class="tab-btn active" onclick="switchTab('dashboard')"><i class="fa-solid fa-chart-line"></i> Dashboard</button>
-        <button class="tab-btn" onclick="switchTab('fiches')"><i class="fa-solid fa-book-bookmark"></i> Fiches & Mémos</button>
-        <button class="tab-btn" onclick="switchTab('flashcards')"><i class="fa-solid fa-clone"></i> Flashcards</button>
-        <button class="tab-btn" onclick="switchTab('edt')"><i class="fa-regular fa-calendar-days"></i> Emploi du Temps</button>
-        <button class="tab-btn" onclick="switchTab('outils')"><i class="fa-solid fa-stopwatch"></i> Focus & Tâches</button>
+
+      <div class="nav-actions">
+        <div class="sync-status">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="statusText">Non connecté à GitHub</span>
+        </div>
+        <button class="btn btn-success" onclick="saveToGitHub()"><i class="fa-solid fa-cloud-arrow-up"></i> Sauvegarder sur GitHub</button>
+        <button class="btn" onclick="fetchFromGitHub()"><i class="fa-solid fa-cloud-arrow-down"></i> Récupérer</button>
       </div>
     </div>
   </header>
 
   <main>
-    <!-- TAB 1: DASHBOARD -->
-    <section id="dashboard" class="tab-content active">
-      <div class="dashboard-grid">
-        <!-- Compte à rebours épreuves -->
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="switchTab('tab-courses')"><i class="fa-solid fa-book-bookmark"></i> Mes Cours & Synthèses</button>
+      <button class="tab-btn" onclick="switchTab('tab-flashcards')"><i class="fa-solid fa-clone"></i> Flashcards Personnalisées</button>
+      <button class="tab-btn" onclick="switchTab('tab-todos')"><i class="fa-solid fa-list-check"></i> Objectifs & Planning</button>
+      <button class="tab-btn" onclick="switchTab('tab-settings')"><i class="fa-solid fa-gear"></i> Paramètres GitHub</button>
+    </div>
+
+    <!-- TAB 1: COURS & FICHES (VIERGE AU DÉPART, AJOUT LIBRE) -->
+    <section id="tab-courses" class="tab-content active">
+      <div class="grid-2">
+        <!-- Formulaire de saisie -->
         <div class="card">
-          <div class="card-title">
-            <span>Compte à rebours Bac Pro</span>
-            <i class="fa-regular fa-clock" style="color: var(--primary);"></i>
+          <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-plus-circle" style="color: var(--primary);"></i> Nouveau Cours / Mémo</h3>
+          
+          <div class="form-group">
+            <label>Matière / Discipline</label>
+            <select class="form-control" id="cSubject">
+              <option value="CIEL - Réseaux & Télécoms">CIEL - Réseaux & Télécoms</option>
+              <option value="CIEL - Cybersécurité">CIEL - Cybersécurité</option>
+              <option value="CIEL - Électronique / IoT">CIEL - Électronique / IoT</option>
+              <option value="Mathématiques">Mathématiques</option>
+              <option value="Physique-Chimie">Physique-Chimie</option>
+              <option value="Français">Français</option>
+              <option value="Histoire-Géographie & EMC">Histoire-Géographie & EMC</option>
+              <option value="Prévention Santé Environnement (PSE)">PSE</option>
+              <option value="Économie-Gestion">Économie-Gestion</option>
+              <option value="Anglais">Anglais</option>
+              <option value="Allemand">Allemand</option>
+            </select>
           </div>
-          <p style="font-size: 0.85rem; color: var(--text-muted);">Épreuves finales et projets de Terminale CIEL</p>
-          <div class="countdown-display" id="countdown">
-            <div class="countdown-unit"><div class="countdown-number" id="days">--</div><div class="countdown-label">Jours</div></div>
-            <div class="countdown-unit"><div class="countdown-number" id="hours">--</div><div class="countdown-label">Heures</div></div>
-            <div class="countdown-unit"><div class="countdown-number" id="mins">--</div><div class="countdown-label">Min</div></div>
-            <div class="countdown-unit"><div class="countdown-number" id="secs">--</div><div class="countdown-label">Sec</div></div>
+
+          <div class="form-group">
+            <label>Titre de la leçon / Fiche</label>
+            <input type="text" class="form-control" id="cTitle" placeholder="Ex: Modèle OSI, Routage statique, Dérivées..." />
           </div>
+
+          <div class="form-group">
+            <label>Contenu de la fiche (Supporte le texte brut & le Markdown)</label>
+            <textarea class="form-control" id="cContent" placeholder="Écris tes résumés de cours, tes commandes Linux, tes formules mathématiques ici..."></textarea>
+          </div>
+
+          <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="addCourse()">
+            <i class="fa-solid fa-plus"></i> Ajouter ce cours à mon classeur
+          </button>
         </div>
 
-        <!-- Progression de révision -->
-        <div class="card">
-          <div class="card-title">
-            <span>Progression globale</span>
-            <i class="fa-solid fa-bars-progress" style="color: var(--accent-green);"></i>
+        <!-- Liste des cours existants -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3><i class="fa-solid fa-folder-open" style="color: var(--accent-orange);"></i> Classeur de cours</h3>
+            <span id="courseCount" style="font-size: 0.85rem; color: var(--text-muted);">0 cours</span>
           </div>
-          <div class="stat-val" id="progressPercent">0%</div>
-          <p style="font-size: 0.8rem; color: var(--text-muted);" id="progressSub">0 tâches validées sur 0</p>
-          <div class="progress-bar-bg">
-            <div class="progress-bar-fill" id="progressBar"></div>
-          </div>
-        </div>
 
-        <!-- Focus du jour -->
-        <div class="card">
-          <div class="card-title">
-            <span>Pôles clés CIEL</span>
-            <i class="fa-solid fa-shield-halved" style="color: var(--accent-orange);"></i>
-          </div>
-          <ul style="list-style: none; font-size: 0.85rem; display: flex; flex-direction: column; gap: 0.4rem;">
-            <li><i class="fa-solid fa-network-wired" style="color: var(--primary);"></i> Réseaux IP & Routage (VLAN, Subnetting)</li>
-            <li><i class="fa-solid fa-lock" style="color: var(--accent-rose);"></i> Cybersécurité (Pare-feu, SSH, Clés, RGPD)</li>
-            <li><i class="fa-solid fa-bolt" style="color: var(--accent-orange);"></i> Électronique & Capteurs (IoT, Mesures)</li>
-          </ul>
-        </div>
-      </div>
-
-      <!-- Quick Summary Cards -->
-      <div class="section-head">
-        <h2><i class="fa-solid fa-fire" style="color: #f59e0b;"></i> Révisions prioritaires par matière</h2>
-      </div>
-
-      <div class="revision-cards-grid">
-        <div class="fiche-card">
-          <span class="fiche-tag">Enseignement Professionnel</span>
-          <div class="fiche-title">Épreuve E2 / E31 - Projet CIEL</div>
-          <div class="fiche-content">
-            Validation des compétences techniques : maquettage réseau, sécurisation des accès, mise en œuvre d'infrastructures et dossier technique de soutenance.
-          </div>
-          <button class="btn btn-primary" style="margin-top: 1rem; width: 100%; justify-content: center;" onclick="filterSubject('ciel'); switchTab('fiches')">Ouvrir les fiches CIEL</button>
-        </div>
-
-        <div class="fiche-card">
-          <span class="fiche-tag">Sciences & Maths</span>
-          <div class="fiche-title">Mathématiques & Physique-Chimie</div>
-          <div class="fiche-content">
-            Étude de fonctions, puissances de 10, décibels & atténuation des liaisons, signaux analogiques/numériques et bilan de puissance électrique.
-          </div>
-          <button class="btn btn-primary" style="margin-top: 1rem; width: 100%; justify-content: center;" onclick="filterSubject('maths'); switchTab('fiches')">Ouvrir les fiches Maths/Physique</button>
-        </div>
-
-        <div class="fiche-card">
-          <span class="fiche-tag">Général & Éco</span>
-          <div class="fiche-title">Français, Histoire-Géo, PSE, Éco-Gestion</div>
-          <div class="fiche-content">
-            Analyse de texte littéraire, repères géopolitiques mondiaux, prévention des risques professionnels en entreprise et gestion financière.
-          </div>
-          <button class="btn btn-primary" style="margin-top: 1rem; width: 100%; justify-content: center;" onclick="filterSubject('general'); switchTab('fiches')">Ouvrir les fiches Générales</button>
-        </div>
-      </div>
-    </section>
-
-    <!-- TAB 2: FICHES ET MEMOS -->
-    <section id="fiches" class="tab-content">
-      <div class="section-head">
-        <h2><i class="fa-solid fa-book-open-reader" style="color: var(--primary);"></i> Fiches de Synthèse CIEL & Tronc Commun</h2>
-      </div>
-
-      <div class="subject-nav">
-        <button class="sub-btn active" onclick="filterSubject('all')">Tout voir</button>
-        <button class="sub-btn" onclick="filterSubject('ciel')">CIEL (Réseaux / Sécurité / Élec)</button>
-        <button class="sub-btn" onclick="filterSubject('maths')">Maths & Physique-Chimie</button>
-        <button class="sub-btn" onclick="filterSubject('general')">Français & Histoire-Géo</button>
-        <button class="sub-btn" onclick="filterSubject('pse')">PSE & Éco-Gestion</button>
-      </div>
-
-      <div class="revision-cards-grid" id="fichesContainer">
-        <!-- Fiche 1 -->
-        <div class="fiche-card" data-cat="ciel">
-          <span class="fiche-tag">CIEL - Réseaux</span>
-          <div class="fiche-title">Modèle OSI vs TCP/IP & Protocoles</div>
-          <div class="fiche-content">
-            <p><strong>Les 7 couches OSI :</strong> Physique, Liaison, Réseau (IP), Transport (TCP/UDP), Session, Présentation, Application (HTTP, DNS, SSH).</p>
-            <p><strong>Ports incontournables :</strong></p>
-            <div class="code-block">SSH: 22 | DNS: 53 | HTTP: 80 | HTTPS: 443 | DHCP: 67/68</div>
-          </div>
-        </div>
-
-        <!-- Fiche 2 -->
-        <div class="fiche-card" data-cat="ciel">
-          <span class="fiche-tag">CIEL - Adressage IP</span>
-          <div class="fiche-title">Masques & Calcul de Sous-Réseaux (CIDR)</div>
-          <div class="fiche-content">
-            <p><strong>Formule :</strong> Nombre d'hôtes utilisables = <code>2^(32 - masque) - 2</code></p>
-            <div class="code-block">
-/24 => 255.255.255.0  (254 hôtes)
-/26 => 255.255.255.192 (62 hôtes, pas de 64)
-/30 => 255.255.255.252 (2 hôtes - liaison point à point)
-            </div>
-            <p>Ne pas oublier : 1ère adresse = Adresse réseau, dernière adresse = Broadcast.</p>
-          </div>
-        </div>
-
-        <!-- Fiche 3 -->
-        <div class="fiche-card" data-cat="ciel">
-          <span class="fiche-tag">CIEL - Cybersécurité</span>
-          <div class="fiche-title">Le Triptyque DIC (CIA Triad)</div>
-          <div class="fiche-content">
-            <p><strong>Disponibilité (Availability) :</strong> Les services et données doivent être accessibles aux utilisateurs légitimes (sauvegardes, redondance RAID, PRA).</p>
-            <p><strong>Intégrité (Integrity) :</strong> Les données ne doivent pas être altérées sans autorisation (hachage SHA-256, signatures).</p>
-            <p><strong>Confidentialité (Confidentiality) :</strong> Seuls les ayants droit ont accès aux données (chiffrement AES, VPN, pare-feu, ACL).</p>
-          </div>
-        </div>
-
-        <!-- Fiche 4 -->
-        <div class="fiche-card" data-cat="maths">
-          <span class="fiche-tag">Mathématiques</span>
-          <div class="fiche-title">Dérivées Usuelles & Variations de Fonction</div>
-          <div class="fiche-content">
-            <p>Pour déterminer le sens de variation d'une fonction <code>f(x)</code> :</p>
-            <ol style="margin-left: 1.2rem; font-size: 0.85rem;">
-              <li>Calculer la fonction dérivée <code>f'(x)</code></li>
-              <li>Résoudre <code>f'(x) = 0</code> pour trouver les extremums</li>
-              <li>Dresser le tableau de signes de <code>f'(x)</code> : si f' > 0 alors f est croissante</li>
-            </ol>
-            <div class="code-block">f(x) = x^n => f'(x) = n*x^(n-1) | f(x) = ax+b => f'(x) = a</div>
-          </div>
-        </div>
-
-        <!-- Fiche 5 -->
-        <div class="fiche-card" data-cat="maths">
-          <span class="fiche-tag">Physique-Chimie</span>
-          <div class="fiche-title">Signaux, Atténuation et Puissance</div>
-          <div class="fiche-content">
-            <p><strong>Loi d'Ohm & Puissance électrique :</strong></p>
-            <div class="code-block">U = R * I   |   P = U * I = R * I²</div>
-            <p><strong>Atténuation en décibels (dB) :</strong></p>
-            <div class="code-block">A = 10 * log10(Pe / Ps)</div>
-            <p>Une atténuation de 3 dB divise la puissance du signal par 2.</p>
-          </div>
-        </div>
-
-        <!-- Fiche 6 -->
-        <div class="fiche-card" data-cat="general">
-          <span class="fiche-tag">Français</span>
-          <div class="fiche-title">Structure de la Rédaction / Argumentation</div>
-          <div class="fiche-content">
-            <p><strong>Méthode pour l'expression écrite au Bac Pro :</strong></p>
-            <ul style="margin-left: 1.2rem; font-size: 0.85rem;">
-              <li><strong>Introduction :</strong> Accroche, présentation du thème, reformulation de la problématique et annonce du plan.</li>
-              <li><strong>Développement (2 ou 3 parties) :</strong> Argument + Explication + Exemple concret tiré du texte ou de ta culture générale.</li>
-              <li><strong>Conclusion :</strong> Bilan concis des axes étudiés et ouverture finale.</li>
-            </ul>
-          </div>
-        </div>
-
-        <!-- Fiche 7 -->
-        <div class="fiche-card" data-cat="pse">
-          <span class="fiche-tag">PSE</span>
-          <div class="fiche-title">Démarche d'Analyse des Risques (PAD)</div>
-          <div class="fiche-content">
-            <p><strong>Processus d'apparition d'un dommage :</strong></p>
-            <p>Danger -> Situation dangereuse -> Événement déclencheur -> Dommage.</p>
-            <div class="code-block">
-Priorité 1 : Supprimer ou substituer le danger
-Priorité 2 : Protection collective (grilles, ventilation)
-Priorité 3 : Protection individuelle (EPI, gants, lunettes)
-            </div>
-          </div>
-        </div>
-
-        <!-- Fiche 8 -->
-        <div class="fiche-card" data-cat="pse">
-          <span class="fiche-tag">Économie-Gestion</span>
-          <div class="fiche-title">L'Entreprise & Les Formes Juridiques</div>
-          <div class="fiche-content">
-            <p><strong>Types de structures :</strong> Entreprise Individuelle (EI), SARL/EURL, SAS/SASU.</p>
-            <p><strong>Facteurs clés :</strong> Chiffre d'affaires, valeur ajoutée (VA = Production - Consommations intermédiaires), résultat net (Bénéfice ou Perte).</p>
+          <div id="coursesList">
+            <!-- État vierge injecté par défaut -->
           </div>
         </div>
       </div>
     </section>
 
-    <!-- TAB 3: FLASHCARDS -->
-    <section id="flashcards" class="tab-content">
-      <div class="section-head">
-        <h2><i class="fa-solid fa-bolt" style="color: var(--accent-orange);"></i> Entraînement Flashcards Spécial Bac</h2>
-      </div>
-      <p style="color: var(--text-muted); font-size: 0.9rem; text-align: center;">Clique sur la carte pour afficher la solution, puis passe à la suivante.</p>
-
-      <div class="flashcard-wrapper">
-        <div class="flashcard" id="activeCard" onclick="flipCard()">
-          <div class="card-face card-front">
-            <span class="fiche-tag" id="cardCategory">Catégorie</span>
-            <div class="card-front-title" id="cardQuestion">Question en cours...</div>
-            <div class="card-hint"><i class="fa-solid fa-arrow-rotate-right"></i> Clique pour retourner</div>
+    <!-- TAB 2: FLASHCARDS -->
+    <section id="tab-flashcards" class="tab-content">
+      <div class="grid-2">
+        <!-- Ajout de Flashcard -->
+        <div class="card">
+          <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-square-plus" style="color: var(--primary);"></i> Créer une Flashcard</h3>
+          <div class="form-group">
+            <label>Matière</label>
+            <input type="text" class="form-control" id="fcSubject" placeholder="Ex: CIEL, Maths, PSE..." />
           </div>
-          <div class="card-face card-back" id="cardAnswer">
-            Réponse...
+          <div class="form-group">
+            <label>Question / Recto</label>
+            <input type="text" class="form-control" id="fcQuestion" placeholder="Ex: Port par défaut de SSH ?" />
           </div>
+          <div class="form-group">
+            <label>Réponse / Verso</label>
+            <textarea class="form-control" id="fcAnswer" style="min-height: 100px;" placeholder="Ex: Port 22 (TCP)"></textarea>
+          </div>
+          <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="addFlashcard()">
+            <i class="fa-solid fa-plus"></i> Ajouter la carte
+          </button>
         </div>
 
-        <div class="flashcard-controls">
-          <button class="btn" onclick="prevCard()"><i class="fa-solid fa-chevron-left"></i> Précédent</button>
-          <button class="btn btn-primary" onclick="flipCard()"><i class="fa-solid fa-repeat"></i> Retourner</button>
-          <button class="btn btn-success" onclick="nextCard()"><i class="fa-solid fa-check"></i> Suivante</button>
-        </div>
-        <div style="text-align: center; margin-top: 1rem; color: var(--text-muted); font-family: var(--font-mono); font-size: 0.85rem;" id="cardCounter">
-          Carte 1 / 10
+        <!-- Révision interactive -->
+        <div class="card" style="text-align: center;">
+          <h3><i class="fa-solid fa-play" style="color: var(--accent-green);"></i> Entraînement</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Clique sur la carte pour basculer Recto/Verso</p>
+          
+          <div class="fc-box" id="fcPlayBox" onclick="toggleFlipCard()">
+            <div id="fcPlayContent" style="font-size: 1.15rem; font-weight: 600;">Ajoute au moins une carte pour démarrer</div>
+          </div>
+
+          <div style="display: flex; justify-content: center; gap: 0.75rem; margin-top: 1rem;">
+            <button class="btn" onclick="prevFlashcard()"><i class="fa-solid fa-chevron-left"></i> Précédente</button>
+            <button class="btn btn-danger" onclick="deleteCurrentFlashcard()"><i class="fa-solid fa-trash-can"></i> Supprimer</button>
+            <button class="btn btn-primary" onclick="nextFlashcard()">Suivante <i class="fa-solid fa-chevron-right"></i></button>
+          </div>
+          <div id="fcCounter" style="margin-top: 0.8rem; font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted);">0 / 0</div>
         </div>
       </div>
     </section>
 
-    <!-- TAB 4: EMPLOI DU TEMPS -->
-    <section id="edt" class="tab-content">
-      <div class="section-head">
-        <h2><i class="fa-regular fa-calendar-check" style="color: var(--accent);"></i> Emploi du Temps - Lycée G. Cisson</h2>
-      </div>
-
-      <div class="timetable-wrapper">
-        <table class="timetable">
-          <thead>
-            <tr>
-              <th>Créneau</th>
-              <th>Lundi</th>
-              <th>Mardi</th>
-              <th>Mercredi</th>
-              <th>Jeudi</th>
-              <th>Vendredi</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>08h00 - 09h00</strong></td>
-              <td>
-                <div class="slot-card general">
-                  <div class="slot-title">HIST.GEO.EN.MOR.CIV.</div>
-                  <div class="slot-prof">SALVIETTI O.</div>
-                  <div class="slot-room">Salle C 218</div>
-                </div>
-              </td>
-              <td rowspan="3">
-                <div class="slot-card ciel">
-                  <div class="slot-title">ENS. TECHNOL. PRO</div>
-                  <div class="slot-prof">THEBAULT R. / MARTIN H.</div>
-                  <div class="slot-room">J205 CIEL 3</div>
-                </div>
-              </td>
-              <td rowspan="2">
-                <div class="slot-card general">
-                  <div class="slot-title">PREVENT.-SANTE-ENV.</div>
-                  <div class="slot-prof">DEIBAS W.</div>
-                  <div class="slot-room">Salle C 106</div>
-                </div>
-              </td>
-              <td>
-                <div class="slot-card general">
-                  <div class="slot-title">FRANCAIS</div>
-                  <div class="slot-prof">MAURRY D.</div>
-                  <div class="slot-room">Salle C 210</div>
-                </div>
-              </td>
-              <td rowspan="3">
-                <div class="slot-card ciel">
-                  <div class="slot-title">REALISATION PROJET</div>
-                  <div class="slot-prof">STORA L. / MARTIN H.</div>
-                  <div class="slot-room">J205 CIEL 3</div>
-                </div>
-              </td>
-            </tr>
-
-            <tr>
-              <td><strong>09h00 - 10h00</strong></td>
-              <td>
-                <div class="slot-card general">
-                  <div class="slot-title">FRANCAIS</div>
-                  <div class="slot-prof">MAURRY D.</div>
-                  <div class="slot-room">Salle C 210</div>
-                </div>
-              </td>
-              <td>
-                <div class="slot-card general">
-                  <div class="slot-title">FRANCAIS</div>
-                  <div class="slot-prof">MAURRY D.</div>
-                  <div class="slot-room">Salle C 210</div>
-                </div>
-              </td>
-            </tr>
-
-            <tr>
-              <td><strong>10h00 - 11h00</strong></td>
-              <td>
-                <div class="slot-card general">
-                  <div class="slot-title">ANGLAIS LV1</div>
-                  <div class="slot-prof">WULLEMAN I.</div>
-                  <div class="slot-room">Salle C 200</div>
-                </div>
-              </td>
-              <td>
-                <div class="slot-card general">
-                  <div class="slot-title">HIST.GEO.EN.MOR.CIV.</div>
-                  <div class="slot-prof">SALVIETTI O.</div>
-                  <div class="slot-room">Salle C 218</div>
-                </div>
-              </td>
-              <td>
-                <div class="slot-card general">
-                  <div class="slot-title">ARTS APPL. CULT. ARTIS</div>
-                  <div class="slot-prof">ALLIX-VAULBERT C.</div>
-                  <div class="slot-room">Salle C 207</div>
-                </div>
-              </td>
-            </tr>
-
-            <tr>
-              <td><strong>11h00 - 12h00</strong></td>
-              <td>
-                <div class="slot-card sciences">
-                  <div class="slot-title">MATHEMATIQUES</div>
-                  <div class="slot-prof">SAHMOUDI M.</div>
-                  <div class="slot-room">Salle C 304</div>
-                </div>
-              </td>
-              <td>-</td>
-              <td>
-                <div class="slot-card general">
-                  <div class="slot-title">SOUTIEN AU PARCOURS</div>
-                  <div class="slot-prof">WULLEMAN I.</div>
-                  <div class="slot-room">Salle C 200</div>
-                </div>
-              </td>
-              <td>
-                <div class="slot-card sciences">
-                  <div class="slot-title">MATHEMATIQUES / PSE</div>
-                  <div class="slot-prof">SAHMOUDI M. / DEIBAS</div>
-                  <div class="slot-room">C 304 / C 106</div>
-                </div>
-              </td>
-              <td>-</td>
-            </tr>
-
-            <tr>
-              <td><strong>12h00 - 13h00</strong></td>
-              <td>Pause Repas</td>
-              <td>Pause Repas</td>
-              <td>Pause Repas</td>
-              <td>
-                <div class="slot-card general">
-                  <div class="slot-title">ALLEMAND LV2</div>
-                  <div class="slot-prof">LAVISON C.</div>
-                  <div class="slot-room">Salle C 209</div>
-                </div>
-              </td>
-              <td>
-                <div class="slot-card sciences">
-                  <div class="slot-title">MATHEMATIQUES</div>
-                  <div class="slot-prof">SAHMOUDI M.</div>
-                  <div class="slot-room">Salle C 304</div>
-                </div>
-              </td>
-            </tr>
-
-            <tr>
-              <td><strong>13h00 - 14h00</strong></td>
-              <td>
-                <div class="slot-card sciences">
-                  <div class="slot-title">PHYSIQUE-CHIMIE</div>
-                  <div class="slot-prof">SAHMOUDI M.</div>
-                  <div class="slot-room">Salle C 306</div>
-                </div>
-              </td>
-              <td>
-                <div class="slot-card ciel">
-                  <div class="slot-title">ENSEIGNEMENT PRO</div>
-                  <div class="slot-prof">MARTIN H.</div>
-                  <div class="slot-room">J205 CIEL 3</div>
-                </div>
-              </td>
-              <td>
-                <div class="slot-card general">
-                  <div class="slot-title">ECONOMIE-GESTION</div>
-                  <div class="slot-prof">CHEFCHOUFI N.</div>
-                  <div class="slot-room">Salle C 211</div>
-                </div>
-              </td>
-              <td>Pause Repas</td>
-              <td>-</td>
-            </tr>
-
-            <tr>
-              <td><strong>14h00 - 16h00</strong></td>
-              <td rowspan="2">
-                <div class="slot-card ciel">
-                  <div class="slot-title">ENS. TECHNOL. PRO</div>
-                  <div class="slot-prof">THEBAULT R. / STORA L.</div>
-                  <div class="slot-room">J205 CIEL 3</div>
-                </div>
-              </td>
-              <td>
-                <div class="slot-card general">
-                  <div class="slot-title">ÉCO-GEST / ANGLAIS</div>
-                  <div class="slot-prof">CHEFCHOUFI / WULLEMAN</div>
-                  <div class="slot-room">C 211 / C 200</div>
-                </div>
-              </td>
-              <td>
-                <div class="slot-card general">
-                  <div class="slot-title">ANGLAIS LV1</div>
-                  <div class="slot-prof">WULLEMAN I.</div>
-                  <div class="slot-room">Salle C 200</div>
-                </div>
-              </td>
-              <td rowspan="2">
-                <div class="slot-card sport">
-                  <div class="slot-title">ED. PHYSIQUE & SPORT.</div>
-                  <div class="slot-prof">BRACQ-GENTHON M.</div>
-                  <div class="slot-room">Installations Sportives</div>
-                </div>
-              </td>
-              <td>-</td>
-            </tr>
-
-            <tr>
-              <td><strong>16h00 - 17h00</strong></td>
-              <td>
-                <div class="slot-card sciences">
-                  <div class="slot-title">PHYSIQUE-CHIMIE</div>
-                  <div class="slot-prof">SAHMOUDI M.</div>
-                  <div class="slot-room">Salle C 304</div>
-                </div>
-              </td>
-              <td>
-                <div class="slot-card general">
-                  <div class="slot-title">HIST.GEO.EN.MOR.CIV.</div>
-                  <div class="slot-prof">SALVIETTI O.</div>
-                  <div class="slot-room">Salle C 218</div>
-                </div>
-              </td>
-              <td>-</td>
-            </tr>
-          </tbody>
-        </table>
+    <!-- TAB 3: OBJECTIFS & TODO -->
+    <section id="tab-todos" class="tab-content">
+      <div class="card" style="max-width: 800px; margin: 0 auto;">
+        <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-tasks" style="color: var(--primary);"></i> Objectifs & Devoirs à réviser</h3>
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
+          <input type="text" class="form-control" id="todoInput" placeholder="Ex: Faire TP routage Cisco, Apprendre chapitre 2 Histoire..." onkeypress="if(event.key==='Enter') addTodo()" />
+          <button class="btn btn-primary" onclick="addTodo()"><i class="fa-solid fa-plus"></i> Ajouter</button>
+        </div>
+        <div id="todosContainer"></div>
       </div>
     </section>
 
-    <!-- TAB 5: POMODORO & TODOS -->
-    <section id="outils" class="tab-content">
-      <div class="tools-grid">
-        <!-- Minuteur Pomodoro -->
-        <div class="card">
-          <div class="card-title">
-            <span>Minuteur Pomodoro</span>
-            <i class="fa-solid fa-hourglass-start" style="color: var(--primary);"></i>
-          </div>
-          <div style="display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 1rem;">
-            <button class="btn" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;" onclick="setPomoMode(25)">Focus (25m)</button>
-            <button class="btn" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;" onclick="setPomoMode(5)">Pause (5m)</button>
-            <button class="btn" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;" onclick="setPomoMode(15)">Pause Longue (15m)</button>
-          </div>
-          <div class="pomo-timer" id="timerDisplay">25:00</div>
-          <div style="display: flex; justify-content: center; gap: 0.75rem;">
-            <button class="btn btn-primary" id="pomoToggleBtn" onclick="togglePomodoro()"><i class="fa-solid fa-play"></i> Démarrer</button>
-            <button class="btn" onclick="resetPomodoro()"><i class="fa-solid fa-rotate-left"></i> Reset</button>
-          </div>
+    <!-- TAB 4: PARAMÈTRES GITHUB -->
+    <section id="tab-settings" class="tab-content">
+      <div class="card" style="max-width: 750px; margin: 0 auto;">
+        <h3 style="margin-bottom: 0.5rem;"><i class="fa-brands fa-github" style="color: var(--primary);"></i> Synchronisation avec GitHub</h3>
+        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">
+          Toutes tes données sont enregistrées en direct dans ton navigateur (localStorage) ET synchronisables dans ton repo GitHub dans un fichier <code>data/bac_data.json</code>.
+        </p>
+
+        <div class="form-group">
+          <label>Utilisateur / Organisation GitHub</label>
+          <input type="text" class="form-control" id="ghOwner" value="fazerdino1" />
         </div>
 
-        <!-- To-Do List Locale -->
-        <div class="card">
-          <div class="card-title">
-            <span>Objectifs de révision</span>
-            <i class="fa-solid fa-list-check" style="color: var(--accent-green);"></i>
-          </div>
-          <div class="todo-input-group">
-            <input type="text" id="newTodoInput" placeholder="Ex: Réviser calcul masques /28, Relire cours PSE..." onkeypress="handleTodoKey(event)" />
-            <button class="btn btn-primary" onclick="addTodo()"><i class="fa-solid fa-plus"></i></button>
-          </div>
-          <div id="todoList" style="max-height: 280px; overflow-y: auto;">
-            <!-- Généré en JS -->
-          </div>
+        <div class="form-group">
+          <label>Nom du Dépôt</label>
+          <input type="text" class="form-control" id="ghRepo" value="revision-bac-pro-Tciel" />
+        </div>
+
+        <div class="form-group">
+          <label>Branche</label>
+          <input type="text" class="form-control" id="ghBranch" value="main" />
+        </div>
+
+        <div class="form-group">
+          <label>GitHub Personal Access Token (PAT)</label>
+          <input type="password" class="form-control" id="ghToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
+          <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 0.35rem;">
+            Créé un token avec la permission <strong>contents: write</strong> sur GitHub (Settings > Developer Settings > Personal Access Tokens). Ce token reste stocké uniquement sur ton propre navigateur.
+          </small>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+          <button class="btn btn-primary" onclick="saveSettings()"><i class="fa-solid fa-floppy-disk"></i> Enregistrer les paramètres</button>
+          <button class="btn btn-success" onclick="testGitHubConnection()"><i class="fa-solid fa-network-wired"></i> Tester la connexion</button>
         </div>
       </div>
     </section>
   </main>
 
   <script>
-    /* ============================================================
-       1. NAVIGATION PAR ONGLETS
-       ============================================================ */
+    /* ==========================================================
+       1. DONNÉES LOCALES (VIERGE PAR DÉFAUT)
+       ========================================================== */
+    let store = JSON.parse(localStorage.getItem('ciel_app_data')) || {
+      courses: [],
+      flashcards: [],
+      todos: [],
+      lastUpdated: null
+    };
+
+    let ghConfig = JSON.parse(localStorage.getItem('ciel_gh_config')) || {
+      owner: 'fazerdino1',
+      repo: 'revision-bac-pro-Tciel',
+      branch: 'main',
+      token: ''
+    };
+
+    let currentFileSha = null;
+    let fcIndex = 0;
+    let isFlipped = false;
+
+    /* ==========================================================
+       2. INITIALISATION ET UI
+       ========================================================== */
+    window.onload = () => {
+      document.getElementById('ghOwner').value = ghConfig.owner;
+      document.getElementById('ghRepo').value = ghConfig.repo;
+      document.getElementById('ghBranch').value = ghConfig.branch;
+      document.getElementById('ghToken').value = ghConfig.token;
+
+      updateSyncStatus();
+      renderCourses();
+      renderFlashcards();
+      renderTodos();
+
+      // Si token déjà paramétré, tentative de récupération
+      if (ghConfig.token) {
+        fetchFromGitHub(true);
+      }
+    };
+
     function switchTab(tabId) {
-      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
 
       const target = document.getElementById(tabId);
       if (target) target.classList.add('active');
 
-      const activeBtn = Array.from(document.querySelectorAll('.tab-btn')).find(btn => 
-        btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(tabId)
-      );
-      if (activeBtn) activeBtn.classList.add('active');
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+      if (btn) btn.classList.add('active');
     }
 
-    /* ============================================================
-       2. COMPTE À REBOURS DU BAC
-       ============================================================ */
-    // Date des épreuves écrites et finales (juin)
-    const bacDate = new Date("June 15, 2027 08:00:00").getTime();
+    function saveLocal() {
+      store.lastUpdated = new Date().toISOString();
+      localStorage.setItem('ciel_app_data', JSON.stringify(store));
+      setSyncStatus('unsaved', 'Modifications locales non poussées');
+    }
 
-    function updateCountdown() {
-      const now = new Date().getTime();
-      const diff = bacDate - now;
+    function setSyncStatus(type, msg) {
+      const dot = document.getElementById('statusDot');
+      const text = document.getElementById('statusText');
+      dot.className = `status-dot ${type}`;
+      text.innerText = msg;
+    }
 
-      if (diff <= 0) {
-        document.getElementById("countdown").innerHTML = "<div style='color: var(--accent-green); font-weight: bold;'>C'est le moment des épreuves ! Bon courage !</div>";
+    function updateSyncStatus() {
+      if (!ghConfig.token) {
+        setSyncStatus('', 'Token GitHub manquant');
+      } else {
+        setSyncStatus('synced', 'Connecté à GitHub');
+      }
+    }
+
+    /* ==========================================================
+       3. GESTION DES COURS
+       ========================================================== */
+    function renderCourses() {
+      const list = document.getElementById('coursesList');
+      const counter = document.getElementById('courseCount');
+      counter.innerText = `${store.courses.length} cours`;
+
+      if (store.courses.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <i class="fa-solid fa-folder-open"></i>
+            <p><strong>Aucun cours enregistré pour le moment.</strong></p>
+            <p style="font-size: 0.85rem; margin-top: 0.25rem;">Remplis le formulaire à gauche pour ajouter tes premières synthèses.</p>
+          </div>
+        `;
         return;
       }
 
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const secs = Math.floor((diff % (1000 * 60)) / 1000);
-
-      document.getElementById("days").innerText = days;
-      document.getElementById("hours").innerText = String(hours).padStart(2, '0');
-      document.getElementById("mins").innerText = String(mins).padStart(2, '0');
-      document.getElementById("secs").innerText = String(secs).padStart(2, '0');
-    }
-    setInterval(updateCountdown, 1000);
-    updateCountdown();
-
-    /* ============================================================
-       3. GESTION DES FICHES & FILTRES
-       ============================================================ */
-    function filterSubject(category) {
-      document.querySelectorAll('.sub-btn').forEach(btn => btn.classList.remove('active'));
-      const activeBtn = Array.from(document.querySelectorAll('.sub-btn')).find(btn => 
-        btn.getAttribute('onclick') && btn.getAttribute('onclick').includes(category)
-      );
-      if (activeBtn) activeBtn.classList.add('active');
-
-      const cards = document.querySelectorAll('.fiche-card[data-cat]');
-      cards.forEach(card => {
-        if (category === 'all' || card.getAttribute('data-cat') === category) {
-          card.style.display = 'block';
-        } else {
-          card.style.display = 'none';
-        }
-      });
-    }
-
-    /* ============================================================
-       4. SYSTÈME DE FLASHCARDS INTERACTIVES
-       ============================================================ */
-    const flashcardsData = [
-      {
-        cat: "CIEL - Réseaux",
-        q: "Quel est le masque de sous-réseau correspondant à une notation CIDR /28 ?",
-        a: "255.255.255.240 (permettant 16 adresses au total, soit 14 hôtes exploitables)."
-      },
-      {
-        cat: "CIEL - Protocoles",
-        q: "Quelles sont les différences clés entre TCP et UDP ?",
-        a: "TCP est orienté connexion, fiable avec accusé de réception (SYN/ACK). UDP est sans connexion, rapide mais sans garantie de livraison (streaming, DNS)."
-      },
-      {
-        cat: "CIEL - Cybersécurité",
-        q: "Quelle commande Linux permet d'afficher les ports réseau actuellement en écoute ?",
-        a: "ss -tulpn (ou l'ancienne commande netstat -tulpn)."
-      },
-      {
-        cat: "Mathématiques",
-        q: "Quelle est la dérivée de la fonction f(x) = 3x² - 5x + 4 ?",
-        a: "f'(x) = 6x - 5."
-      },
-      {
-        cat: "Physique-Chimie",
-        q: "Quelle relation relie la tension U, la résistance R et l'intensité I ?",
-        a: "U = R × I (Loi d'Ohm, U en Volts, R en Ohms, I en Ampères)."
-      },
-      {
-        cat: "CIEL - Linux",
-        q: "Quelle commande permet de modifier les permissions d'un fichier en lecture/écriture pour le propriétaire uniquement ?",
-        a: "chmod 600 nom_du_fichier (ou chmod u=rw,go= nom_du_fichier)."
-      },
-      {
-        cat: "PSE",
-        q: "Quelle est la priorité absolue dans la hiérarchie des mesures de prévention ?",
-        a: "Éliminer ou supprimer le danger directement à la source (suppression ou substitution)."
-      },
-      {
-        cat: "Histoire-Géo",
-        q: "En quelle année s'est effondré le bloc soviétique marquant la fin de la guerre froide ?",
-        a: "1991 (chute du mur de Berlin en 1989, dissolution officielle de l'URSS en décembre 1991)."
-      }
-    ];
-
-    let currentCardIndex = 0;
-    const cardEl = document.getElementById("activeCard");
-
-    function renderFlashcard() {
-      cardEl.classList.remove("is-flipped");
-      const data = flashcardsData[currentCardIndex];
-      document.getElementById("cardCategory").innerText = data.cat;
-      document.getElementById("cardQuestion").innerText = data.q;
-      document.getElementById("cardAnswer").innerText = data.a;
-      document.getElementById("cardCounter").innerText = `Carte ${currentCardIndex + 1} / ${flashcardsData.length}`;
-    }
-
-    function flipCard() {
-      cardEl.classList.toggle("is-flipped");
-    }
-
-    function nextCard() {
-      currentCardIndex = (currentCardIndex + 1) % flashcardsData.length;
-      renderFlashcard();
-    }
-
-    function prevCard() {
-      currentCardIndex = (currentCardIndex - 1 + flashcardsData.length) % flashcardsData.length;
-      renderFlashcard();
-    }
-    renderFlashcard();
-
-    /* ============================================================
-       5. MINUTEUR POMODORO + SON WEBAUDIO
-       ============================================================ */
-    let pomoDuration = 25 * 60;
-    let pomoRemaining = pomoDuration;
-    let pomoTimer = null;
-    let isRunning = false;
-
-    function formatTime(secs) {
-      const m = Math.floor(secs / 60);
-      const s = secs % 60;
-      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-    }
-
-    function setPomoMode(minutes) {
-      clearInterval(pomoTimer);
-      isRunning = false;
-      document.getElementById("pomoToggleBtn").innerHTML = '<i class="fa-solid fa-play"></i> Démarrer';
-      pomoDuration = minutes * 60;
-      pomoRemaining = pomoDuration;
-      document.getElementById("timerDisplay").innerText = formatTime(pomoRemaining);
-    }
-
-    function playBeep() {
-      try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(587.33, audioCtx.currentTime); // Ré
-        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.35);
-      } catch (e) {
-        console.log("Audio non supporté");
-      }
-    }
-
-    function togglePomodoro() {
-      const btn = document.getElementById("pomoToggleBtn");
-      if (isRunning) {
-        clearInterval(pomoTimer);
-        isRunning = false;
-        btn.innerHTML = '<i class="fa-solid fa-play"></i> Reprendre';
-      } else {
-        isRunning = true;
-        btn.innerHTML = '<i class="fa-solid fa-pause"></i> Pause';
-        pomoTimer = setInterval(() => {
-          if (pomoRemaining > 0) {
-            pomoRemaining--;
-            document.getElementById("timerDisplay").innerText = formatTime(pomoRemaining);
-          } else {
-            clearInterval(pomoTimer);
-            isRunning = false;
-            playBeep();
-            alert("Session Pomodoro terminée ! Prends une pause ou relance.");
-            btn.innerHTML = '<i class="fa-solid fa-play"></i> Démarrer';
-          }
-        }, 1000);
-      }
-    }
-
-    function resetPomodoro() {
-      clearInterval(pomoTimer);
-      isRunning = false;
-      pomoRemaining = pomoDuration;
-      document.getElementById("timerDisplay").innerText = formatTime(pomoRemaining);
-      document.getElementById("pomoToggleBtn").innerHTML = '<i class="fa-solid fa-play"></i> Démarrer';
-    }
-
-    /* ============================================================
-       6. TODO-LIST LOCALE AVEC LOCALSTORAGE
-       ============================================================ */
-    let todos = JSON.parse(localStorage.getItem('bac_ciel_todos')) || [
-      { text: "Comprendre les couches OSI et la trame Ethernet", done: true },
-      { text: "Maîtriser le calcul de sous-réseaux IP en /27 et /29", done: false },
-      { text: "Revoir les formules des dérivées en Mathématiques", done: false },
-      { text: "Ficher les thèmes de PSE (risques professionnels)", done: false }
-    ];
-
-    function saveTodos() {
-      localStorage.setItem('bac_ciel_todos', JSON.stringify(todos));
-      renderTodos();
-      updateProgress();
-    }
-
-    function renderTodos() {
-      const list = document.getElementById("todoList");
-      list.innerHTML = "";
-      todos.forEach((item, index) => {
-        const div = document.createElement("div");
-        div.className = `todo-item ${item.done ? 'done' : ''}`;
-        div.innerHTML = `
-          <div style="display: flex; align-items: center; gap: 0.65rem; cursor: pointer;" onclick="toggleTodo(${index})">
-            <i class="fa-${item.done ? 'solid fa-circle-check' : 'regular fa-circle'}" style="color: ${item.done ? 'var(--accent-green)' : 'var(--text-muted)'};"></i>
-            <span>${item.text}</span>
+      list.innerHTML = '';
+      store.courses.forEach((c, idx) => {
+        const item = document.createElement('div');
+        item.className = 'course-item';
+        item.innerHTML = `
+          <div style="flex: 1;">
+            <span class="badge">${escapeHtml(c.subject)}</span>
+            <h4 class="course-title">${escapeHtml(c.title)}</h4>
+            <div class="course-body">${marked.parse(c.content || '')}</div>
+            <small style="color: var(--text-muted); font-size: 0.72rem;">Ajouté le : ${new Date(c.date).toLocaleDateString('fr-FR')}</small>
           </div>
-          <button style="background: none; border: none; color: #ef4444; cursor: pointer;" onclick="deleteTodo(${index})">
+          <button class="btn btn-danger" style="padding: 0.4rem 0.65rem;" onclick="deleteCourse(${idx})">
             <i class="fa-solid fa-trash-can"></i>
           </button>
         `;
-        list.appendChild(div);
+        list.appendChild(item);
+      });
+    }
+
+    function addCourse() {
+      const subject = document.getElementById('cSubject').value;
+      const title = document.getElementById('cTitle').value.trim();
+      const content = document.getElementById('cContent').value.trim();
+
+      if (!title || !content) {
+        alert("Veuillez renseigner au moins un titre et du contenu pour le cours.");
+        return;
+      }
+
+      store.courses.unshift({
+        id: Date.now(),
+        subject,
+        title,
+        content,
+        date: new Date().toISOString()
+      });
+
+      document.getElementById('cTitle').value = '';
+      document.getElementById('cContent').value = '';
+      saveLocal();
+      renderCourses();
+    }
+
+    function deleteCourse(idx) {
+      if (confirm("Supprimer définitivement ce cours ?")) {
+        store.courses.splice(idx, 1);
+        saveLocal();
+        renderCourses();
+      }
+    }
+
+    /* ==========================================================
+       4. GESTION DES FLASHCARDS
+       ========================================================== */
+    function renderFlashcards() {
+      const box = document.getElementById('fcPlayContent');
+      const counter = document.getElementById('fcCounter');
+
+      if (store.flashcards.length === 0) {
+        box.innerHTML = "Aucune flashcard créée pour l'instant.";
+        counter.innerText = "0 / 0";
+        return;
+      }
+
+      if (fcIndex >= store.flashcards.length) fcIndex = 0;
+      if (fcIndex < 0) fcIndex = store.flashcards.length - 1;
+
+      const card = store.flashcards[fcIndex];
+      counter.innerText = `${fcIndex + 1} / ${store.flashcards.length}`;
+
+      if (isFlipped) {
+        box.innerHTML = `<span style="color: var(--accent-green); font-size: 0.8rem; text-transform: uppercase;">[Réponse]</span><br>${escapeHtml(card.a)}`;
+      } else {
+        box.innerHTML = `<span style="color: var(--primary); font-size: 0.8rem; text-transform: uppercase;">[${escapeHtml(card.s)}]</span><br>${escapeHtml(card.q)}`;
+      }
+    }
+
+    function toggleFlipCard() {
+      if (store.flashcards.length === 0) return;
+      isFlipped = !isFlipped;
+      renderFlashcards();
+    }
+
+    function nextFlashcard() {
+      if (store.flashcards.length === 0) return;
+      isFlipped = false;
+      fcIndex = (fcIndex + 1) % store.flashcards.length;
+      renderFlashcards();
+    }
+
+    function prevFlashcard() {
+      if (store.flashcards.length === 0) return;
+      isFlipped = false;
+      fcIndex = (fcIndex - 1 + store.flashcards.length) % store.flashcards.length;
+      renderFlashcards();
+    }
+
+    function addFlashcard() {
+      const s = document.getElementById('fcSubject').value.trim() || 'Général';
+      const q = document.getElementById('fcQuestion').value.trim();
+      const a = document.getElementById('fcAnswer').value.trim();
+
+      if (!q || !a) {
+        alert("Veuillez saisir une question et une réponse.");
+        return;
+      }
+
+      store.flashcards.push({ s, q, a });
+      document.getElementById('fcQuestion').value = '';
+      document.getElementById('fcAnswer').value = '';
+      saveLocal();
+      renderFlashcards();
+    }
+
+    function deleteCurrentFlashcard() {
+      if (store.flashcards.length === 0) return;
+      store.flashcards.splice(fcIndex, 1);
+      isFlipped = false;
+      saveLocal();
+      renderFlashcards();
+    }
+
+    /* ==========================================================
+       5. GESTION DES OBJECTIFS (TODOS)
+       ========================================================== */
+    function renderTodos() {
+      const container = document.getElementById('todosContainer');
+      if (store.todos.length === 0) {
+        container.innerHTML = `<div class="empty-state"><i class="fa-solid fa-circle-check"></i><p>Aucun objectif pour le moment.</p></div>`;
+        return;
+      }
+
+      container.innerHTML = '';
+      store.todos.forEach((t, i) => {
+        const row = document.createElement('div');
+        row.style = `display:flex; align-items:center; justify-content:space-between; padding: 0.65rem 0.85rem; border:1px solid var(--border-color); border-radius: 8px; margin-bottom: 0.5rem; background: var(--bg-card-alt);`;
+        row.innerHTML = `
+          <div style="display:flex; align-items:center; gap:0.75rem; cursor:pointer;" onclick="toggleTodo(${i})">
+            <i class="fa-${t.done ? 'solid fa-circle-check' : 'regular fa-circle'}" style="color:${t.done ? 'var(--accent-green)' : 'var(--text-muted)'};"></i>
+            <span style="${t.done ? 'text-decoration: line-through; color: var(--text-muted);' : ''}">${escapeHtml(t.text)}</span>
+          </div>
+          <button class="btn btn-danger" style="padding: 0.3rem 0.6rem;" onclick="deleteTodo(${i})"><i class="fa-solid fa-trash-can"></i></button>
+        `;
+        container.appendChild(row);
       });
     }
 
     function addTodo() {
-      const input = document.getElementById("newTodoInput");
-      const val = input.value.trim();
+      const val = document.getElementById('todoInput').value.trim();
       if (!val) return;
-      todos.push({ text: val, done: false });
-      input.value = "";
-      saveTodos();
+      store.todos.push({ text: val, done: false });
+      document.getElementById('todoInput').value = '';
+      saveLocal();
+      renderTodos();
     }
 
-    function handleTodoKey(e) {
-      if (e.key === "Enter") addTodo();
+    function toggleTodo(i) {
+      store.todos[i].done = !store.todos[i].done;
+      saveLocal();
+      renderTodos();
     }
 
-    function toggleTodo(index) {
-      todos[index].done = !todos[index].done;
-      saveTodos();
+    function deleteTodo(i) {
+      store.todos.splice(i, 1);
+      saveLocal();
+      renderTodos();
     }
 
-    function deleteTodo(index) {
-      todos.splice(index, 1);
-      saveTodos();
+    /* ==========================================================
+       6. INTÉGRATION AVEC L'API GITHUB REST
+       ========================================================== */
+    function saveSettings() {
+      ghConfig.owner = document.getElementById('ghOwner').value.trim();
+      ghConfig.repo = document.getElementById('ghRepo').value.trim();
+      ghConfig.branch = document.getElementById('ghBranch').value.trim();
+      ghConfig.token = document.getElementById('ghToken').value.trim();
+
+      localStorage.setItem('ciel_gh_config', JSON.stringify(ghConfig));
+      updateSyncStatus();
+      alert("Paramètres GitHub enregistrés.");
     }
 
-    function updateProgress() {
-      if (todos.length === 0) {
-        document.getElementById("progressPercent").innerText = "0%";
-        document.getElementById("progressBar").style.width = "0%";
-        document.getElementById("progressSub").innerText = "Aucun objectif défini";
+    // Gestion de l'encodage UTF-8 pour Base64
+    function utf8ToB64(str) {
+      return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1)));
+    }
+    function b64ToUtf8(str) {
+      return decodeURIComponent(Array.prototype.map.call(atob(str), c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+    }
+
+    async function fetchFromGitHub(silent = false) {
+      if (!ghConfig.token) {
+        if (!silent) alert("Renseigne ton token GitHub dans l'onglet Paramètres pour synchroniser.");
         return;
       }
-      const doneCount = todos.filter(t => t.done).length;
-      const pct = Math.round((doneCount / todos.length) * 100);
-      document.getElementById("progressPercent").innerText = `${pct}%`;
-      document.getElementById("progressBar").style.width = `${pct}%`;
-      document.getElementById("progressSub").innerText = `${doneCount} objectif(s) validé(s) sur ${todos.length}`;
+
+      setSyncStatus('unsaved', 'Synchronisation en cours...');
+      const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data/bac_data.json?ref=${ghConfig.branch}`;
+
+      try {
+        const res = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${ghConfig.token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+
+        if (res.status === 404) {
+          if (!silent) alert("Fichier distant non trouvé. Fais 'Sauvegarder sur GitHub' pour le créer automatiquement.");
+          setSyncStatus('synced', 'Dépôt prêt (fichier initial à pousser)');
+          return;
+        }
+
+        if (!res.ok) throw new Error(`Code HTTP ${res.status}`);
+
+        const json = await res.json();
+        currentFileSha = json.sha;
+
+        const decoded = b64ToUtf8(json.content.replace(/\n/g, ''));
+        const remoteData = JSON.parse(decoded);
+
+        store = remoteData;
+        localStorage.setItem('ciel_app_data', JSON.stringify(store));
+
+        renderCourses();
+        renderFlashcards();
+        renderTodos();
+        setSyncStatus('synced', 'À jour avec GitHub');
+        if (!silent) alert("Données récupérées avec succès depuis GitHub !");
+      } catch (err) {
+        console.error(err);
+        setSyncStatus('error', 'Erreur de synchro');
+        if (!silent) alert("Échec de la récupération : " + err.message);
+      }
     }
 
-    // Initialisation
-    renderTodos();
-    updateProgress();
+    async function saveToGitHub() {
+      if (!ghConfig.token) {
+        alert("Veuillez configurer votre GitHub Personal Access Token (PAT) dans l'onglet Paramètres.");
+        switchTab('tab-settings');
+        return;
+      }
+
+      setSyncStatus('unsaved', 'Envoi vers GitHub...');
+      const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data/bac_data.json`;
+
+      // 1. Récupérer le SHA actuel si non connu pour éviter les conflits
+      if (!currentFileSha) {
+        try {
+          const checkRes = await fetch(`${url}?ref=${ghConfig.branch}`, {
+            headers: {
+              'Authorization': `Bearer ${ghConfig.token}`,
+              'Accept': 'application/vnd.github.v3+json'
+            }
+          });
+          if (checkRes.ok) {
+            const checkJson = await checkRes.json();
+            currentFileSha = checkJson.sha;
+          }
+        } catch (e) {}
+      }
+
+      // 2. Préparation du payload
+      const contentStr = JSON.stringify(store, null, 2);
+      const payload = {
+        message: `Mise à jour des révisions Bac Pro CIEL [${new Date().toLocaleDateString('fr-FR')}]`,
+        content: utf8ToB64(contentStr),
+        branch: ghConfig.branch
+      };
+
+      if (currentFileSha) {
+        payload.sha = currentFileSha;
+      }
+
+      try {
+        const res = await fetch(url, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${ghConfig.token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/vnd.github.v3+json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.message || `Code HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        currentFileSha = data.content.sha;
+        setSyncStatus('synced', 'Sauvegardé sur GitHub');
+        alert("Sauvegarde réussie sur GitHub (data/bac_data.json) !");
+      } catch (err) {
+        console.error(err);
+        setSyncStatus('error', 'Erreur de sauvegarde');
+        alert("Erreur lors de la sauvegarde sur GitHub : " + err.message);
+      }
+    }
+
+    async function testGitHubConnection() {
+      saveSettings();
+      try {
+        const res = await fetch(`https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}`, {
+          headers: {
+            'Authorization': `Bearer ${ghConfig.token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+        if (res.ok) {
+          alert("Connexion réussie au dépôt " + ghConfig.owner + "/" + ghConfig.repo + " !");
+          fetchFromGitHub(false);
+        } else {
+          alert("Impossible d'accéder au dépôt. Vérifie le nom ou les permissions de ton token.");
+        }
+      } catch (e) {
+        alert("Erreur réseau : " + e.message);
+      }
+    }
+
+    function escapeHtml(text) {
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+      return (text || '').replace(/[&<>"']/g, m => map[m]);
+    }
   </script>
 </body>
 </html>
