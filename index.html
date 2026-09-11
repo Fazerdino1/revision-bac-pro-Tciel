@@ -13,7 +13,7 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.9/purify.min.js"></script>
 
-  <link rel="stylesheet" href="css/styles.css?v=2.2.0" />
+  <link rel="stylesheet" href="css/styles.css?v=3.0.0" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
 </head>
 <body>
@@ -36,63 +36,140 @@
     </div>
   </div>
 
-  <!-- ÉCRAN DE CONNEXION / INSCRIPTION -->
+  <!-- ÉCRAN DE CONNEXION / INSCRIPTION MODERNE & SÉCURISÉ -->
   <div class="auth-overlay" id="authOverlay">
+    <!-- Orbes d'ambiance lumineuse 3D -->
+    <div class="auth-ambient-glow auth-glow-1"></div>
+    <div class="auth-ambient-glow auth-glow-2"></div>
+
     <div class="auth-card">
-      <div style="text-align: center; margin-bottom: 1.5rem;">
-        <div class="brand-badge" style="width: 48px; height: 48px; margin: 0 auto 0.75rem auto; font-size: 1.3rem;">
-          <i class="fa-solid fa-lock"></i>
+      <div class="auth-header">
+        <div class="auth-brand-badge">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span class="badge-pulse-ring"></span>
         </div>
-        <h2 style="font-size: 1.35rem; font-weight: 800;">CIEL StudyOS</h2>
-        <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.25rem;">Espace de cours isolé & partages</p>
+        <h2 class="auth-title">CIEL StudyOS</h2>
+        <p class="auth-subtitle">Espace de révision sécurisé & classeur personnel chiffré</p>
       </div>
 
-      <div class="auth-tabs">
-        <button class="auth-tab-btn active" id="tabBtnLogin" onclick="switchAuthMode('login')">Connexion</button>
-        <button class="auth-tab-btn" id="tabBtnRegister" onclick="switchAuthMode('register')">Créer un compte</button>
+      <div class="auth-tabs" role="tablist">
+        <button type="button" class="auth-tab-btn active" id="tabBtnLogin" onclick="switchAuthMode('login')">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> Connexion
+        </button>
+        <button type="button" class="auth-tab-btn" id="tabBtnRegister" onclick="switchAuthMode('register')">
+          <i class="fa-solid fa-user-plus"></i> Créer un compte
+        </button>
       </div>
 
       <form id="authForm" onsubmit="handleAuthSubmit(event)">
         <div class="form-row">
-          <label>Identifiant (Nom d'utilisateur)</label>
-          <input type="text" class="form-input" id="authUsername" placeholder="Ex: esteban" required autocomplete="username" />
+          <label for="authUsername">Identifiant élève</label>
+          <div class="auth-input-wrapper">
+            <i class="fa-solid fa-user auth-input-icon"></i>
+            <input 
+              type="text" 
+              class="form-input auth-input" 
+              id="authUsername" 
+              placeholder="Ex: esteban" 
+              required 
+              autocomplete="username" 
+              spellcheck="false" 
+            />
+          </div>
+          <span class="auth-hint">Minuscules, chiffres et tirets uniquement</span>
         </div>
 
         <div class="form-row">
-          <label>Mot de passe</label>
-          <input type="password" class="form-input" id="authPassword" placeholder="••••••••" required autocomplete="current-password" />
+          <label for="authPassword">Mot de passe de déchiffrement</label>
+          <div class="auth-input-wrapper">
+            <i class="fa-solid fa-lock auth-input-icon"></i>
+            <input 
+              type="password" 
+              class="form-input auth-input" 
+              id="authPassword" 
+              placeholder="••••••••••••" 
+              required 
+              autocomplete="current-password" 
+            />
+            <button 
+              type="button" 
+              class="auth-pwd-toggle" 
+              title="Afficher/Masquer le mot de passe"
+              onclick="const p=document.getElementById('authPassword'), i=this.querySelector('i'); if(p.type==='password'){p.type='text'; i.classList.replace('fa-eye','fa-eye-slash');}else{p.type='password'; i.classList.replace('fa-eye-slash','fa-eye');}"
+            >
+              <i class="fa-regular fa-eye"></i>
+            </button>
+          </div>
         </div>
 
-        <div id="authAlert" style="display: none; padding: 0.6rem; border-radius: 6px; font-size: 0.8rem; margin-bottom: 1rem; background: rgba(244,63,94,0.15); color: #fda4af; border: 1px solid var(--accent-rose);"></div>
+        <div id="authAlert" class="auth-alert" style="display: none;"></div>
 
-        <button type="submit" class="btn btn-primary" id="authSubmitBtn" style="width: 100%;">
+        <button type="submit" class="btn btn-primary auth-submit-btn" id="authSubmitBtn">
           <i class="fa-solid fa-arrow-right-to-bracket"></i> Ouvrir mon espace
         </button>
       </form>
+
+      <div class="auth-security-footer">
+        <div class="auth-sec-item" title="Toutes les données sont chiffrées localement sur votre navigateur avec AES-GCM">
+          <i class="fa-solid fa-lock"></i>
+          <span>AES-256-GCM</span>
+        </div>
+        <div class="auth-sec-item" title="Dérivation sécurisée par PBKDF2 avec sel unique">
+          <i class="fa-solid fa-key"></i>
+          <span>PBKDF2 SHA-256</span>
+        </div>
+        <div class="auth-sec-item" title="Votre classeur est hermétiquement séparé des autres élèves">
+          <i class="fa-solid fa-box-archive"></i>
+          <span>Coffre isolé</span>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Header -->
-  <header>
+  <!-- Header Moderne Flottant & Glassmorphism -->
+  <header id="appHeader" class="app-header">
     <div class="header-content">
+      <!-- Logo avec Effet Néon -->
       <div class="brand">
-        <div class="brand-badge"><i class="fa-solid fa-microchip"></i></div>
-        <span>CIEL Hub</span>
+        <div class="brand-badge glow-neon">
+          <i class="fa-solid fa-microchip"></i>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">CIEL Hub</span>
+          <span class="brand-tag">StudyOS</span>
+        </div>
       </div>
 
+      <!-- Navigation Desktop en Îlot Flottant -->
       <nav class="desktop-nav">
-        <button class="nav-btn active" onclick="showTab('tab-courses')"><i class="fa-solid fa-book-open"></i> Cours</button>
-        <button class="nav-btn" onclick="showTab('tab-flashcards')"><i class="fa-solid fa-clone"></i> Flashcards</button>
-        <button class="nav-btn" onclick="showTab('tab-todos')"><i class="fa-solid fa-list-check"></i> Planning</button>
+        <button class="nav-btn active" onclick="showTab('tab-courses')">
+          <i class="fa-solid fa-book-open"></i>
+          <span>Cours</span>
+        </button>
+        <button class="nav-btn" onclick="showTab('tab-flashcards')">
+          <i class="fa-solid fa-clone"></i>
+          <span>Flashcards</span>
+        </button>
+        <button class="nav-btn" onclick="showTab('tab-todos')">
+          <i class="fa-solid fa-list-check"></i>
+          <span>Planning</span>
+        </button>
       </nav>
 
+      <!-- Profil Élève : Anneau Dégradé & Badge Statut En Ligne -->
       <div class="header-right">
-        <div class="user-pill" onclick="openProfileModal()" title="Mon profil">
-          <div id="headerAvatarContainer"></div>
-          <span class="sync-dot" id="syncDot"></span>
-          <span id="currentUserLabel">Invité</span>
+        <div class="user-pill" onclick="openProfileModal()" title="Mon profil élève">
+          <div class="avatar-ring-wrapper">
+            <div id="headerAvatarContainer"></div>
+            <span class="online-status-badge" title="En ligne"></span>
+          </div>
+          <div class="user-pill-info">
+            <span id="currentUserLabel">Invité</span>
+          </div>
+          <span class="sync-dot" id="syncDot" title="Statut synchronisation"></span>
         </div>
-        <button class="btn" style="padding: 0.3rem 0.65rem; min-height: 32px; font-size: 0.75rem;" onclick="logout()" title="Se déconnecter">
+
+        <button class="btn btn-logout-icon" onclick="logout()" title="Se déconnecter">
           <i class="fa-solid fa-power-off"></i>
         </button>
       </div>
@@ -118,31 +195,70 @@
 
       <div class="top-controls">
         <div class="search-box">
-          <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="text" id="courseSearch" placeholder="Rechercher par mot-clé, formule, commande..." oninput="renderCourses()" />
+          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <input type="text" id="courseSearch" placeholder="Rechercher un cours, TP, formule, commande..." oninput="renderCourses(); toggleSearchClear(this.value);" />
+          <div class="search-kbd-badge" title="Raccourci clavier (Ctrl + K ou /)">
+            <kbd class="kbd-key">Ctrl</kbd>
+            <kbd class="kbd-key">K</kbd>
+          </div>
+          <button type="button" class="search-clear-btn" id="searchClearBtn" onclick="clearCourseSearch()" title="Effacer la recherche">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
         <button class="btn btn-primary" style="display: none; min-width: 170px;" id="desktopAddBtn" onclick="openCourseModal()">
           <i class="fa-solid fa-plus"></i> Nouveau cours
         </button>
       </div>
 
-      <!-- Filtres par matière avec clés strictes -->
-      <div class="category-scroll" id="filterShelf">
-        <span class="cat-chip active" data-cat="all" onclick="setFilter('all')">Toutes les matières</span>
-        <span class="cat-chip" data-cat="reseaux" onclick="setFilter('reseaux')">Réseaux</span>
-        <span class="cat-chip" data-cat="secu" onclick="setFilter('secu')">Cybersécurité</span>
-        <span class="cat-chip" data-cat="elec" onclick="setFilter('elec')">Électronique</span>
-        <span class="cat-chip" data-cat="projet" onclick="setFilter('projet')">Projet CIEL</span>
-        <span class="cat-chip" data-cat="maths" onclick="setFilter('maths')">Mathématiques</span>
-        <span class="cat-chip" data-cat="physique" onclick="setFilter('physique')">Physique-Chimie</span>
-        <span class="cat-chip" data-cat="francais" onclick="setFilter('francais')">Français</span>
-        <span class="cat-chip" data-cat="hist-geo" onclick="setFilter('hist-geo')">Histoire-Géo & EMC</span>
-        <span class="cat-chip" data-cat="pse" onclick="setFilter('pse')">PSE</span>
-        <span class="cat-chip" data-cat="eco" onclick="setFilter('eco')">Éco-Gestion</span>
-        <span class="cat-chip" data-cat="anglais" onclick="setFilter('anglais')">Anglais (LV1)</span>
-        <span class="cat-chip" data-cat="allemand" onclick="setFilter('allemand')">Allemand (LV2)</span>
-        <span class="cat-chip" data-cat="arts" onclick="setFilter('arts')">Arts Appliqués</span>
-        <span class="cat-chip" data-cat="eps" onclick="setFilter('eps')">EPS</span>
+      <!-- Filtres par matière avec icônes dédiées et clés strictes -->
+      <div class="category-scroll-container">
+        <div class="category-scroll" id="filterShelf">
+          <button class="cat-chip active" data-cat="all" onclick="setFilter('all')">
+            <i class="fa-solid fa-layer-group"></i> <span>Toutes</span>
+          </button>
+          <button class="cat-chip" data-cat="reseaux" onclick="setFilter('reseaux')">
+            <i class="fa-solid fa-network-wired"></i> <span>Réseaux</span>
+          </button>
+          <button class="cat-chip" data-cat="secu" onclick="setFilter('secu')">
+            <i class="fa-solid fa-shield-halved"></i> <span>Cybersécurité</span>
+          </button>
+          <button class="cat-chip" data-cat="elec" onclick="setFilter('elec')">
+            <i class="fa-solid fa-bolt"></i> <span>Électronique & IoT</span>
+          </button>
+          <button class="cat-chip" data-cat="projet" onclick="setFilter('projet')">
+            <i class="fa-solid fa-diagram-project"></i> <span>Projet CIEL</span>
+          </button>
+          <button class="cat-chip" data-cat="maths" onclick="setFilter('maths')">
+            <i class="fa-solid fa-square-root-variable"></i> <span>Maths</span>
+          </button>
+          <button class="cat-chip" data-cat="physique" onclick="setFilter('physique')">
+            <i class="fa-solid fa-atom"></i> <span>Physique-Chimie</span>
+          </button>
+          <button class="cat-chip" data-cat="francais" onclick="setFilter('francais')">
+            <i class="fa-solid fa-feather"></i> <span>Français</span>
+          </button>
+          <button class="cat-chip" data-cat="hist-geo" onclick="setFilter('hist-geo')">
+            <i class="fa-solid fa-earth-europe"></i> <span>Histoire-Géo & EMC</span>
+          </button>
+          <button class="cat-chip" data-cat="pse" onclick="setFilter('pse')">
+            <i class="fa-solid fa-heart-pulse"></i> <span>PSE</span>
+          </button>
+          <button class="cat-chip" data-cat="eco" onclick="setFilter('eco')">
+            <i class="fa-solid fa-chart-pie"></i> <span>Éco-Gestion</span>
+          </button>
+          <button class="cat-chip" data-cat="anglais" onclick="setFilter('anglais')">
+            <i class="fa-solid fa-language"></i> <span>Anglais</span>
+          </button>
+          <button class="cat-chip" data-cat="allemand" onclick="setFilter('allemand')">
+            <i class="fa-solid fa-comments"></i> <span>Allemand</span>
+          </button>
+          <button class="cat-chip" data-cat="arts" onclick="setFilter('arts')">
+            <i class="fa-solid fa-palette"></i> <span>Arts Appliqués</span>
+          </button>
+          <button class="cat-chip" data-cat="eps" onclick="setFilter('eps')">
+            <i class="fa-solid fa-person-running"></i> <span>EPS</span>
+          </button>
+        </div>
       </div>
 
       <div style="display: flex; justify-content: space-between; align-items: center; margin: 1rem 0 0.75rem 0;">
@@ -157,11 +273,11 @@
 
     <!-- ONGLET 2 : FLASHCARDS -->
     <section id="tab-flashcards" class="tab-view">
-      <div style="max-width: 600px; margin: 0 auto; text-align: center;">
+      <div style="max-width: 620px; margin: 0 auto; text-align: center;">
         <div class="card" style="text-align: left; margin-bottom: 1.5rem;">
-          <h3 style="font-size: 1rem; margin-bottom: 0.75rem;"><i class="fa-solid fa-plus-circle" style="color: var(--primary);"></i> Nouvelle flashcard</h3>
+          <h3 style="font-size: 1rem; margin-bottom: 0.85rem;"><i class="fa-solid fa-circle-plus" style="color: var(--primary);"></i> Nouvelle Flashcard</h3>
           <div class="form-row">
-            <input type="text" class="form-input" id="fcSub" placeholder="Matière (ex: Maths, Réseaux, PSE...)" />
+            <input type="text" class="form-input" id="fcSub" placeholder="Matière (ex: Réseaux, Cyber, Maths...)" />
           </div>
           <div class="form-row">
             <input type="text" class="form-input" id="fcQ" placeholder="Question (Recto)" />
@@ -169,21 +285,51 @@
           <div class="form-row">
             <input type="text" class="form-input" id="fcA" placeholder="Réponse (Verso)" />
           </div>
-          <button class="btn btn-primary" style="width: 100%;" onclick="addFlashcard()">Ajouter à mes flashcards</button>
+          <button class="btn btn-primary" style="width: 100%;" onclick="addFlashcard()">
+            <i class="fa-solid fa-plus"></i> Ajouter à mes flashcards
+          </button>
         </div>
 
-        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.8rem; color: var(--text-sub);">
-          <span id="fcBadgeLabel">Discipline</span>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; font-size: 0.82rem; color: var(--text-muted); font-weight: 600;">
+          <span id="fcBadgeLabel"><i class="fa-solid fa-layer-group"></i> Discipline</span>
           <span id="fcNumberLabel">0 / 0</span>
         </div>
 
-        <div class="fc-card" id="fcInteractiveCard" onclick="toggleFlashcardFlip()">
-          <div id="fcDisplayContent" style="font-size: 1.15rem; font-weight: 600; line-height: 1.5;">Aucune carte</div>
-          <span style="margin-top: 1.25rem; font-size: 0.75rem; color: var(--text-sub);"><i class="fa-solid fa-hand-pointer"></i> Toucher pour retourner</span>
+        <!-- SCÈNE 3D FLASHCARD -->
+        <div class="fc-scene" onclick="toggleFlashcardFlip()">
+          <div class="fc-card-3d" id="fcInteractiveCard">
+            <!-- Face Recto (Question) -->
+            <div class="fc-face fc-front">
+              <div class="fc-face-header">
+                <span class="fc-type-badge fc-badge-q"><i class="fa-solid fa-circle-question"></i> QUESTION</span>
+                <span class="fc-hint"><i class="fa-solid fa-rotate"></i> Cliquer pour révéler</span>
+              </div>
+              <div class="fc-face-body" id="fcDisplayFront">
+                Aucune carte
+              </div>
+              <div class="fc-face-footer">
+                <span class="fc-discipline-pill" id="fcBadgeLabelFront">CIEL</span>
+              </div>
+            </div>
+
+            <!-- Face Verso (Réponse) -->
+            <div class="fc-face fc-back">
+              <div class="fc-face-header">
+                <span class="fc-type-badge fc-badge-a"><i class="fa-solid fa-circle-check"></i> RÉPONSE</span>
+                <span class="fc-hint"><i class="fa-solid fa-rotate"></i> Cliquer pour retourner</span>
+              </div>
+              <div class="fc-face-body" id="fcDisplayBack">
+                Ajoutez une carte ci-dessus !
+              </div>
+              <div class="fc-face-footer">
+                <span class="fc-discipline-pill" id="fcBadgeLabelBack">CIEL</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
-          <button class="btn" style="flex: 1;" onclick="prevFlashcard()"><i class="fa-solid fa-arrow-left"></i></button>
+        <div style="display: flex; gap: 0.75rem; margin-top: 1.25rem; max-width: 580px; margin-left: auto; margin-right: auto;">
+          <button class="btn" style="flex: 1;" onclick="prevFlashcard()"><i class="fa-solid fa-arrow-left"></i> Précédente</button>
           <button class="btn btn-danger" onclick="deleteCurrentFlashcard()"><i class="fa-solid fa-trash-can"></i></button>
           <button class="btn btn-primary" style="flex: 1;" onclick="nextFlashcard()">Suivante <i class="fa-solid fa-arrow-right"></i></button>
         </div>
@@ -194,35 +340,36 @@
     <section id="tab-todos" class="tab-view">
       <div style="max-width: 650px; margin: 0 auto;">
         <div class="card">
-          <h3 style="font-size: 1.05rem; margin-bottom: 1rem;"><i class="fa-solid fa-list-check" style="color: var(--primary);"></i> Mes Objectifs Personnels</h3>
+          <h3 style="font-size: 1.05rem; margin-bottom: 1rem;"><i class="fa-solid fa-list-check" style="color: var(--primary);"></i> Planning & Objectifs de Révision</h3>
           <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-            <input type="text" class="form-input" id="todoInputText" placeholder="Ex: TP Packet Tracer VLANs..." onkeypress="if(event.key==='Enter') createTodo()" />
+            <input type="text" class="form-input" id="todoInputText" placeholder="Ex: Réviser masque sous-réseau /28..." onkeypress="if(event.key==='Enter') createTodo()" />
             <button class="btn btn-primary" onclick="createTodo()"><i class="fa-solid fa-plus"></i></button>
           </div>
           <div id="todosFeed"></div>
         </div>
       </div>
     </section>
-
-    </section>
   </main>
 
   <!-- Bouton mobile (+) -->
   <button class="fab-add" onclick="openCourseModal()" title="Ajouter un cours"><i class="fa-solid fa-plus"></i></button>
 
-  <!-- Barre de navigation mobile -->
+  <!-- Barre de navigation mobile flottante (Glass Dock) -->
   <nav class="mobile-bar">
     <button class="mobile-tab active" onclick="showTab('tab-courses')">
-      <i class="fa-solid fa-book-open"></i>
+      <div class="mobile-tab-icon"><i class="fa-solid fa-book-open"></i></div>
       <span>Cours</span>
+      <span class="mobile-tab-indicator"></span>
     </button>
     <button class="mobile-tab" onclick="showTab('tab-flashcards')">
-      <i class="fa-solid fa-clone"></i>
+      <div class="mobile-tab-icon"><i class="fa-solid fa-clone"></i></div>
       <span>Flashcards</span>
+      <span class="mobile-tab-indicator"></span>
     </button>
     <button class="mobile-tab" onclick="showTab('tab-todos')">
-      <i class="fa-solid fa-list-check"></i>
+      <div class="mobile-tab-icon"><i class="fa-solid fa-list-check"></i></div>
       <span>Planning</span>
+      <span class="mobile-tab-indicator"></span>
     </button>
   </nav>
 
@@ -345,8 +492,8 @@
     </div>
   </div>
 
-  <script src="js/crypto.js?v=2.2.0"></script>
-  <script src="js/github.js?v=2.2.0"></script>
-  <script src="js/app.js?v=2.2.0"></script>
+  <script src="js/crypto.js?v=3.0.0"></script>
+  <script src="js/github.js?v=3.0.0"></script>
+  <script src="js/app.js?v=3.0.0"></script>
 </body>
 </html>

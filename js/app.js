@@ -24,6 +24,7 @@ let authMode = 'login';
 let currentSubView = 'mine';
 let activeFilter = 'all';
 let courseToShare = null;
+let editingCourseId = null;
 let fcCursor = 0;
 let fcFlipped = false;
 
@@ -65,12 +66,22 @@ function showToast(message, type = 'info') {
   if (type === 'success') icon = 'fa-circle-check';
   if (type === 'error') icon = 'fa-circle-exclamation';
 
-  toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${escapeHtml(message)}</span>`;
+  toast.innerHTML = `
+    <i class="fa-solid ${icon} toast-icon"></i>
+    <span>${escapeHtml(message)}</span>
+    <div class="toast-progress"></div>
+  `;
+
+  toast.onclick = () => {
+    toast.classList.add('fade-out');
+    setTimeout(() => toast.remove(), 250);
+  };
+
   container.appendChild(toast);
 
   setTimeout(() => {
     toast.classList.add('fade-out');
-    setTimeout(() => toast.remove(), 300);
+    setTimeout(() => toast.remove(), 260);
   }, 3000);
 }
 
@@ -693,6 +704,51 @@ function checkSubjectMatch(courseSubject, catKey) {
   }
 }
 
+function getSubjectThemeInfo(subject) {
+  const sub = (subject || '').toLowerCase();
+
+  if (sub.includes('réseaux') || sub.includes('reseaux')) {
+    return { key: 'reseaux', icon: 'fa-solid fa-network-wired' };
+  }
+  if (sub.includes('cyber') || sub.includes('sécurité') || sub.includes('securite')) {
+    return { key: 'secu', icon: 'fa-solid fa-shield-halved' };
+  }
+  if (sub.includes('électronique') || sub.includes('electronique') || sub.includes('iot')) {
+    return { key: 'elec', icon: 'fa-solid fa-bolt' };
+  }
+  if (sub.includes('projet')) {
+    return { key: 'projet', icon: 'fa-solid fa-diagram-project' };
+  }
+  if (sub.includes('math')) {
+    return { key: 'maths', icon: 'fa-solid fa-square-root-variable' };
+  }
+  if (sub.includes('physique') || sub.includes('chimie')) {
+    return { key: 'physique', icon: 'fa-solid fa-atom' };
+  }
+  if (sub.includes('français') || sub.includes('francais')) {
+    return { key: 'francais', icon: 'fa-solid fa-feather' };
+  }
+  if (sub.includes('histoire') || sub.includes('géo') || sub.includes('geo') || sub.includes('emc')) {
+    return { key: 'hist-geo', icon: 'fa-solid fa-earth-europe' };
+  }
+  if (sub.includes('pse') || sub.includes('santé') || sub.includes('environnement')) {
+    return { key: 'pse', icon: 'fa-solid fa-heart-pulse' };
+  }
+  if (sub.includes('économie') || sub.includes('economie') || sub.includes('gestion')) {
+    return { key: 'eco', icon: 'fa-solid fa-chart-pie' };
+  }
+  if (sub.includes('anglais') || sub.includes('allemand')) {
+    return { key: 'langues', icon: 'fa-solid fa-language' };
+  }
+  if (sub.includes('arts') || sub.includes('artistique')) {
+    return { key: 'arts', icon: 'fa-solid fa-palette' };
+  }
+  if (sub.includes('eps') || sub.includes('sport')) {
+    return { key: 'eps', icon: 'fa-solid fa-person-running' };
+  }
+  return { key: 'default', icon: 'fa-solid fa-book-bookmark' };
+}
+
 function renderCourses() {
   const feed = document.getElementById('coursesFeed');
   const counter = document.getElementById('coursesCounter');
@@ -713,17 +769,18 @@ function renderCourses() {
 
     if (items.length === 0) {
       feed.innerHTML = `
-        <div style="text-align: center; padding: 3rem 1rem; color: var(--text-sub);">
-          <i class="fa-solid fa-folder-open" style="font-size: 2.8rem; margin-bottom: 0.75rem; opacity: 0.3;"></i>
-          <p style="font-size: 0.95rem;">Aucun cours dans cette catégorie.</p>
-          <p style="font-size: 0.8rem; margin-top: 0.3rem;">Ajoutez un cours avec le bouton <strong>+</strong>.</p>
+        <div style="grid-column: 1 / -1; text-align: center; padding: 3.5rem 1rem; color: var(--text-sub);">
+          <i class="fa-solid fa-folder-open" style="font-size: 3rem; margin-bottom: 0.85rem; opacity: 0.35;"></i>
+          <p style="font-size: 1rem; font-weight: 600; color: var(--text-muted);">Aucun cours dans cette catégorie.</p>
+          <p style="font-size: 0.82rem; margin-top: 0.35rem;">Ajoutez un cours avec le bouton <strong>+ Nouveau cours</strong>.</p>
         </div>`;
       return;
     }
 
     items.forEach(c => {
       const card = document.createElement('div');
-      card.className = 'course-card';
+      const theme = getSubjectThemeInfo(c.subject);
+      card.className = `course-card theme-${theme.key}`;
 
       let attachmentsHTML = buildAttachmentsHTML(c.attachments);
       const parsedContent = (typeof marked !== 'undefined' && marked.parse) ? marked.parse(c.content || '') : (c.content || '');
@@ -731,23 +788,26 @@ function renderCourses() {
 
       card.innerHTML = `
         <div class="course-card-top">
-          <div>
-            <span class="badge-sub">${escapeHtml(c.subject)}</span>
+          <div class="course-card-meta">
+            <span class="badge-sub"><i class="${theme.icon}"></i> ${escapeHtml(c.subject)}</span>
             <h4 class="course-title">${escapeHtml(c.title)}</h4>
           </div>
-          <div style="display: flex; gap: 0.4rem;">
-            <button class="btn btn-share" style="padding: 0.35rem 0.65rem; min-height: 32px;" onclick="openShareModal(${c.id})" title="Partager avec un camarade">
-              <i class="fa-solid fa-share-nodes"></i> Partager
+          <div class="card-actions">
+            <button class="btn-card-action btn-action-share" onclick="openShareModal(${c.id})" title="Partager avec un camarade">
+              <i class="fa-solid fa-share-nodes"></i>
             </button>
-            <button class="btn btn-danger" style="padding: 0.35rem 0.6rem; min-height: 32px;" onclick="deleteCourseById(${c.id})">
+            <button class="btn-card-action btn-action-edit" onclick="openEditCourseModal(${c.id})" title="Modifier ce cours">
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+            <button class="btn-card-action btn-action-delete" onclick="deleteCourseById(${c.id})" title="Supprimer">
               <i class="fa-solid fa-trash-can"></i>
             </button>
           </div>
         </div>
         <div class="course-body">${sanitizedBody}</div>
         ${attachmentsHTML}
-        <div style="margin-top: 0.85rem; color: var(--text-sub); font-size: 0.72rem;">
-          Enregistré le ${new Date(c.date).toLocaleDateString('fr-FR')} • ${new Date(c.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+        <div class="course-card-footer">
+          <span><i class="fa-regular fa-clock"></i> ${new Date(c.date).toLocaleDateString('fr-FR')} • ${new Date(c.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
         </div>
       `;
       feed.appendChild(card);
@@ -760,17 +820,17 @@ function renderCourses() {
 
     if (received.length === 0) {
       feed.innerHTML = `
-        <div style="text-align: center; padding: 3rem 1rem; color: var(--text-sub);">
-          <i class="fa-solid fa-inbox" style="font-size: 2.8rem; margin-bottom: 0.75rem; opacity: 0.3;"></i>
-          <p style="font-size: 0.95rem;">Aucun cours reçu dans cette matière.</p>
+        <div style="grid-column: 1 / -1; text-align: center; padding: 3.5rem 1rem; color: var(--text-sub);">
+          <i class="fa-solid fa-inbox" style="font-size: 3rem; margin-bottom: 0.85rem; opacity: 0.35;"></i>
+          <p style="font-size: 1rem; font-weight: 600; color: var(--text-muted);">Aucun cours reçu dans cette matière.</p>
         </div>`;
       return;
     }
 
     received.forEach(s => {
       const card = document.createElement('div');
-      card.className = 'course-card';
-      card.style.borderColor = 'rgba(99, 102, 241, 0.4)';
+      const theme = getSubjectThemeInfo(s.course.subject);
+      card.className = `course-card theme-${theme.key}`;
 
       let attachmentsHTML = buildAttachmentsHTML(s.course.attachments);
       const avatarHTML = renderAvatarHTML(s.fromUser, s.senderAvatar, 36);
@@ -780,32 +840,30 @@ function renderCourses() {
 
       card.innerHTML = `
         <div class="course-card-top">
-          <div style="display:flex; align-items:flex-start; gap:0.65rem;">
+          <div style="display:flex; align-items:flex-start; gap:0.65rem; flex:1; min-width:0;">
             ${avatarHTML}
-            <div>
+            <div class="course-card-meta">
               <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
                 <span style="font-weight:700; color:#fff; font-size:0.88rem;">@${escapeHtml(s.fromUser)}</span>
-                <span class="badge-sub" style="background: rgba(99, 102, 241, 0.15); color: #a5b4fc; border-color: #6366f1;">
-                  ${escapeHtml(s.course.subject)}
-                </span>
+                <span class="badge-sub"><i class="${theme.icon}"></i> ${escapeHtml(s.course.subject)}</span>
               </div>
               <div style="font-size:0.75rem; color:var(--text-sub);">${senderBio}</div>
               <h4 class="course-title">${escapeHtml(s.course.title)}</h4>
             </div>
           </div>
-          <div style="display: flex; gap: 0.4rem;">
-            <button class="btn btn-primary" style="padding: 0.35rem 0.65rem; min-height: 32px; font-size: 0.75rem;" onclick="importSharedCourse('${s.id}')">
-              <i class="fa-solid fa-file-import"></i> Importer
+          <div class="card-actions">
+            <button class="btn-card-action btn-action-edit" onclick="importSharedCourse('${s.id}')" title="Importer dans mon classeur">
+              <i class="fa-solid fa-file-import"></i>
             </button>
-            <button class="btn btn-danger" style="padding: 0.35rem 0.6rem; min-height: 32px;" onclick="deleteSharedCourse('${s.id}')">
+            <button class="btn-card-action btn-action-delete" onclick="deleteSharedCourse('${s.id}')" title="Supprimer">
               <i class="fa-solid fa-trash-can"></i>
             </button>
           </div>
         </div>
         <div class="course-body">${sanitizedBody}</div>
         ${attachmentsHTML}
-        <div style="margin-top: 0.85rem; color: var(--text-sub); font-size: 0.72rem;">
-          Envoyé le ${new Date(s.sentAt).toLocaleDateString('fr-FR')} à ${new Date(s.sentAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+        <div class="course-card-footer">
+          <span><i class="fa-regular fa-paper-plane"></i> Reçu le ${new Date(s.sentAt).toLocaleDateString('fr-FR')}</span>
         </div>
       `;
       feed.appendChild(card);
@@ -837,13 +895,43 @@ function buildAttachmentsHTML(attachments) {
 }
 
 function openCourseModal() {
+  editingCourseId = null;
   pendingFiles = [];
   renderPendingModalFiles();
+  const mTitle = document.getElementById('mTitle');
+  const mContent = document.getElementById('mContent');
+  const mSubmitBtn = document.getElementById('mSubmitBtn');
+  if (mTitle) mTitle.value = '';
+  if (mContent) mContent.value = '';
+  if (mSubmitBtn) mSubmitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Sauvegarder dans mon classeur';
+  const modal = document.getElementById('courseModal');
+  if (modal) modal.classList.add('active');
+}
+
+function openEditCourseModal(id) {
+  const course = userVault.courses.find(c => c.id === id);
+  if (!course) return;
+
+  editingCourseId = id;
+  pendingFiles = [];
+  renderPendingModalFiles();
+
+  const mSubject = document.getElementById('mSubject');
+  const mTitle = document.getElementById('mTitle');
+  const mContent = document.getElementById('mContent');
+  const mSubmitBtn = document.getElementById('mSubmitBtn');
+
+  if (mSubject) mSubject.value = course.subject;
+  if (mTitle) mTitle.value = course.title;
+  if (mContent) mContent.value = course.content || '';
+  if (mSubmitBtn) mSubmitBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Mettre à jour le cours';
+
   const modal = document.getElementById('courseModal');
   if (modal) modal.classList.add('active');
 }
 
 function closeCourseModal() {
+  editingCourseId = null;
   const modal = document.getElementById('courseModal');
   if (modal) modal.classList.remove('active');
 }
@@ -944,14 +1032,29 @@ async function submitCourse() {
       uploadedList.push(res);
     }
 
-    userVault.courses.unshift({
-      id: Date.now(),
-      subject,
-      title,
-      content,
-      attachments: uploadedList,
-      date: new Date().toISOString()
-    });
+    if (editingCourseId) {
+      const target = userVault.courses.find(c => c.id === editingCourseId);
+      if (target) {
+        target.subject = subject;
+        target.title = title;
+        target.content = content;
+        if (uploadedList.length > 0) {
+          target.attachments = (target.attachments || []).concat(uploadedList);
+        }
+      }
+      editingCourseId = null;
+      showToast("Cours mis à jour avec succès !", "success");
+    } else {
+      userVault.courses.unshift({
+        id: Date.now(),
+        subject,
+        title,
+        content,
+        attachments: uploadedList,
+        date: new Date().toISOString()
+      });
+      showToast("Cours enregistré avec succès !", "success");
+    }
 
     if (titleEl) titleEl.value = '';
     if (contentEl) contentEl.value = '';
@@ -960,7 +1063,6 @@ async function submitCourse() {
     closeCourseModal();
     renderCourses();
     triggerAutoSave();
-    showToast("Cours enregistré avec succès !", "success");
   } catch (err) {
     showToast("Erreur lors de l'enregistrement : " + err.message, "error");
   } finally {
@@ -985,18 +1087,24 @@ async function deleteCourseById(courseId) {
    7. FLASHCARDS & TODOS
    ========================================================== */
 function renderFlashcards() {
-  const box = document.getElementById('fcDisplayContent');
+  const cardEl = document.getElementById('fcInteractiveCard');
+  const frontBox = document.getElementById('fcDisplayFront');
+  const backBox = document.getElementById('fcDisplayBack');
   const counter = document.getElementById('fcNumberLabel');
   const badge = document.getElementById('fcBadgeLabel');
-  const cardEl = document.getElementById('fcInteractiveCard');
+  const badgeFront = document.getElementById('fcBadgeLabelFront');
+  const badgeBack = document.getElementById('fcBadgeLabelBack');
 
-  if (!box || !cardEl) return;
+  if (!cardEl || !frontBox || !backBox) return;
 
   if (userVault.flashcards.length === 0) {
-    box.innerHTML = "Aucune flashcard enregistrée.";
+    frontBox.innerHTML = "Aucune flashcard enregistrée.";
+    backBox.innerHTML = "Ajoutez une carte ci-dessus !";
     if (counter) counter.innerText = "0 / 0";
-    if (badge) badge.innerText = "Vide";
-    cardEl.classList.remove('is-ans');
+    if (badge) badge.innerHTML = '<i class="fa-solid fa-layer-group"></i> Discipline';
+    if (badgeFront) badgeFront.innerText = "Vide";
+    if (badgeBack) badgeBack.innerText = "Vide";
+    cardEl.classList.remove('is-flipped');
     return;
   }
 
@@ -1005,21 +1113,26 @@ function renderFlashcards() {
 
   const item = userVault.flashcards[fcCursor];
   if (counter) counter.innerText = `${fcCursor + 1} / ${userVault.flashcards.length}`;
-  if (badge) badge.innerText = item.s || "Général";
+  const subject = item.s || "Général";
+  if (badge) badge.innerHTML = `<i class="fa-solid fa-layer-group"></i> ${escapeHtml(subject)}`;
+  if (badgeFront) badgeFront.innerText = subject;
+  if (badgeBack) badgeBack.innerText = subject;
+
+  frontBox.innerText = item.q;
+  backBox.innerText = item.a;
 
   if (fcFlipped) {
-    cardEl.classList.add('is-ans');
-    box.innerHTML = `<span style="color: var(--accent-green); font-size: 0.8rem; text-transform: uppercase;">[Réponse]</span><br>${escapeHtml(item.a)}`;
+    cardEl.classList.add('is-flipped');
   } else {
-    cardEl.classList.remove('is-ans');
-    box.innerHTML = `<span style="color: var(--primary); font-size: 0.8rem; text-transform: uppercase;">[Question]</span><br>${escapeHtml(item.q)}`;
+    cardEl.classList.remove('is-flipped');
   }
 }
 
 function toggleFlashcardFlip() {
   if (userVault.flashcards.length === 0) return;
   fcFlipped = !fcFlipped;
-  renderFlashcards();
+  const cardEl = document.getElementById('fcInteractiveCard');
+  if (cardEl) cardEl.classList.toggle('is-flipped', fcFlipped);
 }
 
 function nextFlashcard() {
@@ -1072,25 +1185,45 @@ async function deleteCurrentFlashcard() {
 function renderTodos() {
   const feed = document.getElementById('todosFeed');
   if (!feed) return;
+
   if (userVault.todos.length === 0) {
-    feed.innerHTML = `<p style="text-align: center; color: var(--text-sub); padding: 1.5rem 0;">Aucun objectif en attente.</p>`;
+    feed.innerHTML = `<p style="text-align: center; color: var(--text-sub); padding: 1.5rem 0;"><i class="fa-solid fa-clipboard-check" style="font-size: 2rem; margin-bottom: 0.5rem; display: block; opacity: 0.4;"></i>Aucun objectif en attente.</p>`;
     return;
   }
-  feed.innerHTML = '';
-  userVault.todos.forEach((t, i) => {
-    const row = document.createElement('div');
-    row.className = 'todo-row';
-    row.innerHTML = `
-      <div style="display:flex; align-items:center; gap:0.75rem; cursor:pointer; flex:1;" onclick="toggleTodo(${i})">
-        <i class="fa-${t.done ? 'solid fa-circle-check' : 'regular fa-circle'}" style="font-size: 1.2rem; color:${t.done ? 'var(--accent-green)' : 'var(--text-sub)'};"></i>
-        <span style="${t.done ? 'text-decoration: line-through; color: var(--text-sub);' : ''}">${escapeHtml(t.text)}</span>
+
+  const total = userVault.todos.length;
+  const doneCount = userVault.todos.filter(t => t.done).length;
+  const percent = Math.round((doneCount / total) * 100);
+
+  let html = `
+    <div class="todo-progress-card">
+      <div class="todo-progress-header">
+        <span><i class="fa-solid fa-chart-line" style="color: var(--primary);"></i> Progression des révisions</span>
+        <span>${doneCount} / ${total} complété${doneCount > 1 ? 's' : ''} (${percent}%)</span>
       </div>
-      <button class="btn btn-danger" style="padding: 0.25rem 0.55rem; min-height: 32px;" onclick="deleteTodo(${i})">
-        <i class="fa-solid fa-trash-can"></i>
-      </button>
+      <div class="todo-progress-bar-bg">
+        <div class="todo-progress-bar-fill" style="width: ${percent}%;"></div>
+      </div>
+    </div>
+  `;
+
+  userVault.todos.forEach((t, i) => {
+    html += `
+      <div class="todo-row ${t.done ? 'is-done' : ''}">
+        <div style="display:flex; align-items:center; gap:0.85rem; cursor:pointer; flex:1;" onclick="toggleTodo(${i})">
+          <div class="todo-check-btn">
+            <i class="fa-solid fa-check"></i>
+          </div>
+          <span class="todo-text">${escapeHtml(t.text)}</span>
+        </div>
+        <button class="btn btn-danger" style="padding: 0.25rem 0.55rem; min-height: 32px;" onclick="deleteTodo(${i})" title="Supprimer">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      </div>
     `;
-    feed.appendChild(row);
   });
+
+  feed.innerHTML = html;
 }
 
 function toggleTodo(i) {
@@ -1153,6 +1286,43 @@ function closeLightbox() {
 }
 
 /* ==========================================================
+   8.1 RACCOURCIS CLAVIER & RECHERCHE ERGONOMIQUE
+   ========================================================== */
+function toggleSearchClear(val) {
+  const btn = document.getElementById('searchClearBtn');
+  if (btn) btn.style.display = val && val.trim().length > 0 ? 'block' : 'none';
+}
+
+function clearCourseSearch() {
+  const searchInput = document.getElementById('courseSearch');
+  if (searchInput) {
+    searchInput.value = '';
+    toggleSearchClear('');
+    renderCourses();
+    searchInput.focus();
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      const searchInput = document.getElementById('courseSearch');
+      if (searchInput) {
+        showTab('tab-courses');
+        searchInput.focus();
+        searchInput.select();
+      }
+    }
+  });
+
+  window.toggleSearchClear = toggleSearchClear;
+  window.clearCourseSearch = clearCourseSearch;
+  window.openEditCourseModal = openEditCourseModal;
+  window.getSubjectThemeInfo = getSubjectThemeInfo;
+}
+
+/* ==========================================================
    9. EXPORTATION CONDITIONNELLE (NODE.JS & MODULES)
    ========================================================== */
 if (typeof module !== 'undefined' && module.exports) {
@@ -1176,6 +1346,8 @@ if (typeof module !== 'undefined' && module.exports) {
     set activeFilter(v) { activeFilter = v; },
     get courseToShare() { return courseToShare; },
     set courseToShare(v) { courseToShare = v; },
+    get editingCourseId() { return editingCourseId; },
+    set editingCourseId(v) { editingCourseId = v; },
     get fcCursor() { return fcCursor; },
     set fcCursor(v) { fcCursor = v; },
     get fcFlipped() { return fcFlipped; },
@@ -1188,6 +1360,8 @@ if (typeof module !== 'undefined' && module.exports) {
     showToast,
     customConfirm,
     setSync,
+    toggleSearchClear,
+    clearCourseSearch,
 
     // Auth & Profil
     initApp,
@@ -1218,9 +1392,11 @@ if (typeof module !== 'undefined' && module.exports) {
     deleteSharedCourse,
     setFilter,
     checkSubjectMatch,
+    getSubjectThemeInfo,
     renderCourses,
     buildAttachmentsHTML,
     openCourseModal,
+    openEditCourseModal,
     closeCourseModal,
     handleModalFiles,
     removePendingFile,
