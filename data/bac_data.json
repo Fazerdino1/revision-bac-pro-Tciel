@@ -1,6 +1,23 @@
 {
-  "courses": [],
+  "courses": [
+    {
+      "id": 1789118673561,
+      "subject": "CIEL - Réseaux",
+      "title": "tst",
+      "content": "tst",
+      "attachments": [
+        {
+          "name": "preview_temp.png",
+          "path": "uploads/1789118671554_preview_temp.png",
+          "downloadUrl": "https://raw.githubusercontent.com/Fazerdino1/revision-bac-pro-Tciel/main/uploads/1789118671554_preview_temp.png",
+          "isImage": true,
+          "size": 32229
+        }
+      ],
+      "date": "2026-09-11T09:24:33.561Z"
+    }
+  ],
   "flashcards": [],
   "todos": [],
-  "lastUpdated": "2026-09-11T09:19:07.329Z"
+  "lastUpdated": "2026-09-11T09:24:33.563Z"
 }
