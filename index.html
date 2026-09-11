@@ -13,7 +13,7 @@
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.9/purify.min.js"></script>
 
-  <link rel="stylesheet" href="css/styles.css?v=3.0.0" />
+  <link rel="stylesheet" href="css/styles.css?v=3.2.0" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
 </head>
 <body>
@@ -261,10 +261,14 @@
         </div>
       </div>
 
-      <div style="display: flex; justify-content: space-between; align-items: center; margin: 1rem 0 0.75rem 0;">
-        <span style="font-size: 0.85rem; color: var(--text-sub); font-weight: 600;" id="coursesCounter">0 cours</span>
-        <button class="btn" style="padding: 0.25rem 0.65rem; min-height: 32px; font-size: 0.75rem;" onclick="syncUserVault(false)">
-          <i class="fa-solid fa-rotate"></i> Synchroniser
+      <div class="feed-status-bar">
+        <div class="feed-status-info">
+          <i class="fa-solid fa-layer-group"></i>
+          <span id="coursesCounter">0 cours</span>
+        </div>
+        <button class="btn-sync-action" onclick="syncUserVault(false)" title="Forcer la synchronisation avec le coffre GitHub">
+          <i class="fa-solid fa-rotate"></i>
+          <span>Synchroniser</span>
         </button>
       </div>
 
@@ -492,8 +496,8 @@
     </div>
   </div>
 
-  <script src="js/crypto.js?v=3.0.0"></script>
-  <script src="js/github.js?v=3.0.0"></script>
-  <script src="js/app.js?v=3.0.0"></script>
+  <script src="js/crypto.js?v=3.2.0"></script>
+  <script src="js/github.js?v=3.2.0"></script>
+  <script src="js/app.js?v=3.2.0"></script>
 </body>
 </html>

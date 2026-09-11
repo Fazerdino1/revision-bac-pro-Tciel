@@ -788,10 +788,7 @@ function renderCourses() {
 
       card.innerHTML = `
         <div class="course-card-top">
-          <div class="course-card-meta">
-            <span class="badge-sub"><i class="${theme.icon}"></i> ${escapeHtml(c.subject)}</span>
-            <h4 class="course-title">${escapeHtml(c.title)}</h4>
-          </div>
+          <span class="badge-sub"><i class="${theme.icon}"></i> ${escapeHtml(c.subject)}</span>
           <div class="card-actions">
             <button class="btn-card-action btn-action-share" onclick="openShareModal(${c.id})" title="Partager avec un camarade">
               <i class="fa-solid fa-share-nodes"></i>
@@ -804,6 +801,7 @@ function renderCourses() {
             </button>
           </div>
         </div>
+        <h4 class="course-title">${escapeHtml(c.title)}</h4>
         <div class="course-body">${sanitizedBody}</div>
         ${attachmentsHTML}
         <div class="course-card-footer">
@@ -834,21 +832,20 @@ function renderCourses() {
 
       let attachmentsHTML = buildAttachmentsHTML(s.course.attachments);
       const avatarHTML = renderAvatarHTML(s.fromUser, s.senderAvatar, 36);
-      const senderBio = s.senderBio ? ` • ${escapeHtml(s.senderBio)}` : '';
+      const senderBioHTML = s.senderBio ? `<span class="course-author-bio">${escapeHtml(s.senderBio)}</span>` : '';
       const parsedContent = (typeof marked !== 'undefined' && marked.parse) ? marked.parse(s.course.content || '') : (s.course.content || '');
       const sanitizedBody = (typeof DOMPurify !== 'undefined' && DOMPurify.sanitize) ? DOMPurify.sanitize(parsedContent) : parsedContent;
 
       card.innerHTML = `
         <div class="course-card-top">
-          <div style="display:flex; align-items:flex-start; gap:0.65rem; flex:1; min-width:0;">
+          <div class="course-card-sender">
             ${avatarHTML}
-            <div class="course-card-meta">
-              <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
-                <span style="font-weight:700; color:#fff; font-size:0.88rem;">@${escapeHtml(s.fromUser)}</span>
+            <div class="course-card-sender-info">
+              <div class="course-card-author-row">
+                <span class="course-author-tag">@${escapeHtml(s.fromUser)}</span>
                 <span class="badge-sub"><i class="${theme.icon}"></i> ${escapeHtml(s.course.subject)}</span>
               </div>
-              <div style="font-size:0.75rem; color:var(--text-sub);">${senderBio}</div>
-              <h4 class="course-title">${escapeHtml(s.course.title)}</h4>
+              ${senderBioHTML}
             </div>
           </div>
           <div class="card-actions">
@@ -860,6 +857,7 @@ function renderCourses() {
             </button>
           </div>
         </div>
+        <h4 class="course-title">${escapeHtml(s.course.title)}</h4>
         <div class="course-body">${sanitizedBody}</div>
         ${attachmentsHTML}
         <div class="course-card-footer">
@@ -869,6 +867,17 @@ function renderCourses() {
       feed.appendChild(card);
     });
   }
+}
+
+function getFileIconClass(filename) {
+  const ext = (filename || '').split('.').pop().toLowerCase();
+  if (['doc', 'docx'].includes(ext)) return 'fa-solid fa-file-word';
+  if (['pdf'].includes(ext)) return 'fa-solid fa-file-pdf';
+  if (['xls', 'xlsx', 'csv'].includes(ext)) return 'fa-solid fa-file-excel';
+  if (['ppt', 'pptx'].includes(ext)) return 'fa-solid fa-file-powerpoint';
+  if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) return 'fa-solid fa-file-zipper';
+  if (['txt', 'md', 'json', 'py', 'c', 'cpp', 'js', 'html', 'css'].includes(ext)) return 'fa-solid fa-file-code';
+  return 'fa-solid fa-file-arrow-down';
 }
 
 function buildAttachmentsHTML(attachments) {
@@ -883,9 +892,10 @@ function buildAttachmentsHTML(attachments) {
           <img src="${safeUrl}" alt="${escapeHtml(att.name)}" loading="lazy" />
         </div>`;
     } else {
+      const iconClass = getFileIconClass(att.name);
       html += `
-        <a href="${safeUrl}" target="_blank" download="${escapeHtml(att.name)}" class="file-badge-download">
-          <i class="fa-solid fa-file-arrow-down"></i>
+        <a href="${safeUrl}" target="_blank" download="${escapeHtml(att.name)}" class="file-badge-download" title="${escapeHtml(att.name)}">
+          <i class="${iconClass}"></i>
           <span>${escapeHtml(att.name)}</span>
         </a>`;
     }
