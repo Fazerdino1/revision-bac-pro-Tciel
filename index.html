@@ -121,7 +121,7 @@
       gap: 0.6rem;
     }
 
-    /* Avatar stylisé */
+    /* Avatars fiables */
     .avatar-circle {
       display: inline-flex;
       align-items: center;
@@ -132,7 +132,6 @@
       text-transform: uppercase;
       user-select: none;
       flex-shrink: 0;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     }
     .avatar-img {
       border-radius: 50%;
@@ -622,7 +621,7 @@
       cursor: pointer;
     }
 
-    /* Ligne destinataire dans la boîte de partage */
+    /* Destinataires dans la modal de partage */
     .recipient-row {
       display: flex;
       align-items: center;
@@ -666,7 +665,7 @@
           <i class="fa-solid fa-lock"></i>
         </div>
         <h2 style="font-size: 1.35rem; font-weight: 800;">CIEL StudyOS</h2>
-        <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.25rem;">Espace chiffré & partages sécurisés</p>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.25rem;">Espace de cours isolé & partages</p>
       </div>
 
       <div class="auth-tabs">
@@ -805,7 +804,7 @@
           <span style="margin-top: 1.25rem; font-size: 0.75rem; color: var(--text-sub);"><i class="fa-solid fa-hand-pointer"></i> Toucher pour retourner</span>
         </div>
 
-        <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
+        <div style="display: gap; gap: 0.75rem; margin-top: 1rem; display: flex;">
           <button class="btn" style="flex: 1;" onclick="prevFlashcard()"><i class="fa-solid fa-arrow-left"></i></button>
           <button class="btn btn-danger" onclick="deleteCurrentFlashcard()"><i class="fa-solid fa-trash-can"></i></button>
           <button class="btn btn-primary" style="flex: 1;" onclick="nextFlashcard()">Suivante <i class="fa-solid fa-arrow-right"></i></button>
@@ -833,7 +832,7 @@
         <div class="card">
           <h3 style="font-size: 1.05rem; margin-bottom: 0.5rem;"><i class="fa-brands fa-github" style="color: var(--primary);"></i> Configuration GitHub</h3>
           <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem;">
-            Les coffres des élèves sont dans <code>data/vaults/</code> et les partages dans <code>data/shares.json</code>.
+            Les coffres des élèves sont dans <code>data/users/</code> et les partages dans <code>data/shares.json</code>.
           </p>
 
           <div class="form-row">
@@ -967,7 +966,7 @@
       </div>
 
       <button class="btn btn-primary" id="mSubmitBtn" style="width: 100%; margin-top: 0.5rem;" onclick="submitCourse()">
-        <i class="fa-solid fa-cloud-arrow-up"></i> Sauvegarder dans mon coffre
+        <i class="fa-solid fa-cloud-arrow-up"></i> Sauvegarder dans mon classeur
       </button>
     </div>
   </div>
@@ -1007,14 +1006,13 @@
 
   <script>
     /* ==========================================================
-       1. FONCTIONS UTILITAIRES & AVATARS ROBUSTES
+       1. FONCTIONS UTILITAIRES & AVATARS ROBUSTES (SANS SVG CASSÉ)
        ========================================================== */
     function escapeHtml(text) {
       const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
       return (text || '').replace(/[&<>"']/g, m => map[m]);
     }
 
-    // Génère une couleur moderne déterministe basée sur le nom d'utilisateur
     function getUserColor(username) {
       const colors = ['#0284c7', '#6366f1', '#a855f7', '#10b981', '#f59e0b', '#ec4899', '#14b8a6', '#8b5cf6'];
       let hash = 0;
@@ -1023,9 +1021,8 @@
       return colors[Math.abs(hash) % colors.length];
     }
 
-    // Rendu d'avatar sans aucun risque de guillemet cassé
     function renderAvatarHTML(username, avatarUrl, size = 28) {
-      const u = username || 'U';
+      const u = (username || 'U').trim();
       if (avatarUrl && typeof avatarUrl === 'string' && avatarUrl.startsWith('data:image/')) {
         return `<img src="${avatarUrl}" class="avatar-img" style="width:${size}px; height:${size}px;" alt="${escapeHtml(u)}" />`;
       }
@@ -1079,12 +1076,24 @@
     }
 
     /* ==========================================================
-       2. CRYPTOGRAPHIE AES-256 ET ENCODAGE UTF-8 PUR
+       2. ENCODAGE UTF-8 & HELPER GITHUB API (ANTI-COLLISION / RETRY)
        ========================================================== */
-    let currentSession = { username: null, aesKey: null, saltHex: null };
+    function utf8ToB64(str) {
+      return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1)));
+    }
+    function b64ToUtf8(str) {
+      return decodeURIComponent(Array.prototype.map.call(atob(str), c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+    }
+
+    async function hashPassword(password) {
+      const msgBuffer = new TextEncoder().encode(password);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    let currentSession = { username: null };
     let userVault = { courses: [], flashcards: [], todos: [], profile: { avatar: '', bio: '' }, lastUpdated: null };
     let allSharedCourses = [];
-    let usersRegistryCache = { users: {} };
 
     let ghConfig = JSON.parse(localStorage.getItem('ciel_gh_config')) || {
       owner: 'fazerdino1',
@@ -1094,8 +1103,6 @@
     };
 
     let pendingFiles = [];
-    let currentVaultSha = null;
-    let sharesFileSha = null;
     let autoSaveTimer = null;
     let authMode = 'login';
     let currentSubView = 'mine';
@@ -1104,51 +1111,71 @@
     let fcCursor = 0;
     let fcFlipped = false;
 
-    // Encodage Base64 UTF-8 infaillible (supporte tous les accents français et caractères spéciaux)
-    function utf8ToB64(str) {
-      return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1)));
-    }
-    function b64ToUtf8(str) {
-      return decodeURIComponent(Array.prototype.map.call(atob(str), c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-    }
-
-    function bufToHex(buf) { return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join(''); }
-    function hexToBuf(hex) {
-      const bytes = new Uint8Array(hex.length / 2);
-      for (let i = 0; i < bytes.length; i++) bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
-      return bytes.buffer;
-    }
-    function bufToB64(buf) { return btoa(String.fromCharCode(...new Uint8Array(buf))); }
-    function b64ToBuf(b64) { return Uint8Array.from(atob(b64), c => c.charCodeAt(0)).buffer; }
-
-    async function deriveKeyFromPassword(password, saltBuffer) {
-      const enc = new TextEncoder();
-      const baseKey = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey', 'deriveBits']);
-      return await crypto.subtle.deriveKey(
-        { name: 'PBKDF2', salt: saltBuffer, iterations: 100000, hash: 'SHA-256' },
-        baseKey, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
-      );
+    // Helper GitHub : lecture avec anti-cache strict (?t=...)
+    async function ghGetFile(filePath) {
+      if (!ghConfig.token) return null;
+      const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/${filePath}?t=${Date.now()}&ref=${ghConfig.branch}`;
+      const res = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${ghConfig.token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Cache-Control': 'no-cache'
+        }
+      });
+      if (res.status === 404) return null;
+      if (!res.ok) throw new Error(`Code HTTP ${res.status}`);
+      const json = await res.json();
+      const content = b64ToUtf8(json.content.replace(/\n/g, ''));
+      return { sha: json.sha, data: JSON.parse(content) };
     }
 
-    async function computePasswordVerifier(password, saltBuffer) {
-      const enc = new TextEncoder();
-      const baseKey = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
-      const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: saltBuffer, iterations: 100000, hash: 'SHA-256' }, baseKey, 256);
-      return bufToHex(bits);
-    }
+    // Helper GitHub : écriture avec auto-résolution du SHA et retry en cas d'erreur 409
+    async function ghPutFile(filePath, dataObj, commitMsg) {
+      if (!ghConfig.token) return null;
+      let sha = null;
+      try {
+        const current = await ghGetFile(filePath);
+        if (current) sha = current.sha;
+      } catch(e) {}
 
-    async function encryptData(obj, aesKey) {
-      const iv = crypto.getRandomValues(new Uint8Array(12));
-      const encoded = new TextEncoder().encode(JSON.stringify(obj));
-      const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, aesKey, encoded);
-      return { iv: bufToHex(iv), ciphertext: bufToB64(ciphertext) };
-    }
+      const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/${filePath}`;
+      const body = {
+        message: commitMsg || `Mise a jour ${filePath}`,
+        content: utf8ToB64(JSON.stringify(dataObj, null, 2)),
+        branch: ghConfig.branch
+      };
+      if (sha) body.sha = sha;
 
-    async function decryptData(encryptedObj, aesKey) {
-      const iv = hexToBuf(encryptedObj.iv);
-      const cipherBuf = b64ToBuf(encryptedObj.ciphertext);
-      const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(iv) }, aesKey, cipherBuf);
-      return JSON.parse(new TextDecoder().decode(decrypted));
+      let res = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${ghConfig.token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/vnd.github.v3+json'
+        },
+        body: JSON.stringify(body)
+      });
+
+      // Si conflit de SHA (409), recharger le SHA et réessayer immédiatement
+      if (res.status === 409) {
+        const retryCurrent = await ghGetFile(filePath);
+        if (retryCurrent) body.sha = retryCurrent.sha;
+        res = await fetch(url, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${ghConfig.token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/vnd.github.v3+json'
+          },
+          body: JSON.stringify(body)
+        });
+      }
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || `Code HTTP ${res.status}`);
+      }
+      return await res.json();
     }
 
     /* ==========================================================
@@ -1164,12 +1191,9 @@
         document.getElementById('desktopAddBtn').style.display = 'inline-flex';
       }
 
-      const savedUser = sessionStorage.getItem('ciel_session_user');
-      const savedSalt = sessionStorage.getItem('ciel_session_salt');
-      const savedKeyRaw = sessionStorage.getItem('ciel_session_key');
-
-      if (savedUser && savedSalt && savedKeyRaw) {
-        restoreSession(savedUser, savedSalt, savedKeyRaw);
+      const savedUser = localStorage.getItem('ciel_session_user');
+      if (savedUser) {
+        restoreSession(savedUser);
       } else {
         document.getElementById('authOverlay').style.display = 'flex';
       }
@@ -1193,7 +1217,7 @@
       const password = document.getElementById('authPassword').value;
 
       if (!username || !password) {
-        document.getElementById('authAlert').innerText = "Veuillez renseigner un nom d'utilisateur et un mot de passe.";
+        document.getElementById('authAlert').innerText = "Veuillez renseigner un identifiant et un mot de passe.";
         document.getElementById('authAlert').style.display = 'block';
         return;
       }
@@ -1203,30 +1227,26 @@
       submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Traitement...';
 
       try {
-        const registry = await fetchUsersRegistry();
+        const registryFile = await ghGetFile('data/users_index.json');
+        const registry = registryFile ? registryFile.data : { users: {} };
+        const passHash = await hashPassword(password);
 
         if (authMode === 'register') {
           if (registry.users && registry.users[username]) {
             throw new Error("Cet identifiant existe déjà. Veuillez vous connecter.");
           }
 
-          const salt = crypto.getRandomValues(new Uint8Array(16));
-          const saltHex = bufToHex(salt);
-          const verifier = await computePasswordVerifier(password, salt);
-          const aesKey = await deriveKeyFromPassword(password, salt);
-
           if (!registry.users) registry.users = {};
           registry.users[username] = {
-            salt: saltHex,
-            verifier: verifier,
+            passHash: passHash,
             avatar: '',
             bio: 'Élève Bac Pro CIEL',
             createdAt: new Date().toISOString()
           };
 
-          await pushUsersRegistry(registry);
+          await ghPutFile('data/users_index.json', registry, `Inscription de @${username}`);
 
-          currentSession = { username, aesKey, saltHex };
+          currentSession = { username };
           userVault = {
             courses: [],
             flashcards: [],
@@ -1234,30 +1254,25 @@
             profile: { avatar: '', bio: 'Élève Bac Pro CIEL' },
             lastUpdated: new Date().toISOString()
           };
-          await saveEncryptedVaultToGitHub();
 
-          openUserSession(username, saltHex, password);
-          showToast(`Bienvenue sur ton espace, ${username} !`, 'success');
+          await ghPutFile(`data/users/${username}.json`, userVault, `Creation coffre @${username}`);
+          openUserSession(username);
+          showToast(`Bienvenue sur votre espace, ${username} !`, 'success');
         } else {
           if (!registry.users || !registry.users[username]) {
-            throw new Error("Nom d'utilisateur inexistant. Créez un compte.");
+            throw new Error("Nom d'utilisateur inexistant. Créez un compte d'abord.");
           }
 
           const userRecord = registry.users[username];
-          const salt = hexToBuf(userRecord.salt);
-          const computedVerifier = await computePasswordVerifier(password, salt);
-
-          if (computedVerifier !== userRecord.verifier) {
+          if (userRecord.passHash && userRecord.passHash !== passHash) {
             throw new Error("Mot de passe incorrect.");
           }
 
-          const aesKey = await deriveKeyFromPassword(password, salt);
-          currentSession = { username, aesKey, saltHex: userRecord.salt };
-
-          await loadEncryptedVaultFromGitHub();
+          currentSession = { username };
+          await loadUserVault();
           await fetchSharedCourses();
-          openUserSession(username, userRecord.salt, password);
-          showToast(`Bon retour parmi nous, ${username} !`, 'success');
+          openUserSession(username);
+          showToast(`Bon retour, ${username} !`, 'success');
         }
       } catch (err) {
         const alertEl = document.getElementById('authAlert');
@@ -1269,11 +1284,8 @@
       }
     }
 
-    function openUserSession(username, saltHex, password) {
-      sessionStorage.setItem('ciel_session_user', username);
-      sessionStorage.setItem('ciel_session_salt', saltHex);
-      sessionStorage.setItem('ciel_session_key', password);
-
+    function openUserSession(username) {
+      localStorage.setItem('ciel_session_user', username);
       document.getElementById('currentUserLabel').innerText = username;
       updateHeaderProfileUI();
       document.getElementById('authOverlay').style.display = 'none';
@@ -1285,13 +1297,22 @@
       setSync('synced', 'Connecté');
     }
 
-    async function restoreSession(username, saltHex, password) {
-      const salt = hexToBuf(saltHex);
-      const aesKey = await deriveKeyFromPassword(password, salt);
-      currentSession = { username, aesKey, saltHex };
+    async function restoreSession(username) {
+      currentSession = { username };
       document.getElementById('currentUserLabel').innerText = username;
 
-      await loadEncryptedVaultFromGitHub();
+      // 1. Restaurer depuis le cache local immédiat
+      const localData = localStorage.getItem(`ciel_vault_${username}`);
+      if (localData) {
+        userVault = JSON.parse(localData);
+        updateHeaderProfileUI();
+        renderCourses();
+        renderFlashcards();
+        renderTodos();
+      }
+
+      // 2. Synchroniser avec GitHub
+      await loadUserVault();
       await fetchSharedCourses();
       updateHeaderProfileUI();
       document.getElementById('authOverlay').style.display = 'none';
@@ -1303,8 +1324,8 @@
     }
 
     function logout() {
-      sessionStorage.clear();
-      currentSession = { username: null, aesKey: null, saltHex: null };
+      localStorage.removeItem('ciel_session_user');
+      currentSession = { username: null };
       userVault = { courses: [], flashcards: [], todos: [], profile: { avatar: '', bio: '' }, lastUpdated: null };
       document.getElementById('authOverlay').style.display = 'flex';
       document.getElementById('currentUserLabel').innerText = "Invité";
@@ -1314,7 +1335,7 @@
     }
 
     /* ==========================================================
-       4. GESTION DU PROFIL (AVATAR SÉCURISÉ & BIO)
+       4. GESTION DU PROFIL
        ========================================================== */
     function updateHeaderProfileUI() {
       const avatarSrc = (userVault.profile && userVault.profile.avatar) ? userVault.profile.avatar : '';
@@ -1365,23 +1386,24 @@
 
       updateHeaderProfileUI();
       closeProfileModal();
-      autoSaveUserVault();
+      triggerAutoSave();
 
+      // Mettre à jour le registre public des élèves
       try {
-        const registry = await fetchUsersRegistry();
-        if (registry.users && registry.users[currentSession.username]) {
-          registry.users[currentSession.username].avatar = userVault.profile.avatar || '';
-          registry.users[currentSession.username].bio = userVault.profile.bio || '';
-          await pushUsersRegistry(registry);
+        const regFile = await ghGetFile('data/users_index.json');
+        if (regFile && regFile.data && regFile.data.users && regFile.data.users[currentSession.username]) {
+          regFile.data.users[currentSession.username].avatar = userVault.profile.avatar || '';
+          regFile.data.users[currentSession.username].bio = userVault.profile.bio || '';
+          await ghPutFile('data/users_index.json', regFile.data, `Profil maj @${currentSession.username}`);
         }
         showToast("Profil enregistré et synchronisé !", "success");
       } catch (err) {
-        showToast("Profil enregistré localement.", "info");
+        showToast("Profil sauvegardé localement.", "info");
       }
     }
 
     /* ==========================================================
-       5. SYNCHRONISATION GITHUB (VAULTS ET REGISTRE)
+       5. SYNCHRONISATION AUTOMATIQUE (AUTO-SYNC ROBUSTE)
        ========================================================== */
     function setSync(state, msg) {
       const dot = document.getElementById('syncDot');
@@ -1389,144 +1411,74 @@
       if (state) dot.classList.add(state);
     }
 
-    async function fetchUsersRegistry() {
-      if (!ghConfig.token) return { users: {} };
-      const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data/users_index.json?ref=${ghConfig.branch}`;
-      try {
-        const res = await fetch(url, { headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github.v3+json' } });
-        if (res.status === 404) return { users: {} };
-        const data = await res.json();
-        const decoded = b64ToUtf8(data.content.replace(/\n/g, ''));
-        usersRegistryCache = JSON.parse(decoded);
-        return usersRegistryCache;
-      } catch (e) { return { users: {} }; }
-    }
-
-    async function pushUsersRegistry(registryObj) {
-      const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data/users_index.json`;
-      let sha = null;
-      try {
-        const head = await fetch(`${url}?ref=${ghConfig.branch}`, { headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github.v3+json' } });
-        if (head.ok) { const h = await head.json(); sha = h.sha; }
-      } catch (e) {}
-
-      const payload = {
-        message: "Mise à jour registre élèves",
-        content: utf8ToB64(JSON.stringify(registryObj, null, 2)),
-        branch: ghConfig.branch
-      };
-      if (sha) payload.sha = sha;
-
-      await fetch(url, { method: 'PUT', headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    }
-
-    async function loadEncryptedVaultFromGitHub() {
-      if (!ghConfig.token || !currentSession.username) return;
+    async function loadUserVault() {
+      if (!currentSession.username || !ghConfig.token) return;
       setSync('saving', 'Chargement...');
 
-      const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data/vaults/${currentSession.username}.json?ref=${ghConfig.branch}`;
       try {
-        const res = await fetch(url, { headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github.v3+json' } });
-        if (res.status === 404) {
-          userVault = {
-            courses: [],
-            flashcards: [],
-            todos: [],
-            profile: { avatar: '', bio: '' },
-            lastUpdated: new Date().toISOString()
-          };
+        const file = await ghGetFile(`data/users/${currentSession.username}.json`);
+        if (file && file.data) {
+          userVault = file.data;
+          if (!userVault.profile) userVault.profile = { avatar: '', bio: '' };
+          localStorage.setItem(`ciel_vault_${currentSession.username}`, JSON.stringify(userVault));
+          setSync('synced', 'À jour');
+        } else {
+          userVault = { courses: [], flashcards: [], todos: [], profile: { avatar: '', bio: '' }, lastUpdated: new Date().toISOString() };
           setSync('synced', 'Nouveau');
-          return;
         }
-        const data = await res.json();
-        currentVaultSha = data.sha;
-        const decoded = JSON.parse(b64ToUtf8(data.content.replace(/\n/g, '')));
-        userVault = await decryptData(decoded, currentSession.aesKey);
-        if (!userVault.profile) userVault.profile = { avatar: '', bio: '' };
-        setSync('synced', 'À jour');
       } catch (err) {
-        setSync('error', 'Erreur coffre');
+        console.error(err);
+        setSync('error', 'Erreur sync');
       }
     }
 
-    async function saveEncryptedVaultToGitHub() {
-      if (!ghConfig.token || !currentSession.username) return;
-      setSync('saving', 'Chiffrement...');
+    function triggerAutoSave() {
+      if (!currentSession.username) return;
+      setSync('saving', 'Sauvegarde...');
 
-      const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data/vaults/${currentSession.username}.json`;
-      try {
-        const encryptedPayload = await encryptData(userVault, currentSession.aesKey);
-        const head = await fetch(`${url}?ref=${ghConfig.branch}`, { headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github.v3+json' } });
-        if (head.ok) { const h = await head.json(); currentVaultSha = h.sha; }
+      // 1. Sauvegarde locale immédiate (zéro perte de données)
+      userVault.lastUpdated = new Date().toISOString();
+      localStorage.setItem(`ciel_vault_${currentSession.username}`, JSON.stringify(userVault));
 
-        const body = {
-          message: `Update vault [${currentSession.username}]`,
-          content: utf8ToB64(JSON.stringify(encryptedPayload)),
-          branch: ghConfig.branch
-        };
-        if (currentVaultSha) body.sha = currentVaultSha;
-
-        const putRes = await fetch(url, { method: 'PUT', headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-        if (!putRes.ok) throw new Error("Erreur GitHub");
-        const resData = await putRes.json();
-        currentVaultSha = resData.content.sha;
-        setSync('synced', 'Sauvegardé');
-      } catch (e) {
-        setSync('error', 'Erreur sauvegarde');
-      }
-    }
-
-    function autoSaveUserVault() {
-      setSync('saving', 'Attente...');
+      // 2. Envoi automatique vers GitHub avec debounce d'1 seconde
       clearTimeout(autoSaveTimer);
-      autoSaveTimer = setTimeout(() => { saveEncryptedVaultToGitHub(); }, 1500);
+      autoSaveTimer = setTimeout(async () => {
+        try {
+          if (ghConfig.token) {
+            await ghPutFile(`data/users/${currentSession.username}.json`, userVault, `Auto-save @${currentSession.username}`);
+            const timeStr = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+            setSync('synced', `Synchronisé (${timeStr})`);
+          } else {
+            setSync('', 'Local');
+          }
+        } catch (e) {
+          console.error("Erreur auto-save:", e);
+          setSync('error', 'Erreur synchro');
+        }
+      }, 1000);
     }
 
     async function syncUserVault(silent = false) {
-      await loadEncryptedVaultFromGitHub();
+      await loadUserVault();
       await fetchSharedCourses();
       updateHeaderProfileUI();
       renderCourses();
       renderFlashcards();
       renderTodos();
       updateReceivedBadge();
-      if (!silent) showToast("Données synchronisées !", "success");
+      if (!silent) showToast("Données synchronisées avec GitHub !", "success");
     }
 
     /* ==========================================================
-       6. SYSTÈME DE PARTAGE CORRIGÉ (SANS GUILLEMETS CASSÉS ET SANS SOI-MÊME)
+       6. PARTAGE DE COURS ENTRE ÉLÈVES (CORRIGÉ & FIABILISÉ)
        ========================================================== */
     async function fetchSharedCourses() {
       if (!ghConfig.token) return;
-      const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data/shares.json?ref=${ghConfig.branch}`;
       try {
-        const res = await fetch(url, { headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github.v3+json' } });
-        if (res.status === 404) { allSharedCourses = []; return; }
-        const data = await res.json();
-        sharesFileSha = data.sha;
-        const decoded = JSON.parse(b64ToUtf8(data.content.replace(/\n/g, '')));
-        allSharedCourses = decoded.shares || [];
-      } catch (e) { allSharedCourses = []; }
-    }
-
-    async function pushSharedCourses(sharesList) {
-      const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data/shares.json`;
-      try {
-        const head = await fetch(`${url}?ref=${ghConfig.branch}`, { headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github.v3+json' } });
-        if (head.ok) { const h = await head.json(); sharesFileSha = h.sha; }
-      } catch (e) {}
-
-      const payload = {
-        message: "Mise à jour des partages CIEL",
-        content: utf8ToB64(JSON.stringify({ shares: sharesList }, null, 2)),
-        branch: ghConfig.branch
-      };
-      if (sharesFileSha) payload.sha = sharesFileSha;
-
-      const res = await fetch(url, { method: 'PUT', headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      if (res.ok) {
-        const d = await res.json();
-        sharesFileSha = d.content.sha;
+        const file = await ghGetFile('data/shares.json');
+        allSharedCourses = (file && file.data && file.data.shares) ? file.data.shares : [];
+      } catch (e) {
+        allSharedCourses = [];
       }
     }
 
@@ -1550,44 +1502,49 @@
 
       document.getElementById('shareCourseTitle').innerText = course.title;
       const listEl = document.getElementById('recipientsList');
-      listEl.innerHTML = '<div style="padding:1rem; text-align:center; color:var(--text-sub);"><i class="fa-solid fa-spinner fa-spin"></i> Chargement des élèves...</div>';
+      listEl.innerHTML = '<div style="padding:1.25rem; text-align:center; color:var(--text-sub);"><i class="fa-solid fa-spinner fa-spin"></i> Chargement des camarades...</div>';
       document.getElementById('shareModal').classList.add('active');
 
-      const registry = await fetchUsersRegistry();
-      const myCleanName = (currentSession.username || '').toLowerCase().trim();
+      try {
+        const regFile = await ghGetFile('data/users_index.json');
+        const registry = regFile ? regFile.data : { users: {} };
+        const myName = (currentSession.username || '').toLowerCase().trim();
 
-      // FILTRE INFAILLIBLE : Exclure strictement soi-même de la liste de partage
-      const otherUsers = Object.keys(registry.users || {}).filter(u => u.toLowerCase().trim() !== myCleanName);
+        // EXCLUSION STRICTE : Ne jamais s'afficher soi-même
+        const otherUsers = Object.keys(registry.users || {}).filter(u => u.toLowerCase().trim() !== myName);
 
-      if (otherUsers.length === 0) {
-        listEl.innerHTML = `<p style="font-size:0.85rem; color:var(--text-sub); padding:1rem; text-align:center;">Aucun autre élève inscrit pour le moment.</p>`;
-        return;
+        if (otherUsers.length === 0) {
+          listEl.innerHTML = `<p style="font-size:0.85rem; color:var(--text-sub); padding:1.25rem; text-align:center;">Aucun autre élève inscrit pour le moment.</p>`;
+          return;
+        }
+
+        listEl.innerHTML = '';
+        otherUsers.forEach(u => {
+          const uData = registry.users[u] || {};
+          const avatarHTML = renderAvatarHTML(u, uData.avatar, 34);
+          const bioText = uData.bio ? escapeHtml(uData.bio) : 'Élève CIEL';
+
+          const row = document.createElement('div');
+          row.className = 'recipient-row';
+          row.innerHTML = `
+            <input type="checkbox" value="${escapeHtml(u)}" class="share-recipient-cb" id="cb_${escapeHtml(u)}" style="width:18px; height:18px; cursor:pointer;" />
+            ${avatarHTML}
+            <div style="flex:1; min-width:0;">
+              <div style="font-weight:700; color:#fff; font-size:0.9rem;">@${escapeHtml(u)}</div>
+              <div style="font-size:0.75rem; color:var(--text-muted); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${bioText}</div>
+            </div>
+          `;
+          row.onclick = (e) => {
+            if (e.target.tagName !== 'INPUT') {
+              const cb = row.querySelector('.share-recipient-cb');
+              cb.checked = !cb.checked;
+            }
+          };
+          listEl.appendChild(row);
+        });
+      } catch (e) {
+        listEl.innerHTML = `<p style="color:var(--accent-rose); padding:1rem; text-align:center;">Erreur : ${escapeHtml(e.message)}</p>`;
       }
-
-      listEl.innerHTML = '';
-      otherUsers.forEach(u => {
-        const uData = registry.users[u] || {};
-        const avatarHTML = renderAvatarHTML(u, uData.avatar, 34);
-        const bioText = uData.bio ? escapeHtml(uData.bio) : 'Élève CIEL';
-
-        const row = document.createElement('div');
-        row.className = 'recipient-row';
-        row.innerHTML = `
-          <input type="checkbox" value="${escapeHtml(u)}" class="share-recipient-cb" id="cb_${escapeHtml(u)}" style="width:18px; height:18px; cursor:pointer;" />
-          ${avatarHTML}
-          <div style="flex:1; line-height:1.2;">
-            <div style="font-weight:700; color:#fff; font-size:0.9rem;">@${escapeHtml(u)}</div>
-            <div style="font-size:0.75rem; color:var(--text-muted);">${bioText}</div>
-          </div>
-        `;
-        row.onclick = (e) => {
-          if (e.target.tagName !== 'INPUT') {
-            const cb = row.querySelector('.share-recipient-cb');
-            cb.checked = !cb.checked;
-          }
-        };
-        listEl.appendChild(row);
-      });
     }
 
     function closeShareModal() {
@@ -1631,11 +1588,12 @@
           });
         });
 
-        await pushSharedCourses(allSharedCourses);
-        showToast(`Cours partagé à ${selected.join(', ')} !`, "success");
+        await ghPutFile('data/shares.json', { shares: allSharedCourses }, `Partage de @${currentSession.username}`);
+        showToast(`Cours partagé avec succès à : ${selected.join(', ')} !`, "success");
         closeShareModal();
       } catch (e) {
-        showToast("Erreur de partage : " + e.message, "error");
+        console.error(e);
+        showToast("Erreur lors du partage : " + e.message, "error");
       } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Envoyer le cours aux élèves choisis';
@@ -1655,7 +1613,7 @@
         date: new Date().toISOString()
       });
 
-      autoSaveUserVault();
+      triggerAutoSave();
       showToast("Ce cours a été importé dans votre classeur personnel !", "success");
       switchCourseSubView('mine');
     }
@@ -1665,7 +1623,9 @@
       if (!ok) return;
 
       allSharedCourses = allSharedCourses.filter(s => s.id !== shareId);
-      await pushSharedCourses(allSharedCourses);
+      try {
+        await ghPutFile('data/shares.json', { shares: allSharedCourses }, `Suppression partage`);
+      } catch(e) {}
       updateReceivedBadge();
       renderCourses();
       showToast("Partage supprimé de la boîte de réception.", "info");
@@ -1725,7 +1685,7 @@
           feed.innerHTML = `
             <div style="text-align: center; padding: 3rem 1rem; color: var(--text-sub);">
               <i class="fa-solid fa-folder-open" style="font-size: 2.8rem; margin-bottom: 0.75rem; opacity: 0.3;"></i>
-              <p style="font-size: 0.95rem;">Aucun cours dans cette matière.</p>
+              <p style="font-size: 0.95rem;">Aucun cours dans cette catégorie.</p>
               <p style="font-size: 0.8rem; margin-top: 0.3rem;">Ajoutez un cours avec le bouton <strong>+</strong>.</p>
             </div>`;
           return;
@@ -1771,7 +1731,7 @@
           feed.innerHTML = `
             <div style="text-align: center; padding: 3rem 1rem; color: var(--text-sub);">
               <i class="fa-solid fa-inbox" style="font-size: 2.8rem; margin-bottom: 0.75rem; opacity: 0.3;"></i>
-              <p style="font-size: 0.95rem;">Aucun cours reçu dans cette catégorie.</p>
+              <p style="font-size: 0.95rem;">Aucun cours reçu dans cette matière.</p>
             </div>`;
           return;
         }
@@ -1843,7 +1803,7 @@
     }
 
     /* ==========================================================
-       8. CRÉATION DE COURS & UPLOAD DIRECT GITHUB
+       8. CRÉATION DE COURS & UPLOAD FICHIERS
        ========================================================== */
     function openCourseModal() {
       pendingFiles = [];
@@ -1902,7 +1862,7 @@
         })
       });
 
-      if (!res.ok) throw new Error("Erreur téléversement");
+      if (!res.ok) throw new Error("Erreur téléversement GitHub");
       const data = await res.json();
       return {
         name: file.name,
@@ -1925,7 +1885,7 @@
       }
 
       btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement chiffré...';
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement...';
 
       try {
         const uploadedList = [];
@@ -1949,13 +1909,13 @@
 
         closeCourseModal();
         renderCourses();
-        autoSaveUserVault();
+        triggerAutoSave();
         showToast("Cours enregistré avec succès !", "success");
       } catch (err) {
         showToast("Erreur lors de l'enregistrement : " + err.message, "error");
       } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Sauvegarder dans mon coffre';
+        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Sauvegarder dans mon classeur';
       }
     }
 
@@ -1965,7 +1925,7 @@
 
       userVault.courses.splice(idx, 1);
       renderCourses();
-      autoSaveUserVault();
+      triggerAutoSave();
       showToast("Cours supprimé.", "info");
     }
 
@@ -2044,7 +2004,7 @@
       document.getElementById('fcQ').value = '';
       document.getElementById('fcA').value = '';
       renderFlashcards();
-      autoSaveUserVault();
+      triggerAutoSave();
       showToast("Flashcard ajoutée !", "success");
     }
 
@@ -2056,7 +2016,7 @@
       userVault.flashcards.splice(fcCursor, 1);
       fcFlipped = false;
       renderFlashcards();
-      autoSaveUserVault();
+      triggerAutoSave();
       showToast("Flashcard supprimée.", "info");
     }
 
@@ -2071,7 +2031,7 @@
         const row = document.createElement('div');
         row.className = 'todo-row';
         row.innerHTML = `
-          <div style="display:flex; align-items:center; gap:0.75rem; cursor:pointer; flex:1;" onclick="userVault.todos[${i}].done = !userVault.todos[${i}].done; renderTodos(); autoSaveUserVault();">
+          <div style="display:flex; align-items:center; gap:0.75rem; cursor:pointer; flex:1;" onclick="userVault.todos[${i}].done = !userVault.todos[${i}].done; renderTodos(); triggerAutoSave();">
             <i class="fa-${t.done ? 'solid fa-circle-check' : 'regular fa-circle'}" style="font-size: 1.2rem; color:${t.done ? 'var(--accent-green)' : 'var(--text-sub)'};"></i>
             <span style="${t.done ? 'text-decoration: line-through; color: var(--text-sub);' : ''}">${escapeHtml(t.text)}</span>
           </div>
@@ -2089,7 +2049,7 @@
       userVault.todos.push({ text: val, done: false });
       document.getElementById('todoInputText').value = '';
       renderTodos();
-      autoSaveUserVault();
+      triggerAutoSave();
     }
 
     async function deleteTodoItem(i) {
@@ -2097,7 +2057,7 @@
       if (!ok) return;
       userVault.todos.splice(i, 1);
       renderTodos();
-      autoSaveUserVault();
+      triggerAutoSave();
       showToast("Objectif supprimé.", "info");
     }
 
