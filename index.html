@@ -2,58 +2,90 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bac Pro CIEL | Hub & Stockage GitHub Dédié</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>CIEL StudyOS | Terminale Bac Pro</title>
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  
+  <!-- Markdown Parser -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <style>
     :root {
-      --bg-dark: #090d16;
-      --bg-card: #111827;
-      --bg-card-alt: #0d121f;
-      --border-color: #1f293d;
+      --bg-body: #090d16;
+      --bg-surface: #111827;
+      --bg-surface-elevated: #162032;
+      --bg-input: #0b111e;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-focus: #38bdf8;
       --primary: #38bdf8;
+      --primary-hover: #0284c7;
+      --primary-glow: rgba(56, 189, 248, 0.15);
       --accent: #6366f1;
       --accent-green: #10b981;
       --accent-orange: #f59e0b;
       --accent-rose: #f43f5e;
       --text-main: #f8fafc;
       --text-muted: #94a3b8;
-      --font-main: 'Plus Jakarta Sans', sans-serif;
+      --text-sub: #64748b;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+      --font-main: 'Inter', sans-serif;
       --font-mono: 'JetBrains Mono', monospace;
+      --nav-height: 64px;
+      --mobile-bottom-nav: 68px;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    
     body {
-      background-color: var(--bg-dark);
+      background-color: var(--bg-body);
       color: var(--text-main);
       font-family: var(--font-main);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
+      line-height: 1.5;
+      padding-bottom: calc(var(--mobile-bottom-nav) + 20px);
     }
 
+    @media (min-width: 851px) {
+      body { padding-bottom: 30px; }
+    }
+
+    /* Scrollbars stylisées */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-body); }
+    ::-webkit-scrollbar-thumb { background: #1f293d; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+    /* En-tête */
     header {
-      background: rgba(17, 24, 39, 0.95);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border-color);
+      background: rgba(17, 24, 39, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
       position: sticky;
       top: 0;
       z-index: 100;
-      padding: 0.85rem 1.5rem;
+      height: var(--nav-height);
+      display: flex;
+      align-items: center;
+      padding: 0 1.25rem;
     }
 
-    .nav-container {
+    .header-container {
       max-width: 1400px;
       margin: 0 auto;
+      width: 100%;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      flex-wrap: wrap;
       gap: 1rem;
     }
 
@@ -61,50 +93,57 @@
       display: flex;
       align-items: center;
       gap: 0.65rem;
-      font-weight: 800;
-      font-size: 1.2rem;
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: -0.3px;
     }
-    .brand i { color: var(--primary); text-shadow: 0 0 10px var(--primary); }
-
-    .nav-actions {
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--accent), var(--primary));
+      border-radius: var(--radius-sm);
       display: flex;
       align-items: center;
-      gap: 0.75rem;
-      flex-wrap: wrap;
+      justify-content: center;
+      color: #fff;
+      font-size: 1rem;
+      box-shadow: 0 0 15px var(--primary-glow);
     }
 
+    /* Statut Sync */
     .sync-status {
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       font-family: var(--font-mono);
-      background: var(--bg-card-alt);
-      padding: 0.4rem 0.85rem;
-      border-radius: 999px;
-      border: 1px solid var(--border-color);
+      background: var(--bg-surface-elevated);
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border);
     }
-    .status-dot { width: 9px; height: 9px; border-radius: 50%; background: #64748b; transition: 0.3s; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #64748b; transition: 0.3s; }
     .status-dot.synced { background: var(--accent-green); box-shadow: 0 0 8px var(--accent-green); }
     .status-dot.saving { background: var(--accent-orange); box-shadow: 0 0 8px var(--accent-orange); animation: pulse 1s infinite alternate; }
     .status-dot.error { background: var(--accent-rose); box-shadow: 0 0 8px var(--accent-rose); }
+    @keyframes pulse { from { opacity: 0.3; } to { opacity: 1; } }
 
-    @keyframes pulse { from { opacity: 0.4; } to { opacity: 1; } }
-
-    .nav-tabs {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-      margin: 1rem 0;
+    /* Navigation bureau */
+    .desktop-nav {
+      display: none;
+      gap: 0.4rem;
+    }
+    @media (min-width: 851px) {
+      .desktop-nav { display: flex; }
     }
 
-    .tab-btn {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
+    .nav-link {
+      background: transparent;
+      border: none;
       color: var(--text-muted);
-      padding: 0.55rem 1.1rem;
-      border-radius: 8px;
-      font-weight: 600;
+      padding: 0.5rem 0.9rem;
+      border-radius: var(--radius-sm);
+      font-weight: 500;
       font-size: 0.88rem;
       cursor: pointer;
       display: flex;
@@ -112,105 +151,159 @@
       gap: 0.5rem;
       transition: all 0.2s;
     }
-    .tab-btn:hover { color: #fff; background: #1e293b; }
-    .tab-btn.active {
+    .nav-link:hover { color: var(--text-main); background: var(--bg-surface-elevated); }
+    .nav-link.active {
       color: var(--primary);
-      border-color: var(--primary);
-      background: rgba(56, 189, 248, 0.08);
+      background: var(--primary-glow);
+      font-weight: 600;
     }
 
+    /* Barre de navigation mobile (Bottom App Bar) */
+    .mobile-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: var(--mobile-bottom-nav);
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 100;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+    @media (min-width: 851px) {
+      .mobile-nav { display: none; }
+    }
+
+    .mobile-tab-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      font-size: 0.68rem;
+      font-weight: 600;
+      width: 25%;
+      height: 100%;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .mobile-tab-btn i { font-size: 1.15rem; }
+    .mobile-tab-btn.active { color: var(--primary); }
+
+    /* Layout central */
     main {
       max-width: 1400px;
       margin: 0 auto;
-      padding: 0 1.5rem 2rem 1.5rem;
-      flex: 1;
+      padding: 1.25rem;
       width: 100%;
+      flex: 1;
     }
 
-    .tab-content { display: none; }
+    .tab-content { display: none; animation: fadeIn 0.2s ease-out; }
     .tab-content.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
+    /* Boutons standards */
     .btn {
-      background: var(--bg-card);
+      background: var(--bg-surface-elevated);
       color: var(--text-main);
-      border: 1px solid var(--border-color);
-      padding: 0.6rem 1.1rem;
-      border-radius: 8px;
+      border: 1px solid var(--border);
+      padding: 0.65rem 1.15rem;
+      border-radius: var(--radius-sm);
       font-weight: 600;
       font-size: 0.85rem;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
+      justify-content: center;
       gap: 0.5rem;
-      transition: 0.2s;
+      transition: all 0.2s;
+      min-height: 42px;
     }
-    .btn:hover { background: #1f293d; border-color: var(--primary); }
-    .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .btn-primary:hover { background: #4f46e5; }
+    .btn:active { transform: scale(0.98); }
+    .btn:hover { background: #1e293b; border-color: var(--primary); }
+    .btn-primary { background: var(--primary); border-color: var(--primary); color: #020617; font-weight: 700; }
+    .btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); color: #fff; }
     .btn-success { background: rgba(16, 185, 129, 0.15); border-color: var(--accent-green); color: #34d399; }
     .btn-danger { background: rgba(244, 63, 94, 0.15); border-color: var(--accent-rose); color: #fda4af; }
+    .btn-danger:hover { background: var(--accent-rose); color: #fff; }
 
+    /* Cartes & Conteneurs */
     .card {
-      background: var(--bg-card);
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
       padding: 1.25rem;
       margin-bottom: 1.25rem;
     }
 
-    .grid-2 {
+    /* Grille responsive bureau/mobile */
+    .layout-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr;
       gap: 1.25rem;
     }
-    @media (max-width: 850px) { .grid-2 { grid-template-columns: 1fr; } }
+    @media (min-width: 950px) {
+      .layout-grid { grid-template-columns: 420px 1fr; }
+    }
 
+    /* Formulaires */
     .form-group { margin-bottom: 1rem; }
     .form-group label {
       display: block;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       font-weight: 600;
       color: var(--text-muted);
       text-transform: uppercase;
+      letter-spacing: 0.5px;
       margin-bottom: 0.4rem;
     }
     .form-control {
       width: 100%;
-      background: var(--bg-card-alt);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 0.65rem 0.85rem;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.7rem 0.9rem;
       color: #fff;
       font-family: var(--font-main);
       font-size: 0.9rem;
+      transition: border-color 0.2s;
     }
-    .form-control:focus { outline: none; border-color: var(--primary); }
-    textarea.form-control { resize: vertical; min-height: 160px; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+    .form-control:focus { outline: none; border-color: var(--border-focus); box-shadow: 0 0 0 2px var(--primary-glow); }
+    textarea.form-control { resize: vertical; min-height: 150px; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
 
-    /* Zone de téléversement */
+    /* Zone de téléversement Drag & Drop */
     .file-dropzone {
-      border: 2px dashed var(--border-color);
-      border-radius: 8px;
+      border: 2px dashed var(--border);
+      border-radius: var(--radius-sm);
       padding: 1.25rem;
       text-align: center;
       cursor: pointer;
       transition: 0.2s;
-      background: rgba(13, 18, 31, 0.5);
+      background: rgba(11, 17, 30, 0.6);
     }
-    .file-dropzone:hover { border-color: var(--primary); background: rgba(56, 189, 248, 0.05); }
+    .file-dropzone:hover { border-color: var(--primary); background: var(--primary-glow); }
     .file-dropzone input { display: none; }
 
-    .attached-preview-list {
+    .file-chips-list {
       display: flex;
       flex-wrap: wrap;
       gap: 0.5rem;
       margin-top: 0.75rem;
     }
     .file-chip {
-      background: #1e293b;
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      padding: 0.35rem 0.65rem;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-full);
+      padding: 0.35rem 0.75rem;
       font-size: 0.75rem;
       display: inline-flex;
       align-items: center;
@@ -219,89 +312,164 @@
     }
     .file-chip i.del-icon { cursor: pointer; color: var(--accent-rose); margin-left: 0.3rem; }
 
-    /* Rendu des cours */
-    .course-item {
-      background: var(--bg-card-alt);
-      border: 1px solid var(--border-color);
-      border-radius: 10px;
+    /* Filtres et Recherche de cours */
+    .search-filter-bar {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+    @media (min-width: 600px) {
+      .search-filter-bar { flex-direction: row; align-items: center; }
+    }
+
+    .search-input-wrap {
+      position: relative;
+      flex: 1;
+    }
+    .search-input-wrap i {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-sub);
+    }
+    .search-input-wrap input {
+      padding-left: 2.4rem;
+    }
+
+    .filter-tags-scroll {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .filter-tag {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 0.4rem 0.8rem;
+      border-radius: var(--radius-full);
+      font-size: 0.78rem;
+      font-weight: 500;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .filter-tag.active {
+      background: var(--primary);
+      color: #020617;
+      font-weight: 600;
+      border-color: var(--primary);
+    }
+
+    /* Cartes de cours */
+    .course-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
       padding: 1.25rem;
       margin-bottom: 1rem;
-      transition: border-color 0.2s;
+      transition: transform 0.2s, border-color 0.2s;
     }
-    .course-item:hover { border-color: var(--primary); }
+    .course-card:hover { border-color: rgba(56, 189, 248, 0.4); }
+
     .badge {
       display: inline-block;
       padding: 0.2rem 0.6rem;
       font-size: 0.7rem;
       font-weight: 700;
-      border-radius: 999px;
+      border-radius: var(--radius-full);
       text-transform: uppercase;
       background: rgba(56, 189, 248, 0.12);
       color: var(--primary);
+      letter-spacing: 0.4px;
     }
-    .course-title { font-size: 1.15rem; font-weight: 700; margin: 0.4rem 0; }
+
+    .course-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1rem;
+      margin-bottom: 0.6rem;
+    }
+    .course-title { font-size: 1.15rem; font-weight: 700; color: var(--text-main); }
     .course-body {
       font-size: 0.9rem;
       color: #cbd5e1;
       line-height: 1.6;
-      margin-top: 0.6rem;
     }
-    .course-body code { background: #000; padding: 0.15rem 0.35rem; border-radius: 4px; font-family: var(--font-mono); color: var(--primary); }
-    .course-body pre { background: #050811; padding: 0.75rem; border-radius: 6px; overflow-x: auto; margin: 0.6rem 0; }
+    .course-body code {
+      background: #000;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      color: var(--primary);
+      font-size: 0.82rem;
+    }
+    .course-body pre {
+      background: #050811;
+      padding: 0.75rem;
+      border-radius: var(--radius-sm);
+      overflow-x: auto;
+      margin: 0.75rem 0;
+      border: 1px solid var(--border);
+    }
 
     .course-attachments {
       margin-top: 1rem;
-      padding-top: 0.75rem;
-      border-top: 1px solid var(--border-color);
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-    }
-    .img-attachment-thumb {
-      max-width: 180px;
-      max-height: 110px;
-      border-radius: 6px;
-      border: 1px solid var(--border-color);
-      cursor: pointer;
-      object-fit: cover;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .img-attachment-thumb:hover {
-      transform: scale(1.04);
-      box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+      padding-top: 0.85rem;
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 0.65rem;
     }
 
-    .file-download-link {
-      background: #111827;
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      padding: 0.45rem 0.8rem;
+    .img-preview-card {
+      position: relative;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      aspect-ratio: 16 / 10;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      background: #000;
+    }
+    .img-preview-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.25s;
+    }
+    .img-preview-card:hover img { transform: scale(1.06); }
+
+    .file-download-badge {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 0.75rem;
       color: var(--primary);
       text-decoration: none;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-family: var(--font-mono);
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
       transition: 0.2s;
     }
-    .file-download-link:hover { background: #1e293b; color: #fff; }
+    .file-download-badge:hover { background: #1e293b; color: #fff; }
 
-    .empty-state {
-      text-align: center;
-      padding: 3rem 1rem;
-      color: var(--text-muted);
-    }
-    .empty-state i { font-size: 2.8rem; margin-bottom: 1rem; opacity: 0.4; }
-
-    /* Flashcard Box */
-    .fc-box {
-      max-width: 600px;
+    /* Flashcards Responsive */
+    .flashcard-box {
+      max-width: 580px;
       margin: 1.5rem auto;
-      background: var(--bg-card-alt);
-      border: 2px solid var(--border-color);
-      border-radius: 14px;
-      min-height: 240px;
+      background: var(--bg-surface);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      min-height: 260px;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -310,190 +478,335 @@
       text-align: center;
       cursor: pointer;
       user-select: none;
-      transition: all 0.3s;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
     }
-    .fc-box:hover { border-color: var(--primary); }
+    .flashcard-box:active { transform: scale(0.98); }
+    .flashcard-box.flipped {
+      border-color: var(--primary);
+      background: linear-gradient(180deg, var(--bg-surface) 0%, rgba(56, 189, 248, 0.05) 100%);
+    }
+
+    /* Modal / Visionneuse plein écran pour images */
+    .image-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.92);
+      backdrop-filter: blur(8px);
+      z-index: 999;
+      justify-content: center;
+      align-items: center;
+      padding: 1rem;
+    }
+    .image-modal.active { display: flex; }
+    .image-modal img {
+      max-width: 100%;
+      max-height: 90vh;
+      border-radius: var(--radius-sm);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+      object-fit: contain;
+    }
+    .modal-close-btn {
+      position: absolute;
+      top: 1.25rem;
+      right: 1.25rem;
+      background: rgba(255, 255, 255, 0.15);
+      border: none;
+      color: #fff;
+      font-size: 1.5rem;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Collapse / Dépliable sur mobile pour le formulaire */
+    .collapse-btn-mobile {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border);
+      padding: 0.85rem 1.25rem;
+      border-radius: var(--radius-md);
+      color: var(--text-main);
+      font-weight: 600;
+      cursor: pointer;
+      margin-bottom: 1rem;
+    }
+    @media (min-width: 950px) {
+      .collapse-btn-mobile { display: none; }
+      .collapse-content { display: block !important; }
+    }
+
+    .collapse-content {
+      display: none;
+    }
   </style>
 </head>
 <body>
 
+  <!-- Header supérieur fixe -->
   <header>
-    <div class="nav-container">
+    <div class="header-container">
       <div class="brand">
-        <i class="fa-solid fa-server"></i>
-        <span>BAC PRO CIEL HUB</span>
+        <div class="brand-icon"><i class="fa-solid fa-graduation-cap"></i></div>
+        <span>CIEL Hub</span>
       </div>
 
-      <div class="nav-actions">
-        <div class="sync-status">
-          <span class="status-dot" id="statusDot"></span>
-          <span id="statusText">Initialisation...</span>
-        </div>
-        <button class="btn" onclick="pullFromGitHub(false)"><i class="fa-solid fa-arrows-rotate"></i> Forcer Synchro</button>
+      <!-- Navigation bureau (masquée sur smartphone) -->
+      <nav class="desktop-nav">
+        <button class="nav-link active" onclick="switchTab('tab-courses')"><i class="fa-solid fa-book-open"></i> Cours</button>
+        <button class="nav-link" onclick="switchTab('tab-flashcards')"><i class="fa-solid fa-clone"></i> Flashcards</button>
+        <button class="nav-link" onclick="switchTab('tab-todos')"><i class="fa-solid fa-list-check"></i> Planning</button>
+        <button class="nav-link" onclick="switchTab('tab-settings')"><i class="fa-solid fa-gear"></i> GitHub</button>
+      </nav>
+
+      <!-- Pill de statut synchronisation -->
+      <div class="sync-status">
+        <span class="status-dot" id="statusDot"></span>
+        <span id="statusText">Connexion...</span>
       </div>
     </div>
   </header>
 
+  <!-- Contenu Principal -->
   <main>
-    <div class="nav-tabs">
-      <button class="tab-btn active" onclick="switchTab('tab-courses')"><i class="fa-solid fa-book-bookmark"></i> Mes Cours & TP</button>
-      <button class="tab-btn" onclick="switchTab('tab-flashcards')"><i class="fa-solid fa-clone"></i> Flashcards</button>
-      <button class="tab-btn" onclick="switchTab('tab-todos')"><i class="fa-solid fa-list-check"></i> Objectifs / Planning</button>
-      <button class="tab-btn" onclick="switchTab('tab-settings')"><i class="fa-solid fa-gear"></i> Paramètres GitHub</button>
-    </div>
-
-    <!-- TAB 1: COURS & FICHIERS -->
+    <!-- ONGLET 1: COURS & FICHIERS -->
     <section id="tab-courses" class="tab-content active">
-      <div class="grid-2">
-        <!-- Formulaire de saisie -->
-        <div class="card">
-          <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-plus-circle" style="color: var(--primary);"></i> Nouveau Cours / TP</h3>
-
-          <div class="form-group">
-            <label>Matière</label>
-            <select class="form-control" id="cSubject">
-              <option value="CIEL - Réseaux & Informatique">CIEL - Réseaux & Informatique</option>
-              <option value="CIEL - Cybersécurité">CIEL - Cybersécurité</option>
-              <option value="CIEL - Électronique / IoT">CIEL - Électronique / IoT</option>
-              <option value="Mathématiques">Mathématiques</option>
-              <option value="Physique-Chimie">Physique-Chimie</option>
-              <option value="Français">Français</option>
-              <option value="Histoire-Géographie & EMC">Histoire-Géographie & EMC</option>
-              <option value="PSE">PSE</option>
-              <option value="Économie-Gestion">Économie-Gestion</option>
-              <option value="Anglais">Anglais</option>
-              <option value="Allemand">Allemand</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Titre de la fiche</label>
-            <input type="text" class="form-control" id="cTitle" placeholder="Ex: TP Adressage IPv4 /28 et Switch Cisco..." />
-          </div>
-
-          <div class="form-group">
-            <label>Contenu (Markdown supporté)</label>
-            <textarea class="form-control" id="cContent" placeholder="Notes, cours, syntaxes Linux, équations..."></textarea>
-          </div>
-
-          <!-- Zone d'importation réelle vers GitHub (uploads/) -->
-          <div class="form-group">
-            <label>Pièces jointes stockées sur GitHub (Images, PDF, .pkt, .py, .zip)</label>
-            <div class="file-dropzone" onclick="document.getElementById('fileInput').click()">
-              <i class="fa-solid fa-cloud-arrow-up" style="font-size: 1.6rem; color: var(--primary); margin-bottom: 0.5rem;"></i>
-              <p style="font-size: 0.85rem; color: var(--text-muted);">Clique pour sélectionner des fichiers à uploader sur GitHub</p>
-              <input type="file" id="fileInput" multiple onchange="handleFileSelect(event)" />
-            </div>
-            <div class="attached-preview-list" id="attachedPreview"></div>
-          </div>
-
-          <button class="btn btn-primary" id="btnSaveCourse" style="width: 100%; justify-content: center;" onclick="addCourse()">
-            <i class="fa-solid fa-cloud-arrow-up"></i> Téléverser et enregistrer le cours
+      <div class="layout-grid">
+        
+        <!-- Colonne Gauche : Formulaire (repliable sur smartphone) -->
+        <div>
+          <button class="collapse-btn-mobile" onclick="toggleCourseFormMobile()">
+            <span><i class="fa-solid fa-pen-to-square" style="color: var(--primary);"></i> Nouvelle Fiche de Cours</span>
+            <i class="fa-solid fa-chevron-down" id="collapseIcon"></i>
           </button>
+
+          <div class="card collapse-content" id="courseFormCollapse">
+            <h3 style="margin-bottom: 1rem; font-size: 1.05rem; display: flex; align-items: center; gap: 0.5rem;">
+              <i class="fa-solid fa-circle-plus" style="color: var(--primary);"></i>
+              <span>Créer une fiche de révision</span>
+            </h3>
+
+            <div class="form-group">
+              <label>Matière</label>
+              <select class="form-control" id="cSubject">
+                <option value="CIEL - Réseaux & Informatique">CIEL - Réseaux & Informatique</option>
+                <option value="CIEL - Cybersécurité">CIEL - Cybersécurité</option>
+                <option value="CIEL - Électronique / IoT">CIEL - Électronique / IoT</option>
+                <option value="Mathématiques">Mathématiques</option>
+                <option value="Physique-Chimie">Physique-Chimie</option>
+                <option value="Français">Français</option>
+                <option value="Histoire-Géographie & EMC">Histoire-Géographie & EMC</option>
+                <option value="PSE">PSE</option>
+                <option value="Économie-Gestion">Économie-Gestion</option>
+                <option value="Anglais">Anglais</option>
+                <option value="Allemand">Allemand</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label>Titre de la leçon</label>
+              <input type="text" class="form-control" id="cTitle" placeholder="Ex: Routage OSPF & VLANs Cisco..." />
+            </div>
+
+            <div class="form-group">
+              <label>Contenu (Markdown supporté)</label>
+              <textarea class="form-control" id="cContent" placeholder="Notes, syntaxes de commandes, schémas textuels..."></textarea>
+            </div>
+
+            <!-- Upload direct GitHub (uploads/) -->
+            <div class="form-group">
+              <label>Documents & Schémas (Stockés sur GitHub)</label>
+              <div class="file-dropzone" onclick="document.getElementById('fileInput').click()">
+                <i class="fa-solid fa-cloud-arrow-up" style="font-size: 1.6rem; color: var(--primary); margin-bottom: 0.4rem;"></i>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">Joindre des images (PNG, JPG) ou TP (PDF, PKT, ZIP)</p>
+                <input type="file" id="fileInput" multiple onchange="handleFileSelect(event)" />
+              </div>
+              <div class="file-chips-list" id="attachedPreview"></div>
+            </div>
+
+            <button class="btn btn-primary" id="btnSaveCourse" style="width: 100%;" onclick="addCourse()">
+              <i class="fa-solid fa-cloud-arrow-up"></i> Sauvegarder & Synchroniser
+            </button>
+          </div>
         </div>
 
-        <!-- Classeur de cours existants -->
+        <!-- Colonne Droite : Liste, Recherche et Filtres -->
         <div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h3><i class="fa-solid fa-folder-open" style="color: var(--accent-orange);"></i> Classeur actif</h3>
-            <span id="courseCount" style="font-size: 0.85rem; color: var(--text-muted); font-family: var(--font-mono);">0 cours</span>
+          <div class="search-filter-bar">
+            <div class="search-input-wrap">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input type="text" class="form-control" id="searchInput" placeholder="Rechercher un mot clé, une commande..." oninput="filterCourses()" />
+            </div>
           </div>
+
+          <!-- Tags défilables sur mobile -->
+          <div class="filter-tags-scroll" id="categoryFilterTags">
+            <span class="filter-tag active" onclick="setSubjectFilter('all')">Tous</span>
+            <span class="filter-tag" onclick="setSubjectFilter('CIEL - Réseaux & Informatique')">Réseaux</span>
+            <span class="filter-tag" onclick="setSubjectFilter('CIEL - Cybersécurité')">Cybersécurité</span>
+            <span class="filter-tag" onclick="setSubjectFilter('CIEL - Électronique / IoT')">Électronique</span>
+            <span class="filter-tag" onclick="setSubjectFilter('Mathématiques')">Maths</span>
+            <span class="filter-tag" onclick="setSubjectFilter('Physique-Chimie')">Physique</span>
+            <span class="filter-tag" onclick="setSubjectFilter('PSE')">PSE</span>
+            <span class="filter-tag" onclick="setSubjectFilter('Français')">Français</span>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin: 1rem 0 0.75rem 0;">
+            <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;" id="courseCount">0 fiche</span>
+            <button class="btn" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;" onclick="pullFromGitHub(false)">
+              <i class="fa-solid fa-rotate"></i> Actualiser
+            </button>
+          </div>
+
+          <!-- Liste dynamique de cours -->
           <div id="coursesList"></div>
         </div>
+
       </div>
     </section>
 
-    <!-- TAB 2: FLASHCARDS -->
+    <!-- ONGLET 2: FLASHCARDS -->
     <section id="tab-flashcards" class="tab-content">
-      <div class="grid-2">
+      <div style="max-width: 650px; margin: 0 auto;">
+        
         <div class="card">
-          <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-square-plus" style="color: var(--primary);"></i> Nouvelle Flashcard</h3>
+          <h3 style="margin-bottom: 1rem; font-size: 1.05rem;"><i class="fa-solid fa-square-plus" style="color: var(--primary);"></i> Créer une flashcard</h3>
           <div class="form-group">
             <label>Discipline</label>
-            <input type="text" class="form-control" id="fcSubject" placeholder="Ex: Réseaux, Cybersécurité, Maths..." />
+            <input type="text" class="form-control" id="fcSubject" placeholder="Ex: Réseaux CIEL, Cybersécurité..." />
           </div>
           <div class="form-group">
             <label>Question (Recto)</label>
-            <input type="text" class="form-control" id="fcQuestion" placeholder="Ex: Quel port écoute SSH par défaut ?" />
+            <input type="text" class="form-control" id="fcQuestion" placeholder="Ex: Quel port écoute HTTPS ?" />
           </div>
           <div class="form-group">
             <label>Réponse (Verso)</label>
-            <textarea class="form-control" id="fcAnswer" style="min-height: 100px;" placeholder="Ex: Port 22 en protocole TCP"></textarea>
+            <textarea class="form-control" id="fcAnswer" style="min-height: 90px;" placeholder="Ex: Port 443 (TCP)"></textarea>
           </div>
-          <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="addFlashcard()">
-            <i class="fa-solid fa-plus"></i> Ajouter la carte (Auto-Sync)
+          <button class="btn btn-primary" style="width: 100%;" onclick="addFlashcard()">
+            <i class="fa-solid fa-plus"></i> Ajouter la carte
           </button>
         </div>
 
         <div class="card" style="text-align: center;">
-          <h3><i class="fa-solid fa-play" style="color: var(--accent-green);"></i> Entraînement Flashcards</h3>
-          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Clique sur la boîte pour révéler la réponse</p>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <span class="badge" id="fcCurrentBadge">Discipline</span>
+            <span style="font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-muted);" id="fcCounter">0 / 0</span>
+          </div>
 
-          <div class="fc-box" id="fcPlayBox" onclick="toggleFlipCard()">
-            <div id="fcPlayContent" style="font-size: 1.15rem; font-weight: 600;">Aucune flashcard</div>
+          <div class="flashcard-box" id="fcPlayBox" onclick="toggleFlipCard()">
+            <div id="fcPlayContent" style="font-size: 1.15rem; font-weight: 600; line-height: 1.5;">Aucune flashcard</div>
+            <span style="font-size: 0.75rem; color: var(--text-sub); margin-top: 1.5rem; display: flex; align-items: center; gap: 0.4rem;">
+              <i class="fa-solid fa-hand-pointer"></i> Toucher pour retourner
+            </span>
           </div>
 
           <div style="display: flex; justify-content: center; gap: 0.75rem; margin-top: 1rem;">
-            <button class="btn" onclick="prevFlashcard()"><i class="fa-solid fa-chevron-left"></i> Précédente</button>
+            <button class="btn" style="flex: 1;" onclick="prevFlashcard()"><i class="fa-solid fa-chevron-left"></i></button>
             <button class="btn btn-danger" onclick="deleteCurrentFlashcard()"><i class="fa-solid fa-trash-can"></i></button>
-            <button class="btn btn-primary" onclick="nextFlashcard()">Suivante <i class="fa-solid fa-chevron-right"></i></button>
+            <button class="btn btn-primary" style="flex: 1;" onclick="nextFlashcard()"><i class="fa-solid fa-chevron-right"></i></button>
           </div>
-          <div id="fcCounter" style="margin-top: 0.8rem; font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted);">0 / 0</div>
         </div>
+
       </div>
     </section>
 
-    <!-- TAB 3: TODOS -->
+    <!-- ONGLET 3: TODOS -->
     <section id="tab-todos" class="tab-content">
-      <div class="card" style="max-width: 800px; margin: 0 auto;">
-        <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-tasks" style="color: var(--primary);"></i> Objectifs & Planning</h3>
-        <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
-          <input type="text" class="form-control" id="todoInput" placeholder="Ex: Finir le rapport de projet CIEL..." onkeypress="if(event.key==='Enter') addTodo()" />
-          <button class="btn btn-primary" onclick="addTodo()"><i class="fa-solid fa-plus"></i></button>
+      <div style="max-width: 700px; margin: 0 auto;">
+        <div class="card">
+          <h3 style="margin-bottom: 1rem; font-size: 1.05rem;"><i class="fa-solid fa-list-check" style="color: var(--primary);"></i> Objectifs & Devoirs</h3>
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem;">
+            <input type="text" class="form-control" id="todoInput" placeholder="Ex: Terminer le rapport de projet CIEL..." onkeypress="if(event.key==='Enter') addTodo()" />
+            <button class="btn btn-primary" onclick="addTodo()"><i class="fa-solid fa-plus"></i></button>
+          </div>
+          <div id="todosContainer"></div>
         </div>
-        <div id="todosContainer"></div>
       </div>
     </section>
 
-    <!-- TAB 4: SETTINGS GITHUB -->
+    <!-- ONGLET 4: SETTINGS GITHUB -->
     <section id="tab-settings" class="tab-content">
-      <div class="card" style="max-width: 750px; margin: 0 auto;">
-        <h3 style="margin-bottom: 0.5rem;"><i class="fa-brands fa-github" style="color: var(--primary);"></i> Paramètres de Dépôt GitHub</h3>
-        <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">
-          Les fichiers et images téléversés sont placés directement dans <code>uploads/</code> et les données de cours dans <code>data/bac_data.json</code>.
-        </p>
+      <div style="max-width: 650px; margin: 0 auto;">
+        <div class="card">
+          <h3 style="margin-bottom: 0.5rem; font-size: 1.05rem;"><i class="fa-brands fa-github" style="color: var(--primary);"></i> Synchronisation GitHub</h3>
+          <p style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 1.25rem;">
+            Les données sont sauvegardées en continu dans <code>data/bac_data.json</code> et les images dans <code>uploads/</code>.
+          </p>
 
-        <div class="form-group">
-          <label>Utilisateur / Organisation GitHub</label>
-          <input type="text" class="form-control" id="ghOwner" value="fazerdino1" />
+          <div class="form-group">
+            <label>Utilisateur GitHub</label>
+            <input type="text" class="form-control" id="ghOwner" value="fazerdino1" />
+          </div>
+
+          <div class="form-group">
+            <label>Nom du Dépôt</label>
+            <input type="text" class="form-control" id="ghRepo" value="revision-bac-pro-Tciel" />
+          </div>
+
+          <div class="form-group">
+            <label>Branche</label>
+            <input type="text" class="form-control" id="ghBranch" value="main" />
+          </div>
+
+          <div class="form-group">
+            <label>GitHub Personal Access Token (PAT)</label>
+            <div style="position: relative;">
+              <input type="password" class="form-control" id="ghToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
+              <button type="button" onclick="toggleTokenVisibility()" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-sub); cursor: pointer;">
+                <i class="fa-solid fa-eye" id="tokenEyeIcon"></i>
+              </button>
+            </div>
+            <small style="color: var(--text-sub); font-size: 0.72rem; display: block; margin-top: 0.35rem;">
+              Token conservé uniquement dans le navigateur local. Scope requis : <strong>repo</strong>.
+            </small>
+          </div>
+
+          <button class="btn btn-primary" style="width: 100%;" onclick="saveSettings()">
+            <i class="fa-solid fa-floppy-disk"></i> Enregistrer & Connecter
+          </button>
         </div>
-
-        <div class="form-group">
-          <label>Nom du Dépôt</label>
-          <input type="text" class="form-control" id="ghRepo" value="revision-bac-pro-Tciel" />
-        </div>
-
-        <div class="form-group">
-          <label>Branche principale</label>
-          <input type="text" class="form-control" id="ghBranch" value="main" />
-        </div>
-
-        <div class="form-group">
-          <label>GitHub Personal Access Token (PAT Classic avec scope 'repo')</label>
-          <input type="password" class="form-control" id="ghToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
-          <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 0.35rem;">
-            Le token est conservé uniquement dans le navigateur local et n'est jamais publié en clair.
-          </small>
-        </div>
-
-        <button class="btn btn-primary" onclick="saveSettings()"><i class="fa-solid fa-floppy-disk"></i> Enregistrer et Connecter</button>
       </div>
     </section>
   </main>
 
+  <!-- Barre de navigation mobile inférieure (Fixe au pouce) -->
+  <nav class="mobile-nav">
+    <button class="mobile-tab-btn active" onclick="switchTab('tab-courses')">
+      <i class="fa-solid fa-book-open"></i>
+      <span>Cours</span>
+    </button>
+    <button class="mobile-tab-btn" onclick="switchTab('tab-flashcards')">
+      <i class="fa-solid fa-clone"></i>
+      <span>Flashcards</span>
+    </button>
+    <button class="mobile-tab-btn" onclick="switchTab('tab-todos')">
+      <i class="fa-solid fa-list-check"></i>
+      <span>Planning</span>
+    </button>
+    <button class="mobile-tab-btn" onclick="switchTab('tab-settings')">
+      <i class="fa-solid fa-gear"></i>
+      <span>GitHub</span>
+    </button>
+  </nav>
+
+  <!-- Visionneuse Lightbox Plein Écran -->
+  <div class="image-modal" id="imageModal" onclick="closeImageModal()">
+    <button class="modal-close-btn" onclick="closeImageModal()"><i class="fa-solid fa-xmark"></i></button>
+    <img id="modalImageSrc" src="" alt="Agrandissement image" onclick="event.stopPropagation()" />
+  </div>
+
   <script>
     /* ==========================================================
-       1. ÉTAT GLOBAL ET CONFIGURATION
+       1. ÉTAT GLOBAL
        ========================================================== */
     let store = JSON.parse(localStorage.getItem('ciel_app_data')) || {
       courses: [],
@@ -514,6 +827,7 @@
     let autoSaveTimer = null;
     let fcIndex = 0;
     let isFlipped = false;
+    let activeSubjectFilter = 'all';
 
     window.onload = async () => {
       document.getElementById('ghOwner').value = ghConfig.owner;
@@ -526,22 +840,50 @@
       renderTodos();
 
       if (ghConfig.token) {
-        setSyncStatus('saving', 'Synchronisation GitHub...');
+        setSyncStatus('saving', 'Synchro...');
         await pullFromGitHub(true);
       } else {
-        setSyncStatus('', 'Token manquant (Onglet Paramètres)');
+        setSyncStatus('', 'Local');
       }
     };
 
+    /* ==========================================================
+       2. NAVIGATION RESPONSIVE & UI
+       ========================================================== */
     function switchTab(tabId) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.mobile-tab-btn').forEach(el => el.classList.remove('active'));
 
       const target = document.getElementById(tabId);
       if (target) target.classList.add('active');
 
-      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
-      if (btn) btn.classList.add('active');
+      document.querySelectorAll(`[onclick="switchTab('${tabId}')"]`).forEach(btn => btn.classList.add('active'));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function toggleCourseFormMobile() {
+      const form = document.getElementById('courseFormCollapse');
+      const icon = document.getElementById('collapseIcon');
+      if (form.style.display === 'block') {
+        form.style.display = 'none';
+        icon.className = 'fa-solid fa-chevron-down';
+      } else {
+        form.style.display = 'block';
+        icon.className = 'fa-solid fa-chevron-up';
+      }
+    }
+
+    function toggleTokenVisibility() {
+      const input = document.getElementById('ghToken');
+      const icon = document.getElementById('tokenEyeIcon');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fa-solid fa-eye-slash';
+      } else {
+        input.type = 'password';
+        icon.className = 'fa-solid fa-eye';
+      }
     }
 
     function setSyncStatus(state, message) {
@@ -553,13 +895,11 @@
     }
 
     /* ==========================================================
-       2. TÉLÉVERSEMENT DES FICHIERS ET IMAGES DIRECT SUR GITHUB
+       3. TÉLÉVERSEMENT DES FICHIERS DIRECT VERS GITHUB
        ========================================================== */
     function handleFileSelect(e) {
       const files = Array.from(e.target.files);
-      files.forEach(file => {
-        localSelectedFiles.push(file);
-      });
+      files.forEach(file => localSelectedFiles.push(file));
       renderSelectedFiles();
       e.target.value = '';
     }
@@ -573,7 +913,7 @@
         chip.className = 'file-chip';
         chip.innerHTML = `
           <i class="${isImg ? 'fa-solid fa-image' : 'fa-solid fa-file'}"></i>
-          <span>${escapeHtml(f.name)} (${Math.round(f.size / 1024)} Ko)</span>
+          <span>${escapeHtml(f.name)}</span>
           <i class="fa-solid fa-xmark del-icon" onclick="removeSelectedFile(${idx})"></i>
         `;
         container.appendChild(chip);
@@ -585,20 +925,15 @@
       renderSelectedFiles();
     }
 
-    // Convertit un fichier en Base64 pur (sans le préfixe data:...;base64,)
     function getFileBase64(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = () => {
-          const base64Content = reader.result.split(',')[1];
-          resolve(base64Content);
-        };
+        reader.onload = () => resolve(reader.result.split(',')[1]);
         reader.onerror = err => reject(err);
         reader.readAsDataURL(file);
       });
     }
 
-    // Pousse un fichier physique dans le dossier uploads/ du dépôt GitHub
     async function uploadFileDirectToGitHub(file) {
       const base64Data = await getFileBase64(file);
       const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -624,7 +959,7 @@
 
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.message || `Erreur téléversement GitHub (${res.status})`);
+        throw new Error(err.message || `Code ${res.status}`);
       }
 
       const resData = await res.json();
@@ -639,18 +974,18 @@
     }
 
     /* ==========================================================
-       3. SYNCHRONISATION AUTOMATIQUE DES COURS ET DONNÉES
+       4. AUTO-SYNCHRONISATION ET PERSISTANCE
        ========================================================== */
     function triggerAutoSave() {
       store.lastUpdated = new Date().toISOString();
       localStorage.setItem('ciel_app_data', JSON.stringify(store));
 
       if (!ghConfig.token) {
-        setSyncStatus('', 'Sauvegardé en local (token non configuré)');
+        setSyncStatus('', 'Local');
         return;
       }
 
-      setSyncStatus('saving', 'Auto-sauvegarde en cours...');
+      setSyncStatus('saving', 'Envoi...');
       clearTimeout(autoSaveTimer);
 
       autoSaveTimer = setTimeout(() => {
@@ -682,7 +1017,7 @@
         }
 
         const payload = {
-          message: `Mise à jour cours Bac CIEL [${new Date().toLocaleTimeString('fr-FR')}]`,
+          message: `Maj Bac CIEL [${new Date().toLocaleTimeString('fr-FR')}]`,
           content: utf8ToB64(JSON.stringify(store, null, 2)),
           branch: ghConfig.branch
         };
@@ -698,14 +1033,14 @@
           body: JSON.stringify(payload)
         });
 
-        if (!res.ok) throw new Error(`Erreur HTTP ${res.status}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const resData = await res.json();
         currentDataSha = resData.content.sha;
-        setSyncStatus('synced', `Synchronisé (${new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})})`);
+        setSyncStatus('synced', `À jour ${new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}`);
       } catch (err) {
         console.error(err);
-        setSyncStatus('error', 'Erreur sauvegarde GitHub');
+        setSyncStatus('error', 'Erreur sync');
       }
     }
 
@@ -722,7 +1057,7 @@
         });
 
         if (res.status === 404) {
-          setSyncStatus('synced', 'Dépôt prêt (vide)');
+          setSyncStatus('synced', 'Dépôt prêt');
           return;
         }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -736,38 +1071,57 @@
         renderCourses();
         renderFlashcards();
         renderTodos();
-        setSyncStatus('synced', 'À jour avec GitHub');
-        if (!silent) alert("Données synchronisées depuis GitHub !");
+        setSyncStatus('synced', 'Synchronisé');
+        if (!silent) alert("Données synchronisées !");
       } catch (e) {
         console.error(e);
-        setSyncStatus('error', 'Erreur lecture');
-        if (!silent) alert("Échec de la récupération : " + e.message);
+        setSyncStatus('error', 'Erreur');
       }
     }
 
     /* ==========================================================
-       4. COURS & CLASSEUR
+       5. GESTION DES COURS & FILTRES
        ========================================================== */
+    function setSubjectFilter(sub) {
+      activeSubjectFilter = sub;
+      document.querySelectorAll('.filter-tag').forEach(tag => {
+        tag.classList.toggle('active', tag.innerText === (sub === 'all' ? 'Tous' : (sub.split(' - ')[1] || sub)));
+      });
+      renderCourses();
+    }
+
+    function filterCourses() {
+      renderCourses();
+    }
+
     function renderCourses() {
       const list = document.getElementById('coursesList');
       const counter = document.getElementById('courseCount');
-      counter.innerText = `${store.courses.length} cours`;
+      const query = (document.getElementById('searchInput')?.value || '').toLowerCase();
 
-      if (store.courses.length === 0) {
+      const filtered = store.courses.filter(c => {
+        const matchesSub = (activeSubjectFilter === 'all') || (c.subject === activeSubjectFilter);
+        const matchesQuery = !query || c.title.toLowerCase().includes(query) || (c.content || '').toLowerCase().includes(query);
+        return matchesSub && matchesQuery;
+      });
+
+      counter.innerText = `${filtered.length} fiche${filtered.length > 1 ? 's' : ''}`;
+
+      if (filtered.length === 0) {
         list.innerHTML = `
-          <div class="empty-state">
-            <i class="fa-solid fa-folder-open"></i>
-            <p><strong>Aucun cours enregistré pour le moment.</strong></p>
-            <p style="font-size: 0.85rem; margin-top: 0.25rem;">Remplis le formulaire pour stocker tes cours et fichiers sur ton dépôt.</p>
+          <div style="text-align: center; padding: 3rem 1rem; color: var(--text-sub);">
+            <i class="fa-solid fa-folder-open" style="font-size: 2.5rem; margin-bottom: 0.75rem; opacity: 0.3;"></i>
+            <p style="font-size: 0.9rem;">Aucun cours correspondant trouvé.</p>
           </div>
         `;
         return;
       }
 
       list.innerHTML = '';
-      store.courses.forEach((c, idx) => {
+      filtered.forEach((c) => {
+        const originalIndex = store.courses.findIndex(item => item.id === c.id);
         const div = document.createElement('div');
-        div.className = 'course-item';
+        div.className = 'course-card';
 
         let attachHTML = '';
         if (c.attachments && c.attachments.length > 0) {
@@ -776,13 +1130,14 @@
             const fileSrc = att.downloadUrl || att.path;
             if (att.isImage) {
               attachHTML += `
-                <a href="${fileSrc}" target="_blank" title="Voir l'image sur GitHub">
-                  <img src="${fileSrc}" class="img-attachment-thumb" alt="${escapeHtml(att.name)}" />
-                </a>`;
+                <div class="img-preview-card" onclick="openImageModal('${fileSrc}')" title="Agrandir">
+                  <img src="${fileSrc}" alt="${escapeHtml(att.name)}" loading="lazy" />
+                </div>`;
             } else {
               attachHTML += `
-                <a href="${fileSrc}" target="_blank" download="${escapeHtml(att.name)}" class="file-download-link">
-                  <i class="fa-solid fa-cloud-arrow-down"></i> ${escapeHtml(att.name)}
+                <a href="${fileSrc}" target="_blank" download="${escapeHtml(att.name)}" class="file-download-badge">
+                  <i class="fa-solid fa-file-arrow-down"></i>
+                  <span>${escapeHtml(att.name)}</span>
                 </a>`;
             }
           });
@@ -790,19 +1145,19 @@
         }
 
         div.innerHTML = `
-          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+          <div class="course-header">
             <div>
               <span class="badge">${escapeHtml(c.subject)}</span>
-              <h4 class="course-title">${escapeHtml(c.title)}</h4>
+              <h4 class="course-title" style="margin-top: 0.35rem;">${escapeHtml(c.title)}</h4>
             </div>
-            <button class="btn btn-danger" style="padding: 0.35rem 0.65rem;" onclick="deleteCourse(${idx})">
+            <button class="btn btn-danger" style="padding: 0.3rem 0.55rem; min-height: auto;" onclick="deleteCourse(${originalIndex})">
               <i class="fa-solid fa-trash-can"></i>
             </button>
           </div>
           <div class="course-body">${marked.parse(c.content || '')}</div>
           ${attachHTML}
-          <div style="margin-top: 0.75rem; color: var(--text-muted); font-size: 0.72rem;">
-            Ajouté le ${new Date(c.date).toLocaleDateString('fr-FR')} à ${new Date(c.date).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}
+          <div style="margin-top: 0.75rem; color: var(--text-sub); font-size: 0.72rem;">
+            ${new Date(c.date).toLocaleDateString('fr-FR')} à ${new Date(c.date).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}
           </div>
         `;
         list.appendChild(div);
@@ -816,24 +1171,23 @@
       const btn = document.getElementById('btnSaveCourse');
 
       if (!title) {
-        alert("Indique au moins un titre pour le cours.");
+        alert("Indique au moins un titre.");
         return;
       }
 
       if (localSelectedFiles.length > 0 && !ghConfig.token) {
-        alert("Pour envoyer des fichiers et images sur GitHub, configure d'abord ton Token dans l'onglet Paramètres !");
+        alert("Configure d'abord ton Token GitHub pour stocker les fichiers sur ton dépôt !");
         switchTab('tab-settings');
         return;
       }
 
       btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Téléversement sur GitHub...';
-      setSyncStatus('saving', 'Upload des fichiers sur GitHub...');
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Envoi des fichiers...';
+      setSyncStatus('saving', 'Upload fichiers...');
 
       const uploadedFilesRefs = [];
 
       try {
-        // Envoi individuel de chaque fichier dans le dossier uploads/ sur GitHub
         for (const file of localSelectedFiles) {
           const ref = await uploadFileDirectToGitHub(file);
           uploadedFilesRefs.push(ref);
@@ -855,18 +1209,24 @@
 
         renderCourses();
         triggerAutoSave();
+
+        // Replier le formulaire sur mobile
+        if (window.innerWidth < 950) {
+          document.getElementById('courseFormCollapse').style.display = 'none';
+          document.getElementById('collapseIcon').className = 'fa-solid fa-chevron-down';
+        }
       } catch (err) {
         console.error(err);
-        alert("Erreur lors de l'upload sur GitHub : " + err.message);
-        setSyncStatus('error', 'Erreur envoi fichiers');
+        alert("Erreur upload GitHub : " + err.message);
+        setSyncStatus('error', 'Erreur upload');
       } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Téléverser et enregistrer le cours';
+        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Sauvegarder & Synchroniser';
       }
     }
 
     function deleteCourse(idx) {
-      if (confirm("Supprimer ce cours du classeur ?")) {
+      if (confirm("Supprimer cette fiche ?")) {
         store.courses.splice(idx, 1);
         renderCourses();
         triggerAutoSave();
@@ -874,15 +1234,29 @@
     }
 
     /* ==========================================================
-       5. FLASHCARDS
+       6. VISIONNEUSE LIGHTBOX
+       ========================================================== */
+    function openImageModal(src) {
+      document.getElementById('modalImageSrc').src = src;
+      document.getElementById('imageModal').classList.add('active');
+    }
+    function closeImageModal() {
+      document.getElementById('imageModal').classList.remove('active');
+      document.getElementById('modalImageSrc').src = '';
+    }
+
+    /* ==========================================================
+       7. FLASHCARDS
        ========================================================== */
     function renderFlashcards() {
       const box = document.getElementById('fcPlayContent');
       const counter = document.getElementById('fcCounter');
+      const badge = document.getElementById('fcCurrentBadge');
 
       if (store.flashcards.length === 0) {
-        box.innerHTML = "Aucune flashcard créée.";
+        box.innerHTML = "Aucune flashcard enregistrée.";
         counter.innerText = "0 / 0";
+        badge.innerText = "Vide";
         return;
       }
 
@@ -891,11 +1265,15 @@
 
       const card = store.flashcards[fcIndex];
       counter.innerText = `${fcIndex + 1} / ${store.flashcards.length}`;
+      badge.innerText = card.s || "Général";
 
+      const cardBox = document.getElementById('fcPlayBox');
       if (isFlipped) {
+        cardBox.classList.add('flipped');
         box.innerHTML = `<span style="color: var(--accent-green); font-size: 0.8rem; text-transform: uppercase;">[Réponse]</span><br>${escapeHtml(card.a)}`;
       } else {
-        box.innerHTML = `<span style="color: var(--primary); font-size: 0.8rem; text-transform: uppercase;">[${escapeHtml(card.s)}]</span><br>${escapeHtml(card.q)}`;
+        cardBox.classList.remove('flipped');
+        box.innerHTML = `<span style="color: var(--primary); font-size: 0.8rem; text-transform: uppercase;">[Question]</span><br>${escapeHtml(card.q)}`;
       }
     }
 
@@ -917,12 +1295,12 @@
       renderFlashcards();
     }
     function addFlashcard() {
-      const s = document.getElementById('fcSubject').value.trim() || 'Général';
+      const s = document.getElementById('fcSubject').value.trim() || 'CIEL';
       const q = document.getElementById('fcQuestion').value.trim();
       const a = document.getElementById('fcAnswer').value.trim();
 
       if (!q || !a) {
-        alert("Saisis la question et sa réponse.");
+        alert("Remplis la question et la réponse.");
         return;
       }
       store.flashcards.push({ s, q, a });
@@ -940,24 +1318,26 @@
     }
 
     /* ==========================================================
-       6. TODOS
+       8. TODOS / PLANNING
        ========================================================== */
     function renderTodos() {
       const container = document.getElementById('todosContainer');
       if (store.todos.length === 0) {
-        container.innerHTML = `<div class="empty-state"><i class="fa-solid fa-clipboard-check"></i><p>Aucun objectif pour l'instant.</p></div>`;
+        container.innerHTML = `<p style="text-align: center; color: var(--text-sub); padding: 1.5rem 0;">Aucun objectif en attente.</p>`;
         return;
       }
       container.innerHTML = '';
       store.todos.forEach((t, i) => {
         const row = document.createElement('div');
-        row.style = `display:flex; align-items:center; justify-content:space-between; padding: 0.65rem 0.85rem; border:1px solid var(--border-color); border-radius: 8px; margin-bottom: 0.5rem; background: var(--bg-card-alt);`;
+        row.style = `display:flex; align-items:center; justify-content:space-between; padding: 0.75rem 0.9rem; border:1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 0.5rem; background: var(--bg-input);`;
         row.innerHTML = `
-          <div style="display:flex; align-items:center; gap:0.75rem; cursor:pointer;" onclick="toggleTodo(${i})">
-            <i class="fa-${t.done ? 'solid fa-circle-check' : 'regular fa-circle'}" style="color:${t.done ? 'var(--accent-green)' : 'var(--text-muted)'};"></i>
-            <span style="${t.done ? 'text-decoration: line-through; color: var(--text-muted);' : ''}">${escapeHtml(t.text)}</span>
+          <div style="display:flex; align-items:center; gap:0.75rem; cursor:pointer; flex: 1;" onclick="toggleTodo(${i})">
+            <i class="fa-${t.done ? 'solid fa-circle-check' : 'regular fa-circle'}" style="font-size: 1.1rem; color:${t.done ? 'var(--accent-green)' : 'var(--text-sub)'};"></i>
+            <span style="${t.done ? 'text-decoration: line-through; color: var(--text-sub);' : ''}">${escapeHtml(t.text)}</span>
           </div>
-          <button class="btn btn-danger" style="padding: 0.3rem 0.6rem;" onclick="deleteTodo(${i})"><i class="fa-solid fa-trash-can"></i></button>
+          <button class="btn btn-danger" style="padding: 0.3rem 0.55rem; min-height: auto;" onclick="deleteTodo(${i})">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
         `;
         container.appendChild(row);
       });
@@ -973,19 +1353,17 @@
     }
     function toggleTodo(i) {
       store.todos[i].done = !store.todos[i].done;
-      saveLocalAndSync();
+      renderTodos();
+      triggerAutoSave();
     }
     function deleteTodo(i) {
       store.todos.splice(i, 1);
-      saveLocalAndSync();
-    }
-    function saveLocalAndSync() {
       renderTodos();
       triggerAutoSave();
     }
 
     /* ==========================================================
-       7. PARAMÈTRES
+       9. PARAMÈTRES
        ========================================================== */
     function saveSettings() {
       ghConfig.owner = document.getElementById('ghOwner').value.trim();
@@ -994,7 +1372,7 @@
       ghConfig.token = document.getElementById('ghToken').value.trim();
 
       localStorage.setItem('ciel_gh_config', JSON.stringify(ghConfig));
-      alert("Paramètres enregistrés ! Synchronisation avec GitHub...");
+      alert("Paramètres enregistrés ! Synchronisation...");
       pullFromGitHub(false);
     }
 
