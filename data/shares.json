@@ -1,26 +1,6 @@
 {
   "shares": [
     {
-      "id": "share_1789119308631_3xh2m",
-      "fromUser": "matt",
-      "toUser": "esteban",
-      "sentAt": "2026-09-11T09:35:08.631Z",
-      "course": {
-        "subject": "CIEL - Réseaux & Informatique",
-        "title": "tst",
-        "content": "tst",
-        "attachments": [
-          {
-            "name": "~$eation d'un compte Github.docx",
-            "path": "uploads/matt/1789119300397___eation_d_un_compte_Github.docx",
-            "downloadUrl": "https://raw.githubusercontent.com/Fazerdino1/revision-bac-pro-Tciel/main/uploads/matt/1789119300397___eation_d_un_compte_Github.docx",
-            "isImage": false,
-            "size": 162
-          }
-        ]
-      }
-    },
-    {
       "id": "share_1789119448401_3vxqi",
       "fromUser": "esteban",
       "toUser": "matt",
