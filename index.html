@@ -3,12 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bac Pro CIEL | Hub de Révision Automatisé</title>
+  <title>Bac Pro CIEL | Hub & Stockage GitHub Dédié</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <!-- Markdown Renderer -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <style>
@@ -39,7 +38,7 @@
     }
 
     header {
-      background: rgba(17, 24, 39, 0.92);
+      background: rgba(17, 24, 39, 0.95);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border-color);
       position: sticky;
@@ -150,7 +149,6 @@
     .btn-primary:hover { background: #4f46e5; }
     .btn-success { background: rgba(16, 185, 129, 0.15); border-color: var(--accent-green); color: #34d399; }
     .btn-danger { background: rgba(244, 63, 94, 0.15); border-color: var(--accent-rose); color: #fda4af; }
-    .btn-danger:hover { background: var(--accent-rose); color: #fff; }
 
     .card {
       background: var(--bg-card);
@@ -187,9 +185,9 @@
       font-size: 0.9rem;
     }
     .form-control:focus { outline: none; border-color: var(--primary); }
-    textarea.form-control { resize: vertical; min-height: 180px; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
+    textarea.form-control { resize: vertical; min-height: 160px; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
 
-    /* Fichiers & Attachments */
+    /* Zone de téléversement */
     .file-dropzone {
       border: 2px dashed var(--border-color);
       border-radius: 8px;
@@ -212,7 +210,7 @@
       background: #1e293b;
       border: 1px solid var(--border-color);
       border-radius: 6px;
-      padding: 0.3rem 0.6rem;
+      padding: 0.35rem 0.65rem;
       font-size: 0.75rem;
       display: inline-flex;
       align-items: center;
@@ -260,28 +258,31 @@
       gap: 0.75rem;
     }
     .img-attachment-thumb {
-      max-width: 140px;
-      max-height: 90px;
+      max-width: 180px;
+      max-height: 110px;
       border-radius: 6px;
       border: 1px solid var(--border-color);
       cursor: pointer;
       object-fit: cover;
-      transition: transform 0.2s;
+      transition: transform 0.2s, box-shadow 0.2s;
     }
-    .img-attachment-thumb:hover { transform: scale(1.05); }
+    .img-attachment-thumb:hover {
+      transform: scale(1.04);
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+    }
 
     .file-download-link {
       background: #111827;
       border: 1px solid var(--border-color);
       border-radius: 6px;
-      padding: 0.4rem 0.75rem;
+      padding: 0.45rem 0.8rem;
       color: var(--primary);
       text-decoration: none;
       font-size: 0.8rem;
       font-family: var(--font-mono);
       display: inline-flex;
       align-items: center;
-      gap: 0.4rem;
+      gap: 0.5rem;
       transition: 0.2s;
     }
     .file-download-link:hover { background: #1e293b; color: #fff; }
@@ -319,7 +320,7 @@
   <header>
     <div class="nav-container">
       <div class="brand">
-        <i class="fa-solid fa-cloud-bolt"></i>
+        <i class="fa-solid fa-server"></i>
         <span>BAC PRO CIEL HUB</span>
       </div>
 
@@ -328,16 +329,16 @@
           <span class="status-dot" id="statusDot"></span>
           <span id="statusText">Initialisation...</span>
         </div>
-        <button class="btn" onclick="forceSyncFromGitHub()"><i class="fa-solid fa-arrows-rotate"></i> Recharger</button>
+        <button class="btn" onclick="pullFromGitHub(false)"><i class="fa-solid fa-arrows-rotate"></i> Forcer Synchro</button>
       </div>
     </div>
   </header>
 
   <main>
     <div class="nav-tabs">
-      <button class="tab-btn active" onclick="switchTab('tab-courses')"><i class="fa-solid fa-book-bookmark"></i> Cours & Fichiers</button>
+      <button class="tab-btn active" onclick="switchTab('tab-courses')"><i class="fa-solid fa-book-bookmark"></i> Mes Cours & TP</button>
       <button class="tab-btn" onclick="switchTab('tab-flashcards')"><i class="fa-solid fa-clone"></i> Flashcards</button>
-      <button class="tab-btn" onclick="switchTab('tab-todos')"><i class="fa-solid fa-list-check"></i> To-Do / Planning</button>
+      <button class="tab-btn" onclick="switchTab('tab-todos')"><i class="fa-solid fa-list-check"></i> Objectifs / Planning</button>
       <button class="tab-btn" onclick="switchTab('tab-settings')"><i class="fa-solid fa-gear"></i> Paramètres GitHub</button>
     </div>
 
@@ -346,7 +347,7 @@
       <div class="grid-2">
         <!-- Formulaire de saisie -->
         <div class="card">
-          <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-plus-circle" style="color: var(--primary);"></i> Ajouter un Cours / TP</h3>
+          <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-plus-circle" style="color: var(--primary);"></i> Nouveau Cours / TP</h3>
 
           <div class="form-group">
             <label>Matière</label>
@@ -366,28 +367,28 @@
           </div>
 
           <div class="form-group">
-            <label>Titre</label>
-            <input type="text" class="form-control" id="cTitle" placeholder="Ex: Configuration VLAN et routage inter-vlan..." />
+            <label>Titre de la fiche</label>
+            <input type="text" class="form-control" id="cTitle" placeholder="Ex: TP Adressage IPv4 /28 et Switch Cisco..." />
           </div>
 
           <div class="form-group">
             <label>Contenu (Markdown supporté)</label>
-            <textarea class="form-control" id="cContent" placeholder="Notes, syntaxes de commandes, formules..."></textarea>
+            <textarea class="form-control" id="cContent" placeholder="Notes, cours, syntaxes Linux, équations..."></textarea>
           </div>
 
-          <!-- Zone d'importation de fichiers / images -->
+          <!-- Zone d'importation réelle vers GitHub (uploads/) -->
           <div class="form-group">
-            <label>Joindre des Images ou Fichiers (Schémas, TP, PDF, .pkt...)</label>
+            <label>Pièces jointes stockées sur GitHub (Images, PDF, .pkt, .py, .zip)</label>
             <div class="file-dropzone" onclick="document.getElementById('fileInput').click()">
-              <i class="fa-solid fa-cloud-arrow-up" style="font-size: 1.5rem; color: var(--primary); margin-bottom: 0.5rem;"></i>
-              <p style="font-size: 0.85rem; color: var(--text-muted);">Clique pour importer des images (PNG, JPG) ou documents (PDF, PKT, Code, ZIP)</p>
+              <i class="fa-solid fa-cloud-arrow-up" style="font-size: 1.6rem; color: var(--primary); margin-bottom: 0.5rem;"></i>
+              <p style="font-size: 0.85rem; color: var(--text-muted);">Clique pour sélectionner des fichiers à uploader sur GitHub</p>
               <input type="file" id="fileInput" multiple onchange="handleFileSelect(event)" />
             </div>
             <div class="attached-preview-list" id="attachedPreview"></div>
           </div>
 
-          <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="addCourse()">
-            <i class="fa-solid fa-save"></i> Enregistrer le cours (Auto-Sync)
+          <button class="btn btn-primary" id="btnSaveCourse" style="width: 100%; justify-content: center;" onclick="addCourse()">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Téléverser et enregistrer le cours
           </button>
         </div>
 
@@ -409,27 +410,27 @@
           <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-square-plus" style="color: var(--primary);"></i> Nouvelle Flashcard</h3>
           <div class="form-group">
             <label>Discipline</label>
-            <input type="text" class="form-control" id="fcSubject" placeholder="Ex: Réseaux CIEL, Maths..." />
+            <input type="text" class="form-control" id="fcSubject" placeholder="Ex: Réseaux, Cybersécurité, Maths..." />
           </div>
           <div class="form-group">
             <label>Question (Recto)</label>
-            <input type="text" class="form-control" id="fcQuestion" placeholder="Ex: Quelle est l'adresse de loopback en IPv4 ?" />
+            <input type="text" class="form-control" id="fcQuestion" placeholder="Ex: Quel port écoute SSH par défaut ?" />
           </div>
           <div class="form-group">
             <label>Réponse (Verso)</label>
-            <textarea class="form-control" id="fcAnswer" style="min-height: 100px;" placeholder="Ex: 127.0.0.1"></textarea>
+            <textarea class="form-control" id="fcAnswer" style="min-height: 100px;" placeholder="Ex: Port 22 en protocole TCP"></textarea>
           </div>
           <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="addFlashcard()">
-            <i class="fa-solid fa-plus"></i> Ajouter (Auto-Sync)
+            <i class="fa-solid fa-plus"></i> Ajouter la carte (Auto-Sync)
           </button>
         </div>
 
         <div class="card" style="text-align: center;">
-          <h3><i class="fa-solid fa-play" style="color: var(--accent-green);"></i> Mode Révision</h3>
-          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Clique sur la carte pour révéler la réponse</p>
+          <h3><i class="fa-solid fa-play" style="color: var(--accent-green);"></i> Entraînement Flashcards</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Clique sur la boîte pour révéler la réponse</p>
 
           <div class="fc-box" id="fcPlayBox" onclick="toggleFlipCard()">
-            <div id="fcPlayContent" style="font-size: 1.15rem; font-weight: 600;">Aucune carte</div>
+            <div id="fcPlayContent" style="font-size: 1.15rem; font-weight: 600;">Aucune flashcard</div>
           </div>
 
           <div style="display: flex; justify-content: center; gap: 0.75rem; margin-top: 1rem;">
@@ -445,9 +446,9 @@
     <!-- TAB 3: TODOS -->
     <section id="tab-todos" class="tab-content">
       <div class="card" style="max-width: 800px; margin: 0 auto;">
-        <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-tasks" style="color: var(--primary);"></i> Objectifs de révision</h3>
+        <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-tasks" style="color: var(--primary);"></i> Objectifs & Planning</h3>
         <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
-          <input type="text" class="form-control" id="todoInput" placeholder="Ex: Faire le schéma Cisco du TP2..." onkeypress="if(event.key==='Enter') addTodo()" />
+          <input type="text" class="form-control" id="todoInput" placeholder="Ex: Finir le rapport de projet CIEL..." onkeypress="if(event.key==='Enter') addTodo()" />
           <button class="btn btn-primary" onclick="addTodo()"><i class="fa-solid fa-plus"></i></button>
         </div>
         <div id="todosContainer"></div>
@@ -457,13 +458,13 @@
     <!-- TAB 4: SETTINGS GITHUB -->
     <section id="tab-settings" class="tab-content">
       <div class="card" style="max-width: 750px; margin: 0 auto;">
-        <h3 style="margin-bottom: 0.5rem;"><i class="fa-brands fa-github" style="color: var(--primary);"></i> Configuration Sauvegarde Auto</h3>
+        <h3 style="margin-bottom: 0.5rem;"><i class="fa-brands fa-github" style="color: var(--primary);"></i> Paramètres de Dépôt GitHub</h3>
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">
-          Toutes les modifications sont automatiquement synchronisées sur ton GitHub dans <code>data/bac_data.json</code>.
+          Les fichiers et images téléversés sont placés directement dans <code>uploads/</code> et les données de cours dans <code>data/bac_data.json</code>.
         </p>
 
         <div class="form-group">
-          <label>Propriétaire du Dépôt</label>
+          <label>Utilisateur / Organisation GitHub</label>
           <input type="text" class="form-control" id="ghOwner" value="fazerdino1" />
         </div>
 
@@ -473,26 +474,26 @@
         </div>
 
         <div class="form-group">
-          <label>Branche</label>
+          <label>Branche principale</label>
           <input type="text" class="form-control" id="ghBranch" value="main" />
         </div>
 
         <div class="form-group">
-          <label>GitHub Personal Access Token (PAT classic)</label>
+          <label>GitHub Personal Access Token (PAT Classic avec scope 'repo')</label>
           <input type="password" class="form-control" id="ghToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
           <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 0.35rem;">
-            Le token est conservé uniquement dans le stockage local de ton navigateur actuel (jamais écrit en clair sur GitHub).
+            Le token est conservé uniquement dans le navigateur local et n'est jamais publié en clair.
           </small>
         </div>
 
-        <button class="btn btn-primary" onclick="saveSettings()"><i class="fa-solid fa-floppy-disk"></i> Enregistrer et Activer la Synchronisation</button>
+        <button class="btn btn-primary" onclick="saveSettings()"><i class="fa-solid fa-floppy-disk"></i> Enregistrer et Connecter</button>
       </div>
     </section>
   </main>
 
   <script>
     /* ==========================================================
-       1. ÉTAT DES DONNÉES & CONFIGURATION
+       1. ÉTAT GLOBAL ET CONFIGURATION
        ========================================================== */
     let store = JSON.parse(localStorage.getItem('ciel_app_data')) || {
       courses: [],
@@ -508,8 +509,8 @@
       token: ''
     };
 
-    let pendingFiles = [];
-    let currentFileSha = null;
+    let localSelectedFiles = [];
+    let currentDataSha = null;
     let autoSaveTimer = null;
     let fcIndex = 0;
     let isFlipped = false;
@@ -525,10 +526,10 @@
       renderTodos();
 
       if (ghConfig.token) {
-        setSyncStatus('saving', 'Synchronisation avec GitHub...');
+        setSyncStatus('saving', 'Synchronisation GitHub...');
         await pullFromGitHub(true);
       } else {
-        setSyncStatus('', 'Token manquant (mode local)');
+        setSyncStatus('', 'Token manquant (Onglet Paramètres)');
       }
     };
 
@@ -552,28 +553,111 @@
     }
 
     /* ==========================================================
-       2. MOTEUR D'AUTO-SAUVEGARDE SUR GITHUB (CONTINU)
+       2. TÉLÉVERSEMENT DES FICHIERS ET IMAGES DIRECT SUR GITHUB
+       ========================================================== */
+    function handleFileSelect(e) {
+      const files = Array.from(e.target.files);
+      files.forEach(file => {
+        localSelectedFiles.push(file);
+      });
+      renderSelectedFiles();
+      e.target.value = '';
+    }
+
+    function renderSelectedFiles() {
+      const container = document.getElementById('attachedPreview');
+      container.innerHTML = '';
+      localSelectedFiles.forEach((f, idx) => {
+        const isImg = f.type.startsWith('image/');
+        const chip = document.createElement('span');
+        chip.className = 'file-chip';
+        chip.innerHTML = `
+          <i class="${isImg ? 'fa-solid fa-image' : 'fa-solid fa-file'}"></i>
+          <span>${escapeHtml(f.name)} (${Math.round(f.size / 1024)} Ko)</span>
+          <i class="fa-solid fa-xmark del-icon" onclick="removeSelectedFile(${idx})"></i>
+        `;
+        container.appendChild(chip);
+      });
+    }
+
+    function removeSelectedFile(idx) {
+      localSelectedFiles.splice(idx, 1);
+      renderSelectedFiles();
+    }
+
+    // Convertit un fichier en Base64 pur (sans le préfixe data:...;base64,)
+    function getFileBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64Content = reader.result.split(',')[1];
+          resolve(base64Content);
+        };
+        reader.onerror = err => reject(err);
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // Pousse un fichier physique dans le dossier uploads/ du dépôt GitHub
+    async function uploadFileDirectToGitHub(file) {
+      const base64Data = await getFileBase64(file);
+      const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const uniqueFileName = `${Date.now()}_${cleanName}`;
+      const remotePath = `uploads/${uniqueFileName}`;
+      const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/${remotePath}`;
+
+      const payload = {
+        message: `Upload piece jointe CIEL: ${uniqueFileName}`,
+        content: base64Data,
+        branch: ghConfig.branch
+      };
+
+      const res = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${ghConfig.token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/vnd.github.v3+json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || `Erreur téléversement GitHub (${res.status})`);
+      }
+
+      const resData = await res.json();
+      return {
+        name: file.name,
+        fileName: uniqueFileName,
+        path: remotePath,
+        downloadUrl: resData.content.download_url,
+        isImage: file.type.startsWith('image/'),
+        size: file.size
+      };
+    }
+
+    /* ==========================================================
+       3. SYNCHRONISATION AUTOMATIQUE DES COURS ET DONNÉES
        ========================================================== */
     function triggerAutoSave() {
-      // 1. Sauvegarde locale immédiate
       store.lastUpdated = new Date().toISOString();
       localStorage.setItem('ciel_app_data', JSON.stringify(store));
 
       if (!ghConfig.token) {
-        setSyncStatus('', 'Sauvegardé en local (pas de token)');
+        setSyncStatus('', 'Sauvegardé en local (token non configuré)');
         return;
       }
 
-      setSyncStatus('saving', 'Sauvegarde en attente...');
+      setSyncStatus('saving', 'Auto-sauvegarde en cours...');
       clearTimeout(autoSaveTimer);
 
-      // 2. Debounce de 1.8 seconde pour regrouper les frappes et actions
       autoSaveTimer = setTimeout(() => {
-        commitToGitHub();
-      }, 1800);
+        pushDataToGitHub();
+      }, 1500);
     }
 
-    // Gestion Unicode UTF-8 Base64
     function utf8ToB64(str) {
       return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1)));
     }
@@ -581,14 +665,11 @@
       return decodeURIComponent(Array.prototype.map.call(atob(str), c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
     }
 
-    async function commitToGitHub() {
+    async function pushDataToGitHub() {
       if (!ghConfig.token) return;
-      setSyncStatus('saving', 'Envoi vers GitHub...');
-
       const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data/bac_data.json`;
 
       try {
-        // Obtenir le dernier SHA pour éviter les 409 Conflict
         const headRes = await fetch(`${url}?ref=${ghConfig.branch}`, {
           headers: {
             'Authorization': `Bearer ${ghConfig.token}`,
@@ -596,18 +677,18 @@
           }
         });
         if (headRes.ok) {
-          const headData = await headRes.json();
-          currentFileSha = headData.sha;
+          const headJson = await headRes.json();
+          currentDataSha = headJson.sha;
         }
 
         const payload = {
-          message: `Auto-update CIEL [${new Date().toLocaleTimeString('fr-FR')}]`,
+          message: `Mise à jour cours Bac CIEL [${new Date().toLocaleTimeString('fr-FR')}]`,
           content: utf8ToB64(JSON.stringify(store, null, 2)),
           branch: ghConfig.branch
         };
-        if (currentFileSha) payload.sha = currentFileSha;
+        if (currentDataSha) payload.sha = currentDataSha;
 
-        const putRes = await fetch(url, {
+        const res = await fetch(url, {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${ghConfig.token}`,
@@ -617,14 +698,14 @@
           body: JSON.stringify(payload)
         });
 
-        if (!putRes.ok) throw new Error(`HTTP ${putRes.status}`);
+        if (!res.ok) throw new Error(`Erreur HTTP ${res.status}`);
 
-        const putData = await putRes.json();
-        currentFileSha = putData.content.sha;
-        setSyncStatus('synced', `À jour (${new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})})`);
-      } catch (e) {
-        console.error("AutoSave Error:", e);
-        setSyncStatus('error', 'Erreur synchro GitHub');
+        const resData = await res.json();
+        currentDataSha = resData.content.sha;
+        setSyncStatus('synced', `Synchronisé (${new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})})`);
+      } catch (err) {
+        console.error(err);
+        setSyncStatus('error', 'Erreur sauvegarde GitHub');
       }
     }
 
@@ -641,13 +722,13 @@
         });
 
         if (res.status === 404) {
-          setSyncStatus('synced', 'Dépôt connecté (vierge)');
+          setSyncStatus('synced', 'Dépôt prêt (vide)');
           return;
         }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const json = await res.json();
-        currentFileSha = json.sha;
+        currentDataSha = json.sha;
         const decoded = b64ToUtf8(json.content.replace(/\n/g, ''));
         store = JSON.parse(decoded);
 
@@ -655,59 +736,13 @@
         renderCourses();
         renderFlashcards();
         renderTodos();
-        setSyncStatus('synced', 'Synchronisé avec GitHub');
-        if (!silent) alert("Données synchronisées depuis GitHub avec succès !");
+        setSyncStatus('synced', 'À jour avec GitHub');
+        if (!silent) alert("Données synchronisées depuis GitHub !");
       } catch (e) {
         console.error(e);
-        setSyncStatus('error', 'Erreur de lecture');
-        if (!silent) alert("Erreur de synchronisation : " + e.message);
+        setSyncStatus('error', 'Erreur lecture');
+        if (!silent) alert("Échec de la récupération : " + e.message);
       }
-    }
-
-    function forceSyncFromGitHub() {
-      pullFromGitHub(false);
-    }
-
-    /* ==========================================================
-       3. GESTION DES FICHIERS & IMAGES
-       ========================================================== */
-    function handleFileSelect(e) {
-      const files = Array.from(e.target.files);
-      files.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          pendingFiles.push({
-            name: file.name,
-            type: file.type,
-            size: file.size,
-            data: event.target.result,
-            isImage: file.type.startsWith('image/')
-          });
-          renderPendingFiles();
-        };
-        reader.readAsDataURL(file);
-      });
-      e.target.value = '';
-    }
-
-    function renderPendingFiles() {
-      const container = document.getElementById('attachedPreview');
-      container.innerHTML = '';
-      pendingFiles.forEach((f, idx) => {
-        const chip = document.createElement('span');
-        chip.className = 'file-chip';
-        chip.innerHTML = `
-          <i class="${f.isImage ? 'fa-solid fa-image' : 'fa-solid fa-file'}"></i>
-          <span>${escapeHtml(f.name)}</span>
-          <i class="fa-solid fa-xmark del-icon" onclick="removePendingFile(${idx})"></i>
-        `;
-        container.appendChild(chip);
-      });
-    }
-
-    function removePendingFile(idx) {
-      pendingFiles.splice(idx, 1);
-      renderPendingFiles();
     }
 
     /* ==========================================================
@@ -722,8 +757,8 @@
         list.innerHTML = `
           <div class="empty-state">
             <i class="fa-solid fa-folder-open"></i>
-            <p><strong>Aucun cours dans ton classeur.</strong></p>
-            <p style="font-size: 0.85rem; margin-top: 0.25rem;">Remplis le formulaire pour ajouter tes leçons et tes schémas.</p>
+            <p><strong>Aucun cours enregistré pour le moment.</strong></p>
+            <p style="font-size: 0.85rem; margin-top: 0.25rem;">Remplis le formulaire pour stocker tes cours et fichiers sur ton dépôt.</p>
           </div>
         `;
         return;
@@ -738,10 +773,17 @@
         if (c.attachments && c.attachments.length > 0) {
           attachHTML += '<div class="course-attachments">';
           c.attachments.forEach(att => {
+            const fileSrc = att.downloadUrl || att.path;
             if (att.isImage) {
-              attachHTML += `<a href="${att.data}" target="_blank" title="Agrandir l'image"><img src="${att.data}" class="img-attachment-thumb" alt="${escapeHtml(att.name)}" /></a>`;
+              attachHTML += `
+                <a href="${fileSrc}" target="_blank" title="Voir l'image sur GitHub">
+                  <img src="${fileSrc}" class="img-attachment-thumb" alt="${escapeHtml(att.name)}" />
+                </a>`;
             } else {
-              attachHTML += `<a href="${att.data}" download="${escapeHtml(att.name)}" class="file-download-link"><i class="fa-solid fa-download"></i> ${escapeHtml(att.name)}</a>`;
+              attachHTML += `
+                <a href="${fileSrc}" target="_blank" download="${escapeHtml(att.name)}" class="file-download-link">
+                  <i class="fa-solid fa-cloud-arrow-down"></i> ${escapeHtml(att.name)}
+                </a>`;
             }
           });
           attachHTML += '</div>';
@@ -759,44 +801,72 @@
           </div>
           <div class="course-body">${marked.parse(c.content || '')}</div>
           ${attachHTML}
-          <div style="margin-top: 0.6rem; color: var(--text-muted); font-size: 0.72rem;">
-            Enregistré le ${new Date(c.date).toLocaleDateString('fr-FR')} à ${new Date(c.date).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})}
+          <div style="margin-top: 0.75rem; color: var(--text-muted); font-size: 0.72rem;">
+            Ajouté le ${new Date(c.date).toLocaleDateString('fr-FR')} à ${new Date(c.date).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}
           </div>
         `;
         list.appendChild(div);
       });
     }
 
-    function addCourse() {
+    async function addCourse() {
       const subject = document.getElementById('cSubject').value;
       const title = document.getElementById('cTitle').value.trim();
       const content = document.getElementById('cContent').value.trim();
+      const btn = document.getElementById('btnSaveCourse');
 
       if (!title) {
-        alert("Donne au moins un titre à ton cours.");
+        alert("Indique au moins un titre pour le cours.");
         return;
       }
 
-      store.courses.unshift({
-        id: Date.now(),
-        subject,
-        title,
-        content,
-        attachments: [...pendingFiles],
-        date: new Date().toISOString()
-      });
+      if (localSelectedFiles.length > 0 && !ghConfig.token) {
+        alert("Pour envoyer des fichiers et images sur GitHub, configure d'abord ton Token dans l'onglet Paramètres !");
+        switchTab('tab-settings');
+        return;
+      }
 
-      document.getElementById('cTitle').value = '';
-      document.getElementById('cContent').value = '';
-      pendingFiles = [];
-      renderPendingFiles();
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Téléversement sur GitHub...';
+      setSyncStatus('saving', 'Upload des fichiers sur GitHub...');
 
-      renderCourses();
-      triggerAutoSave();
+      const uploadedFilesRefs = [];
+
+      try {
+        // Envoi individuel de chaque fichier dans le dossier uploads/ sur GitHub
+        for (const file of localSelectedFiles) {
+          const ref = await uploadFileDirectToGitHub(file);
+          uploadedFilesRefs.push(ref);
+        }
+
+        store.courses.unshift({
+          id: Date.now(),
+          subject,
+          title,
+          content,
+          attachments: uploadedFilesRefs,
+          date: new Date().toISOString()
+        });
+
+        document.getElementById('cTitle').value = '';
+        document.getElementById('cContent').value = '';
+        localSelectedFiles = [];
+        renderSelectedFiles();
+
+        renderCourses();
+        triggerAutoSave();
+      } catch (err) {
+        console.error(err);
+        alert("Erreur lors de l'upload sur GitHub : " + err.message);
+        setSyncStatus('error', 'Erreur envoi fichiers');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Téléverser et enregistrer le cours';
+      }
     }
 
     function deleteCourse(idx) {
-      if (confirm("Supprimer ce cours ?")) {
+      if (confirm("Supprimer ce cours du classeur ?")) {
         store.courses.splice(idx, 1);
         renderCourses();
         triggerAutoSave();
@@ -811,7 +881,7 @@
       const counter = document.getElementById('fcCounter');
 
       if (store.flashcards.length === 0) {
-        box.innerHTML = "Aucune flashcard enregistrée.";
+        box.innerHTML = "Aucune flashcard créée.";
         counter.innerText = "0 / 0";
         return;
       }
@@ -875,7 +945,7 @@
     function renderTodos() {
       const container = document.getElementById('todosContainer');
       if (store.todos.length === 0) {
-        container.innerHTML = `<div class="empty-state"><i class="fa-solid fa-clipboard-check"></i><p>Aucun devoir ou tâche pour le moment.</p></div>`;
+        container.innerHTML = `<div class="empty-state"><i class="fa-solid fa-clipboard-check"></i><p>Aucun objectif pour l'instant.</p></div>`;
         return;
       }
       container.innerHTML = '';
@@ -903,18 +973,20 @@
     }
     function toggleTodo(i) {
       store.todos[i].done = !store.todos[i].done;
-      renderTodos();
-      triggerAutoSave();
+      saveLocalAndSync();
     }
     function deleteTodo(i) {
       store.todos.splice(i, 1);
+      saveLocalAndSync();
+    }
+    function saveLocalAndSync() {
       renderTodos();
       triggerAutoSave();
     }
 
     /* ==========================================================
        7. PARAMÈTRES
-       ========================================================= */
+       ========================================================== */
     function saveSettings() {
       ghConfig.owner = document.getElementById('ghOwner').value.trim();
       ghConfig.repo = document.getElementById('ghRepo').value.trim();
@@ -922,7 +994,7 @@
       ghConfig.token = document.getElementById('ghToken').value.trim();
 
       localStorage.setItem('ciel_gh_config', JSON.stringify(ghConfig));
-      alert("Paramètres enregistrés. Test de synchronisation immédiat...");
+      alert("Paramètres enregistrés ! Synchronisation avec GitHub...");
       pullFromGitHub(false);
     }
 
