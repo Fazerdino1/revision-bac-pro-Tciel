@@ -4,6 +4,11 @@
       "salt": "e631bc51a252935c439152ab3ba88128",
       "verifier": "dd2a13b470172f8df3bcff15753e61412a13c069b49a5c4e4db2d7eefdaa25c2",
       "createdAt": "2026-09-11T09:26:36.136Z"
+    },
+    "matt": {
+      "salt": "f768ddf324cf1626e97b852c032d1662",
+      "verifier": "ea9087c6ce25567a141a5864ed1d36d939ad0f9fe2dbb4743aa6a69f3a75972d",
+      "createdAt": "2026-09-11T09:34:18.025Z"
     }
   }
 }
