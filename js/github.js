@@ -44,8 +44,7 @@ async function ghGetFile(filePath) {
   const res = await fetch(url, {
     headers: {
       'Authorization': `Bearer ${ghConfig.token}`,
-      'Accept': 'application/vnd.github.v3+json',
-      'Cache-Control': 'no-cache'
+      'Accept': 'application/vnd.github.v3+json'
     }
   });
   if (res.status === 404) return null;
