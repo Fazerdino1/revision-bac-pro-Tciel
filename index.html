@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>CIEL StudyOS | Espace Révision Sécurisé</title>
+  <title>CIEL StudyOS | Hub Bac Pro Collaboratif</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -52,9 +52,9 @@
     }
     @media (min-width: 850px) { body { padding-bottom: 40px; } }
 
-    /* En-tête */
+    /* Header */
     header {
-      background: rgba(15, 23, 42, 0.92);
+      background: rgba(15, 23, 42, 0.94);
       backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--border);
       position: sticky;
@@ -204,26 +204,27 @@
     .tab-view { display: none; }
     .tab-view.active { display: block; }
 
-    /* Boutons et UI */
     .btn {
       background: var(--bg-card-elevated);
       color: var(--text-main);
       border: 1px solid var(--border);
-      padding: 0.65rem 1.1rem;
+      padding: 0.6rem 1.05rem;
       border-radius: var(--radius-sm);
       font-weight: 600;
-      font-size: 0.88rem;
+      font-size: 0.85rem;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 0.5rem;
-      min-height: 44px;
+      gap: 0.45rem;
+      min-height: 40px;
       transition: 0.2s;
     }
     .btn:active { transform: scale(0.97); }
     .btn-primary { background: var(--primary); color: #04101e; border-color: var(--primary); font-weight: 700; }
     .btn-primary:hover { background: var(--primary-hover); color: #fff; }
+    .btn-share { background: rgba(99, 102, 241, 0.15); border-color: #6366f1; color: #a5b4fc; }
+    .btn-share:hover { background: #6366f1; color: #fff; }
     .btn-danger { background: rgba(244, 63, 94, 0.15); border-color: var(--accent-rose); color: #fda4af; }
 
     .card {
@@ -234,7 +235,6 @@
       margin-bottom: 1rem;
     }
 
-    /* Formulaires */
     .form-row { margin-bottom: 1rem; }
     .form-row label {
       display: block;
@@ -258,7 +258,47 @@
     .form-input:focus { outline: none; border-color: var(--primary); }
     textarea.form-input { min-height: 140px; font-family: var(--font-mono); font-size: 0.88rem; line-height: 1.5; }
 
-    /* Barre de recherche & tags */
+    /* Switcher Mes Cours / Cours Partagés */
+    .view-switcher {
+      display: flex;
+      gap: 0.5rem;
+      background: var(--bg-card);
+      padding: 4px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      margin-bottom: 1rem;
+    }
+    .switcher-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.6rem 0.8rem;
+      border-radius: var(--radius-sm);
+      font-weight: 700;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: 0.2s;
+    }
+    .switcher-btn.active {
+      background: var(--bg-card-elevated);
+      color: var(--primary);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .badge-count {
+      background: var(--accent-purple);
+      color: #fff;
+      font-size: 0.7rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: var(--radius-full);
+      font-weight: bold;
+    }
+
+    /* Barre de recherche et catégories */
     .top-controls {
       display: flex;
       flex-direction: column;
@@ -284,7 +324,8 @@
       display: flex;
       gap: 0.5rem;
       overflow-x: auto;
-      padding-bottom: 4px;
+      padding-bottom: 6px;
+      -webkit-overflow-scrolling: touch;
     }
     .cat-chip {
       background: var(--bg-card);
@@ -296,10 +337,12 @@
       font-weight: 600;
       white-space: nowrap;
       cursor: pointer;
+      user-select: none;
+      transition: 0.2s;
     }
-    .cat-chip.active { background: var(--primary); color: #020817; border-color: var(--primary); }
+    .cat-chip.active { background: var(--primary); color: #020817; border-color: var(--primary); font-weight: 700; }
 
-    /* Cartes de cours & fond blanc schémas */
+    /* Cartes de cours */
     .course-card {
       background: var(--bg-card);
       border: 1px solid var(--border);
@@ -365,7 +408,7 @@
       max-width: 100%;
     }
 
-    /* Modal / Formulaire Cours */
+    /* Modal / Formulaire Cours & Partage */
     .modal-backdrop {
       display: none;
       position: fixed;
@@ -419,7 +462,7 @@
     }
     .lightbox-frame img { max-width: 100%; max-height: 78vh; object-fit: contain; }
 
-    /* ÉCRAN DE CONNEXION / INSCRIPTION */
+    /* Écran d'authentification */
     .auth-overlay {
       position: fixed;
       inset: 0;
@@ -459,10 +502,7 @@
       border-radius: var(--radius-sm);
       cursor: pointer;
     }
-    .auth-tab-btn.active {
-      background: var(--bg-card-elevated);
-      color: var(--primary);
-    }
+    .auth-tab-btn.active { background: var(--bg-card-elevated); color: var(--primary); }
 
     /* Flashcards & Todos */
     .fc-card {
@@ -496,7 +536,7 @@
 </head>
 <body>
 
-  <!-- ÉCRAN DE CONNEXION / INSCRIPTION SÉCURISÉ -->
+  <!-- ÉCRAN DE CONNEXION / INSCRIPTION -->
   <div class="auth-overlay" id="authOverlay">
     <div class="auth-card">
       <div style="text-align: center; margin-bottom: 1.5rem;">
@@ -504,7 +544,7 @@
           <i class="fa-solid fa-lock"></i>
         </div>
         <h2 style="font-size: 1.35rem; font-weight: 800;">CIEL StudyOS</h2>
-        <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.25rem;">Espace de cours isolé et chiffré</p>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.25rem;">Espace chiffré & partages sécurisés</p>
       </div>
 
       <div class="auth-tabs">
@@ -521,9 +561,6 @@
         <div class="form-row">
           <label>Mot de passe</label>
           <input type="password" class="form-input" id="authPassword" placeholder="••••••••" required autocomplete="current-password" />
-          <small style="color: var(--text-sub); font-size: 0.72rem; display: block; margin-top: 0.35rem;">
-            Vos cours sont chiffrés avec ce mot de passe. Vous seul(e) pouvez les lire.
-          </small>
         </div>
 
         <div id="authAlert" style="display: none; padding: 0.6rem; border-radius: 6px; font-size: 0.8rem; margin-bottom: 1rem; background: rgba(244,63,94,0.15); color: #fda4af; border: 1px solid var(--accent-rose);"></div>
@@ -562,28 +599,50 @@
     </div>
   </header>
 
-  <!-- Contenu Principal -->
   <main>
     <!-- ONGLET 1 : COURS -->
     <section id="tab-courses" class="tab-view active">
+      
+      <!-- Switcher : Mes cours / Cours reçus d'autres élèves -->
+      <div class="view-switcher">
+        <button class="switcher-btn active" id="btnViewMine" onclick="switchCourseSubView('mine')">
+          <i class="fa-solid fa-folder-closed"></i>
+          <span>Mes Cours</span>
+        </button>
+        <button class="switcher-btn" id="btnViewReceived" onclick="switchCourseSubView('received')">
+          <i class="fa-solid fa-inbox"></i>
+          <span>Cours Reçus</span>
+          <span class="badge-count" id="receivedCountBadge">0</span>
+        </button>
+      </div>
+
       <div class="top-controls">
         <div class="search-box">
           <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="text" id="courseSearch" placeholder="Rechercher parmi mes cours..." oninput="renderCourses()" />
+          <input type="text" id="courseSearch" placeholder="Rechercher par mot-clé, formule, commande..." oninput="renderCourses()" />
         </div>
         <button class="btn btn-primary" style="display: none; min-width: 170px;" id="desktopAddBtn" onclick="openCourseModal()">
           <i class="fa-solid fa-plus"></i> Nouveau cours
         </button>
       </div>
 
-      <div class="category-scroll">
-        <span class="cat-chip active" onclick="setFilter('all')">Tous mes cours</span>
-        <span class="cat-chip" onclick="setFilter('CIEL - Réseaux')">Réseaux IP</span>
-        <span class="cat-chip" onclick="setFilter('CIEL - Cybersécurité')">Cybersécurité</span>
-        <span class="cat-chip" onclick="setFilter('CIEL - Électronique')">Électronique</span>
-        <span class="cat-chip" onclick="setFilter('Mathématiques')">Maths</span>
-        <span class="cat-chip" onclick="setFilter('Physique-Chimie')">Physique</span>
-        <span class="cat-chip" onclick="setFilter('PSE')">PSE</span>
+      <!-- Filtres par matière avec toutes les matières au programme -->
+      <div class="category-scroll" id="filterShelf">
+        <span class="cat-chip active" data-cat="all" onclick="setFilter('all')">Toutes les matières</span>
+        <span class="cat-chip" data-cat="reseaux" onclick="setFilter('reseaux')">Réseaux</span>
+        <span class="cat-chip" data-cat="secu" onclick="setFilter('secu')">Cybersécurité</span>
+        <span class="cat-chip" data-cat="elec" onclick="setFilter('elec')">Électronique</span>
+        <span class="cat-chip" data-cat="projet" onclick="setFilter('projet')">Projet CIEL</span>
+        <span class="cat-chip" data-cat="maths" onclick="setFilter('maths')">Mathématiques</span>
+        <span class="cat-chip" data-cat="physique" onclick="setFilter('physique')">Physique-Chimie</span>
+        <span class="cat-chip" data-cat="francais" onclick="setFilter('francais')">Français</span>
+        <span class="cat-chip" data-cat="hist-geo" onclick="setFilter('hist-geo')">Histoire-Géo & EMC</span>
+        <span class="cat-chip" data-cat="pse" onclick="setFilter('pse')">PSE</span>
+        <span class="cat-chip" data-cat="eco" onclick="setFilter('eco')">Éco-Gestion</span>
+        <span class="cat-chip" data-cat="anglais" onclick="setFilter('anglais')">Anglais (LV1)</span>
+        <span class="cat-chip" data-cat="allemand" onclick="setFilter('allemand')">Allemand (LV2)</span>
+        <span class="cat-chip" data-cat="arts" onclick="setFilter('arts')">Arts Appliqués</span>
+        <span class="cat-chip" data-cat="eps" onclick="setFilter('eps')">EPS</span>
       </div>
 
       <div style="display: flex; justify-content: space-between; align-items: center; margin: 1rem 0 0.75rem 0;">
@@ -602,7 +661,7 @@
         <div class="card" style="text-align: left; margin-bottom: 1.5rem;">
           <h3 style="font-size: 1rem; margin-bottom: 0.75rem;"><i class="fa-solid fa-plus-circle" style="color: var(--primary);"></i> Nouvelle flashcard</h3>
           <div class="form-row">
-            <input type="text" class="form-input" id="fcSub" placeholder="Matière (ex: Réseaux, Maths...)" />
+            <input type="text" class="form-input" id="fcSub" placeholder="Matière (ex: Maths, Réseaux, PSE...)" />
           </div>
           <div class="form-row">
             <input type="text" class="form-input" id="fcQ" placeholder="Question (Recto)" />
@@ -610,7 +669,7 @@
           <div class="form-row">
             <input type="text" class="form-input" id="fcA" placeholder="Réponse (Verso)" />
           </div>
-          <button class="btn btn-primary" style="width: 100%;" onclick="addFlashcard()">Ajouter à mes cartes</button>
+          <button class="btn btn-primary" style="width: 100%;" onclick="addFlashcard()">Ajouter à mes flashcards</button>
         </div>
 
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.8rem; color: var(--text-sub);">
@@ -626,7 +685,7 @@
         <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
           <button class="btn" style="flex: 1;" onclick="prevFlashcard()"><i class="fa-solid fa-arrow-left"></i></button>
           <button class="btn btn-danger" onclick="deleteCurrentFlashcard()"><i class="fa-solid fa-trash-can"></i></button>
-          <button class="btn btn-primary" style="flex: 1;" onclick="nextFlashcard()"><i class="fa-solid fa-arrow-right"></i></button>
+          <button class="btn btn-primary" style="flex: 1;" onclick="nextFlashcard()">Suivante <i class="fa-solid fa-arrow-right"></i></button>
         </div>
       </div>
     </section>
@@ -637,7 +696,7 @@
         <div class="card">
           <h3 style="font-size: 1.05rem; margin-bottom: 1rem;"><i class="fa-solid fa-list-check" style="color: var(--primary);"></i> Mes Objectifs Personnels</h3>
           <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-            <input type="text" class="form-input" id="todoInputText" placeholder="Ex: Réviser TP Routage..." onkeypress="if(event.key==='Enter') createTodo()" />
+            <input type="text" class="form-input" id="todoInputText" placeholder="Ex: TP Packet Tracer VLANs..." onkeypress="if(event.key==='Enter') createTodo()" />
             <button class="btn btn-primary" onclick="createTodo()"><i class="fa-solid fa-plus"></i></button>
           </div>
           <div id="todosFeed"></div>
@@ -649,9 +708,9 @@
     <section id="tab-settings" class="tab-view">
       <div style="max-width: 650px; margin: 0 auto;">
         <div class="card">
-          <h3 style="font-size: 1.05rem; margin-bottom: 0.5rem;"><i class="fa-brands fa-github" style="color: var(--primary);"></i> Configuration Dépôt GitHub</h3>
+          <h3 style="font-size: 1.05rem; margin-bottom: 0.5rem;"><i class="fa-brands fa-github" style="color: var(--primary);"></i> Configuration GitHub</h3>
           <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem;">
-            Les coffres chiffrés des utilisateurs sont hébergés dans <code>data/vaults/</code>.
+            Les coffres des élèves sont dans <code>data/vaults/</code> et les partages dans <code>data/shares.json</code>.
           </p>
 
           <div class="form-row">
@@ -670,7 +729,7 @@
             <label>GitHub Personal Access Token (PAT)</label>
             <input type="password" class="form-input" id="cfgToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
             <small style="color: var(--text-sub); font-size: 0.72rem; display: block; margin-top: 0.35rem;">
-              Token requis pour créer les fichiers des utilisateurs et stocker les schémas.
+              Enregistré localement dans votre navigateur.
             </small>
           </div>
           <button class="btn btn-primary" style="width: 100%;" onclick="saveSettings()">
@@ -704,7 +763,7 @@
     </button>
   </nav>
 
-  <!-- MODAL / FORMULAIRE DE CRÉATION DE COURS -->
+  <!-- MODAL DE CRÉATION DE COURS -->
   <div class="modal-backdrop" id="courseModal" onclick="closeCourseModal()">
     <div class="modal-sheet" onclick="event.stopPropagation()">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
@@ -713,33 +772,37 @@
       </div>
 
       <div class="form-row">
-        <label>Matière</label>
+        <label>Matière (Toutes les matières Bac Pro CIEL)</label>
         <select class="form-input" id="mSubject">
-          <option value="CIEL - Réseaux">CIEL - Réseaux & Télécoms</option>
+          <option value="CIEL - Réseaux & Informatique">CIEL - Réseaux & Informatique</option>
           <option value="CIEL - Cybersécurité">CIEL - Cybersécurité</option>
-          <option value="CIEL - Électronique">CIEL - Électronique & IoT</option>
+          <option value="CIEL - Électronique & IoT">CIEL - Électronique & IoT</option>
+          <option value="CIEL - Réalisation de Projet">CIEL - Réalisation de Projet (E2/E31)</option>
           <option value="Mathématiques">Mathématiques</option>
           <option value="Physique-Chimie">Physique-Chimie</option>
           <option value="Français">Français</option>
-          <option value="Histoire-Géographie">Histoire-Géographie & EMC</option>
-          <option value="PSE">PSE</option>
+          <option value="Histoire-Géographie & EMC">Histoire-Géographie & EMC</option>
+          <option value="PSE">Prévention Santé Environnement (PSE)</option>
           <option value="Économie-Gestion">Économie-Gestion</option>
-          <option value="Anglais">Anglais</option>
+          <option value="Anglais (LV1)">Anglais (LV1)</option>
+          <option value="Allemand (LV2)">Allemand (LV2)</option>
+          <option value="Arts Appliqués">Arts Appliqués & Cultures Artistiques</option>
+          <option value="EPS">Éducation Physique & Sportive (EPS)</option>
         </select>
       </div>
 
       <div class="form-row">
         <label>Titre de la fiche</label>
-        <input type="text" class="form-input" id="mTitle" placeholder="Ex: Configuration Trunk & VLANs 10, 20" />
+        <input type="text" class="form-input" id="mTitle" placeholder="Ex: TP Masques IPv4 /28 et Switch Cisco" />
       </div>
 
       <div class="form-row">
         <label>Contenu du cours (Markdown supporté)</label>
-        <textarea class="form-input" id="mContent" placeholder="Commandes, résumés, formules..."></textarea>
+        <textarea class="form-input" id="mContent" placeholder="Formules, commandes de configuration, résumés..."></textarea>
       </div>
 
       <div class="form-row">
-        <label>Schémas et Fichiers (Stockés dans mon espace uploads/)</label>
+        <label>Schémas et Fichiers (Stockés sur GitHub)</label>
         <div style="border: 2px dashed var(--border-light); border-radius: var(--radius-sm); padding: 1.25rem; text-align: center; cursor: pointer;" onclick="document.getElementById('mFileInput').click()">
           <i class="fa-solid fa-cloud-arrow-up" style="font-size: 1.6rem; color: var(--primary); margin-bottom: 0.4rem;"></i>
           <p style="font-size: 0.85rem; color: var(--text-muted);">Joindre des schémas (PNG, JPG) ou TP (PDF, PKT)</p>
@@ -754,7 +817,32 @@
     </div>
   </div>
 
-  <!-- LIGHTBOX SCHÉMAS (FOND BLANC POUR CONTRASTE NET) -->
+  <!-- MODAL DE PARTAGE DE COURS -->
+  <div class="modal-backdrop" id="shareModal" onclick="closeShareModal()">
+    <div class="modal-sheet" onclick="event.stopPropagation()">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h3 style="font-size: 1.1rem;"><i class="fa-solid fa-share-nodes" style="color: var(--primary);"></i> Partager un cours</h3>
+        <button class="btn" style="padding: 0.4rem 0.7rem; min-height: 36px;" onclick="closeShareModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">
+        Cours à partager : <strong id="shareCourseTitle" style="color: #fff;"></strong>
+      </p>
+
+      <div class="form-row">
+        <label>Sélectionnez les élèves destinataires :</label>
+        <div id="recipientsList" style="max-height: 180px; overflow-y: auto; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem;">
+          <!-- Injecté dynamiquement depuis users_index.json -->
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="btnConfirmShare" style="width: 100%;" onclick="confirmSendShare()">
+        <i class="fa-solid fa-paper-plane"></i> Envoyer le cours aux élèves choisis
+      </button>
+    </div>
+  </div>
+
+  <!-- LIGHTBOX SCHÉMAS (FOND BLANC) -->
   <div class="lightbox-modal" id="lightboxModal" onclick="closeLightbox()">
     <div style="position: absolute; top: 1rem; right: 1rem;">
       <button class="btn" onclick="closeLightbox()" style="border-radius: 50%; width: 44px; height: 44px;"><i class="fa-solid fa-xmark"></i></button>
@@ -766,20 +854,11 @@
 
   <script>
     /* ==========================================================
-       1. MODULE CRYPTOGRAPHIQUE ZERO-KNOWLEDGE (AES-256 + PBKDF2)
+       1. CRYPTOGRAPHIE AES-256 ET SESSION
        ========================================================== */
-    let currentSession = {
-      username: null,
-      aesKey: null,
-      saltHex: null
-    };
-
-    let userVault = {
-      courses: [],
-      flashcards: [],
-      todos: [],
-      lastUpdated: null
-    };
+    let currentSession = { username: null, aesKey: null, saltHex: null };
+    let userVault = { courses: [], flashcards: [], todos: [], lastUpdated: null };
+    let allSharedCourses = []; // Liste des partages sur GitHub
 
     let ghConfig = JSON.parse(localStorage.getItem('ciel_gh_config')) || {
       owner: 'fazerdino1',
@@ -790,82 +869,56 @@
 
     let pendingFiles = [];
     let currentVaultSha = null;
+    let sharesFileSha = null;
     let autoSaveTimer = null;
     let authMode = 'login';
+    let currentSubView = 'mine'; // 'mine' ou 'received'
     let activeFilter = 'all';
+    let courseToShare = null;
     let fcCursor = 0;
     let fcFlipped = false;
 
-    // Convertisseurs Hex / Base64 / ArrayBuffer
-    function bufToHex(buf) {
-      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-    }
+    function bufToHex(buf) { return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join(''); }
     function hexToBuf(hex) {
       const bytes = new Uint8Array(hex.length / 2);
       for (let i = 0; i < bytes.length; i++) bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
       return bytes.buffer;
     }
-    function bufToB64(buf) {
-      return btoa(String.fromCharCode(...new Uint8Array(buf)));
-    }
-    function b64ToBuf(b64) {
-      return Uint8Array.from(atob(b64), c => c.charCodeAt(0)).buffer;
-    }
+    function bufToB64(buf) { return btoa(String.fromCharCode(...new Uint8Array(buf))); }
+    function b64ToBuf(b64) { return Uint8Array.from(atob(b64), c => c.charCodeAt(0)).buffer; }
 
-    // Dérivation de clé AES-256 à partir du mot de passe
     async function deriveKeyFromPassword(password, saltBuffer) {
       const enc = new TextEncoder();
-      const baseKey = await crypto.subtle.importKey(
-        'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey', 'deriveBits']
-      );
+      const baseKey = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey', 'deriveBits']);
       return await crypto.subtle.deriveKey(
         { name: 'PBKDF2', salt: saltBuffer, iterations: 100000, hash: 'SHA-256' },
-        baseKey,
-        { name: 'AES-GCM', length: 256 },
-        false,
-        ['encrypt', 'decrypt']
+        baseKey, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']
       );
     }
 
-    // Hash de vérification (pour valider le mot de passe sans le stocker)
     async function computePasswordVerifier(password, saltBuffer) {
       const enc = new TextEncoder();
-      const baseKey = await crypto.subtle.importKey(
-        'raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']
-      );
-      const bits = await crypto.subtle.deriveBits(
-        { name: 'PBKDF2', salt: saltBuffer, iterations: 100000, hash: 'SHA-256' },
-        baseKey, 256
-      );
+      const baseKey = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']);
+      const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: saltBuffer, iterations: 100000, hash: 'SHA-256' }, baseKey, 256);
       return bufToHex(bits);
     }
 
-    // Chiffrement AES-GCM d'un objet JSON
     async function encryptData(obj, aesKey) {
       const iv = crypto.getRandomValues(new Uint8Array(12));
       const encoded = new TextEncoder().encode(JSON.stringify(obj));
-      const ciphertext = await crypto.subtle.encrypt(
-        { name: 'AES-GCM', iv: iv }, aesKey, encoded
-      );
-      return {
-        iv: bufToHex(iv),
-        ciphertext: bufToB64(ciphertext)
-      };
+      const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, aesKey, encoded);
+      return { iv: bufToHex(iv), ciphertext: bufToB64(ciphertext) };
     }
 
-    // Déchiffrement AES-GCM
     async function decryptData(encryptedObj, aesKey) {
       const iv = hexToBuf(encryptedObj.iv);
       const cipherBuf = b64ToBuf(encryptedObj.ciphertext);
-      const decrypted = await crypto.subtle.decrypt(
-        { name: 'AES-GCM', iv: new Uint8Array(iv) }, aesKey, cipherBuf
-      );
-      const decodedStr = new TextDecoder().decode(decrypted);
-      return JSON.parse(decodedStr);
+      const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(iv) }, aesKey, cipherBuf);
+      return JSON.parse(new TextDecoder().decode(decrypted));
     }
 
     /* ==========================================================
-       2. GESTION DES UTILISATEURS (AUTH & SESSION)
+       2. INITIALISATION & CONNEXION
        ========================================================== */
     window.onload = () => {
       document.getElementById('cfgOwner').value = ghConfig.owner;
@@ -877,7 +930,6 @@
         document.getElementById('desktopAddBtn').style.display = 'inline-flex';
       }
 
-      // Vérifier si un utilisateur a déjà une session ouverte dans sessionStorage
       const savedUser = sessionStorage.getItem('ciel_session_user');
       const savedSalt = sessionStorage.getItem('ciel_session_salt');
       const savedKeyRaw = sessionStorage.getItem('ciel_session_key');
@@ -896,68 +948,47 @@
       document.getElementById('authSubmitBtn').innerHTML = mode === 'login'
         ? '<i class="fa-solid fa-arrow-right-to-bracket"></i> Ouvrir mon espace'
         : '<i class="fa-solid fa-user-plus"></i> Créer mon espace personnel';
-      hideAuthAlert();
-    }
-
-    function showAuthAlert(msg) {
-      const el = document.getElementById('authAlert');
-      el.innerText = msg;
-      el.style.display = 'block';
-    }
-    function hideAuthAlert() {
       document.getElementById('authAlert').style.display = 'none';
     }
 
     async function handleAuthSubmit(e) {
       e.preventDefault();
-      hideAuthAlert();
+      document.getElementById('authAlert').style.display = 'none';
       const username = document.getElementById('authUsername').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
       const password = document.getElementById('authPassword').value;
 
-      if (!username || !password) {
-        showAuthAlert("Veuillez renseigner un nom d'utilisateur et un mot de passe.");
-        return;
-      }
+      if (!username || !password) return;
 
       const submitBtn = document.getElementById('authSubmitBtn');
       submitBtn.disabled = true;
-      submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Traitement sécurisé...';
+      submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Traitement...';
 
       try {
-        // 1. Récupération de l'index des utilisateurs sur GitHub
         const registry = await fetchUsersRegistry();
 
         if (authMode === 'register') {
           if (registry.users && registry.users[username]) {
-            throw new Error("Ce nom d'utilisateur existe déjà. Connectez-vous.");
+            throw new Error("Cet identifiant existe déjà. Veuillez vous connecter.");
           }
 
-          // Génération du sel aléatoire
           const salt = crypto.getRandomValues(new Uint8Array(16));
           const saltHex = bufToHex(salt);
           const verifier = await computePasswordVerifier(password, salt);
           const aesKey = await deriveKeyFromPassword(password, salt);
 
-          // Enregistrement dans l'index des utilisateurs
           if (!registry.users) registry.users = {};
-          registry.users[username] = {
-            salt: saltHex,
-            verifier: verifier,
-            createdAt: new Date().toISOString()
-          };
+          registry.users[username] = { salt: saltHex, verifier: verifier, createdAt: new Date().toISOString() };
 
           await pushUsersRegistry(registry);
 
-          // Création du coffre vierge chiffré
           currentSession = { username, aesKey, saltHex };
           userVault = { courses: [], flashcards: [], todos: [], lastUpdated: new Date().toISOString() };
           await saveEncryptedVaultToGitHub();
 
           openUserSession(username, saltHex, password);
         } else {
-          // Mode Connexion
           if (!registry.users || !registry.users[username]) {
-            throw new Error("Nom d'utilisateur inexistant. Veuillez créer un compte.");
+            throw new Error("Nom d'utilisateur inexistant. Créez un compte.");
           }
 
           const userRecord = registry.users[username];
@@ -965,26 +996,27 @@
           const computedVerifier = await computePasswordVerifier(password, salt);
 
           if (computedVerifier !== userRecord.verifier) {
-            throw new Error("Mot de passe incorrect pour cet utilisateur.");
+            throw new Error("Mot de passe incorrect.");
           }
 
           const aesKey = await deriveKeyFromPassword(password, salt);
           currentSession = { username, aesKey, saltHex: userRecord.salt };
 
           await loadEncryptedVaultFromGitHub();
+          await fetchSharedCourses();
           openUserSession(username, userRecord.salt, password);
         }
       } catch (err) {
-        showAuthAlert(err.message);
+        const alertEl = document.getElementById('authAlert');
+        alertEl.innerText = err.message;
+        alertEl.style.display = 'block';
       } finally {
         submitBtn.disabled = false;
-        submitBtn.innerHTML = authMode === 'login'
-          ? '<i class="fa-solid fa-arrow-right-to-bracket"></i> Ouvrir mon espace'
-          : '<i class="fa-solid fa-user-plus"></i> Créer mon espace personnel';
+        submitBtn.innerHTML = authMode === 'login' ? '<i class="fa-solid fa-arrow-right-to-bracket"></i> Ouvrir mon espace' : '<i class="fa-solid fa-user-plus"></i> Créer mon espace';
       }
     }
 
-    async function openUserSession(username, saltHex, password) {
+    function openUserSession(username, saltHex, password) {
       sessionStorage.setItem('ciel_session_user', username);
       sessionStorage.setItem('ciel_session_salt', saltHex);
       sessionStorage.setItem('ciel_session_key', password);
@@ -995,6 +1027,7 @@
       renderCourses();
       renderFlashcards();
       renderTodos();
+      updateReceivedBadge();
       setSync('synced', 'Connecté');
     }
 
@@ -1006,9 +1039,11 @@
       document.getElementById('authOverlay').style.display = 'none';
 
       await loadEncryptedVaultFromGitHub();
+      await fetchSharedCourses();
       renderCourses();
       renderFlashcards();
       renderTodos();
+      updateReceivedBadge();
     }
 
     function logout() {
@@ -1021,7 +1056,7 @@
     }
 
     /* ==========================================================
-       3. SYNCHRONISATION DU COFFRE CHIFFRÉ GITHUB
+       3. SYNCHRONISATION GITHUB (VAULTS ET REGISTRE)
        ========================================================== */
     function setSync(state, msg) {
       const dot = document.getElementById('syncDot');
@@ -1029,99 +1064,66 @@
       if (state) dot.classList.add(state);
     }
 
-    // Récupérer le registre général des comptes utilisateurs
     async function fetchUsersRegistry() {
       if (!ghConfig.token) return { users: {} };
       const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data/users_index.json?ref=${ghConfig.branch}`;
       try {
-        const res = await fetch(url, {
-          headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github.v3+json' }
-        });
+        const res = await fetch(url, { headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github.v3+json' } });
         if (res.status === 404) return { users: {} };
         const data = await res.json();
-        const decoded = decodeURIComponent(escape(atob(data.content.replace(/\n/g, ''))));
-        return JSON.parse(decoded);
-      } catch (e) {
-        return { users: {} };
-      }
+        return JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\n/g, '')))));
+      } catch (e) { return { users: {} }; }
     }
 
     async function pushUsersRegistry(registryObj) {
       const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data/users_index.json`;
       let sha = null;
       try {
-        const head = await fetch(`${url}?ref=${ghConfig.branch}`, {
-          headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github.v3+json' }
-        });
-        if (head.ok) {
-          const hJson = await head.json();
-          sha = hJson.sha;
-        }
+        const head = await fetch(`${url}?ref=${ghConfig.branch}`, { headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github.v3+json' } });
+        if (head.ok) { const h = await head.json(); sha = h.sha; }
       } catch (e) {}
 
       const payload = {
-        message: "Enregistrement utilisateur CIEL",
+        message: "Mise à jour registre élèves",
         content: btoa(unescape(encodeURIComponent(JSON.stringify(registryObj, null, 2)))),
         branch: ghConfig.branch
       };
       if (sha) payload.sha = sha;
 
-      await fetch(url, {
-        method: 'PUT',
-        headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      await fetch(url, { method: 'PUT', headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     }
 
-    // Charger le coffre chiffré spécifique à l'utilisateur connecté
     async function loadEncryptedVaultFromGitHub() {
       if (!ghConfig.token || !currentSession.username) return;
       setSync('saving', 'Chargement...');
 
       const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data/vaults/${currentSession.username}.json?ref=${ghConfig.branch}`;
       try {
-        const res = await fetch(url, {
-          headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github.v3+json' }
-        });
-
+        const res = await fetch(url, { headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github.v3+json' } });
         if (res.status === 404) {
           userVault = { courses: [], flashcards: [], todos: [], lastUpdated: new Date().toISOString() };
-          setSync('synced', 'Nouveau coffre');
+          setSync('synced', 'Nouveau');
           return;
         }
-
         const data = await res.json();
         currentVaultSha = data.sha;
         const decoded = JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\n/g, '')))));
-
-        // Déchiffrement avec la clé de session
         userVault = await decryptData(decoded, currentSession.aesKey);
         setSync('synced', 'À jour');
       } catch (err) {
-        console.error("Erreur de déchiffrement :", err);
         setSync('error', 'Erreur coffre');
       }
     }
 
-    // Sauvegarder le coffre chiffré sur GitHub
     async function saveEncryptedVaultToGitHub() {
       if (!ghConfig.token || !currentSession.username) return;
       setSync('saving', 'Chiffrement...');
 
       const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data/vaults/${currentSession.username}.json`;
-
       try {
-        // 1. Chiffrement AES-256
         const encryptedPayload = await encryptData(userVault, currentSession.aesKey);
-
-        // 2. Vérification du SHA distant
-        const head = await fetch(`${url}?ref=${ghConfig.branch}`, {
-          headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github.v3+json' }
-        });
-        if (head.ok) {
-          const hJson = await head.json();
-          currentVaultSha = hJson.sha;
-        }
+        const head = await fetch(`${url}?ref=${ghConfig.branch}`, { headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github.v3+json' } });
+        if (head.ok) { const h = await head.json(); currentVaultSha = h.sha; }
 
         const body = {
           message: `Update vault [${currentSession.username}]`,
@@ -1130,18 +1132,12 @@
         };
         if (currentVaultSha) body.sha = currentVaultSha;
 
-        const putRes = await fetch(url, {
-          method: 'PUT',
-          headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        });
-
-        if (!putRes.ok) throw new Error("Erreur GitHub " + putRes.status);
+        const putRes = await fetch(url, { method: 'PUT', headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        if (!putRes.ok) throw new Error("Erreur GitHub");
         const resData = await putRes.json();
         currentVaultSha = resData.content.sha;
-        setSync('synced', 'Chiffré & Sauvegardé');
+        setSync('synced', 'Sauvegardé');
       } catch (e) {
-        console.error(e);
         setSync('error', 'Erreur sauvegarde');
       }
     }
@@ -1149,29 +1145,219 @@
     function autoSaveUserVault() {
       setSync('saving', 'Attente...');
       clearTimeout(autoSaveTimer);
-      autoSaveTimer = setTimeout(() => {
-        saveEncryptedVaultToGitHub();
-      }, 1500);
+      autoSaveTimer = setTimeout(() => { saveEncryptedVaultToGitHub(); }, 1500);
     }
 
-    function syncUserVault(silent = false) {
-      loadEncryptedVaultFromGitHub().then(() => {
-        renderCourses();
-        renderFlashcards();
-        renderTodos();
-        if (!silent) alert("Données chiffrées synchronisées depuis GitHub !");
-      });
+    async function syncUserVault(silent = false) {
+      await loadEncryptedVaultFromGitHub();
+      await fetchSharedCourses();
+      renderCourses();
+      renderFlashcards();
+      renderTodos();
+      updateReceivedBadge();
+      if (!silent) alert("Coffre et partages synchronisés avec GitHub !");
     }
 
     /* ==========================================================
-       4. GESTION DES COURS PERSONNELS & SCHÉMAS
+       4. SYSTÈME DE PARTAGE DE COURS ENTRE ÉLÈVES
        ========================================================== */
-    function setFilter(cat) {
-      activeFilter = cat;
+    async function fetchSharedCourses() {
+      if (!ghConfig.token) return;
+      const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data/shares.json?ref=${ghConfig.branch}`;
+      try {
+        const res = await fetch(url, { headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github.v3+json' } });
+        if (res.status === 404) { allSharedCourses = []; return; }
+        const data = await res.json();
+        sharesFileSha = data.sha;
+        const decoded = JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\n/g, '')))));
+        allSharedCourses = decoded.shares || [];
+      } catch (e) { allSharedCourses = []; }
+    }
+
+    async function pushSharedCourses(sharesList) {
+      const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data/shares.json`;
+      try {
+        const head = await fetch(`${url}?ref=${ghConfig.branch}`, { headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github.v3+json' } });
+        if (head.ok) { const h = await head.json(); sharesFileSha = h.sha; }
+      } catch (e) {}
+
+      const payload = {
+        message: "Mise à jour des partages CIEL",
+        content: btoa(unescape(encodeURIComponent(JSON.stringify({ shares: sharesList }, null, 2)))),
+        branch: ghConfig.branch
+      };
+      if (sharesFileSha) payload.sha = sharesFileSha;
+
+      const res = await fetch(url, { method: 'PUT', headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (res.ok) {
+        const d = await res.json();
+        sharesFileSha = d.content.sha;
+      }
+    }
+
+    function switchCourseSubView(mode) {
+      currentSubView = mode;
+      document.getElementById('btnViewMine').classList.toggle('active', mode === 'mine');
+      document.getElementById('btnViewReceived').classList.toggle('active', mode === 'received');
+      renderCourses();
+    }
+
+    function updateReceivedBadge() {
+      if (!currentSession.username) return;
+      const received = allSharedCourses.filter(s => s.toUser === currentSession.username);
+      document.getElementById('receivedCountBadge').innerText = received.length;
+    }
+
+    async function openShareModal(courseId) {
+      const course = userVault.courses.find(c => c.id === courseId);
+      if (!course) return;
+      courseToShare = course;
+
+      document.getElementById('shareCourseTitle').innerText = course.title;
+      const listEl = document.getElementById('recipientsList');
+      listEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Chargement des élèves...';
+      document.getElementById('shareModal').classList.add('active');
+
+      const registry = await fetchUsersRegistry();
+      const otherUsers = Object.keys(registry.users || {}).filter(u => u !== currentSession.username);
+
+      if (otherUsers.length === 0) {
+        listEl.innerHTML = `<p style="font-size:0.85rem; color:var(--text-sub);">Aucun autre compte élève inscrit pour le moment.</p>`;
+        return;
+      }
+
+      listEl.innerHTML = '';
+      otherUsers.forEach(u => {
+        const row = document.createElement('label');
+        row.style = 'display:flex; align-items:center; gap:0.6rem; padding:0.4rem 0; cursor:pointer; font-size:0.9rem; color:#fff;';
+        row.innerHTML = `<input type="checkbox" value="${u}" class="share-recipient-cb" /> <span>@${u}</span>`;
+        listEl.appendChild(row);
+      });
+    }
+
+    function closeShareModal() {
+      document.getElementById('shareModal').classList.remove('active');
+      courseToShare = null;
+    }
+
+    async function confirmSendShare() {
+      if (!courseToShare) return;
+      const selected = Array.from(document.querySelectorAll('.share-recipient-cb:checked')).map(cb => cb.value);
+
+      if (selected.length === 0) {
+        alert("Veuillez cocher au moins un élève destinataire.");
+        return;
+      }
+
+      const btn = document.getElementById('btnConfirmShare');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Envoi en cours...';
+
+      try {
+        await fetchSharedCourses(); // Recharger la dernière version
+
+        selected.forEach(recipient => {
+          allSharedCourses.push({
+            id: 'share_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+            fromUser: currentSession.username,
+            toUser: recipient,
+            sentAt: new Date().toISOString(),
+            course: {
+              subject: courseToShare.subject,
+              title: courseToShare.title,
+              content: courseToShare.content,
+              attachments: courseToShare.attachments || []
+            }
+          });
+        });
+
+        await pushSharedCourses(allSharedCourses);
+        alert(`Cours partagé avec succès à : ${selected.join(', ')} !`);
+        closeShareModal();
+      } catch (e) {
+        alert("Erreur de partage : " + e.message);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Envoyer le cours aux élèves choisis';
+      }
+    }
+
+    // Importer un cours reçu dans son coffre personnel
+    function importSharedCourse(shareId) {
+      const share = allSharedCourses.find(s => s.id === shareId);
+      if (!share) return;
+
+      userVault.courses.unshift({
+        id: Date.now(),
+        subject: share.course.subject,
+        title: `[Reçu de @${share.fromUser}] ${share.course.title}`,
+        content: share.course.content,
+        attachments: share.course.attachments || [],
+        date: new Date().toISOString()
+      });
+
+      autoSaveUserVault();
+      alert("Ce cours a été importé dans votre classeur personnel !");
+      switchCourseSubView('mine');
+    }
+
+    async function deleteSharedCourse(shareId) {
+      if (confirm("Supprimer ce partage de votre boîte de réception ?")) {
+        allSharedCourses = allSharedCourses.filter(s => s.id !== shareId);
+        await pushSharedCourses(allSharedCourses);
+        updateReceivedBadge();
+        renderCourses();
+      }
+    }
+
+    /* ==========================================================
+       5. FILTRAGE STRICT & RENDU DES COURS
+       ========================================================== */
+    function setFilter(catKey) {
+      activeFilter = catKey;
       document.querySelectorAll('.cat-chip').forEach(c => {
-        c.classList.toggle('active', c.innerText.includes(cat === 'all' ? 'Tous' : cat.split(' - ')[1] || cat));
+        c.classList.toggle('active', c.getAttribute('data-cat') === catKey);
       });
       renderCourses();
+    }
+
+    // Vérificateur infaillible de matière
+    function checkSubjectMatch(courseSubject, catKey) {
+      if (catKey === 'all') return true;
+      const sub = (courseSubject || '').toLowerCase();
+
+      switch (catKey) {
+        case 'maths':
+          return sub.includes('math');
+        case 'physique':
+          return sub.includes('physique') || sub.includes('chimie');
+        case 'reseaux':
+          return sub.includes('réseaux') || sub.includes('reseaux');
+        case 'secu':
+          return sub.includes('cyber') || sub.includes('sécurité') || sub.includes('securite');
+        case 'elec':
+          return sub.includes('électronique') || sub.includes('electronique') || sub.includes('iot');
+        case 'projet':
+          return sub.includes('projet');
+        case 'francais':
+          return sub.includes('français') || sub.includes('francais');
+        case 'hist-geo':
+          return sub.includes('histoire') || sub.includes('géo') || sub.includes('geo') || sub.includes('emc');
+        case 'pse':
+          return sub.includes('pse') || sub.includes('santé') || sub.includes('environnement');
+        case 'eco':
+          return sub.includes('économie') || sub.includes('economie') || sub.includes('gestion');
+        case 'anglais':
+          return sub.includes('anglais');
+        case 'allemand':
+          return sub.includes('allemand');
+        case 'arts':
+          return sub.includes('arts') || sub.includes('artistique');
+        case 'eps':
+          return sub.includes('eps') || sub.includes('sport');
+        default:
+          return sub.includes(catKey.toLowerCase());
+      }
     }
 
     function renderCourses() {
@@ -1179,74 +1365,134 @@
       const counter = document.getElementById('coursesCounter');
       const search = (document.getElementById('courseSearch')?.value || '').toLowerCase();
 
-      const items = userVault.courses.filter(c => {
-        const matchesCat = (activeFilter === 'all') || (c.subject.includes(activeFilter));
-        const matchesSearch = !search || c.title.toLowerCase().includes(search) || (c.content || '').toLowerCase().includes(search);
-        return matchesCat && matchesSearch;
-      });
-
-      counter.innerText = `${items.length} cours`;
-
-      if (items.length === 0) {
-        feed.innerHTML = `
-          <div style="text-align: center; padding: 3.5rem 1rem; color: var(--text-sub);">
-            <i class="fa-solid fa-lock" style="font-size: 2.8rem; margin-bottom: 0.75rem; opacity: 0.3;"></i>
-            <p style="font-size: 0.95rem;">Votre espace est actuellement vide.</p>
-            <p style="font-size: 0.8rem; margin-top: 0.3rem;">Ajoutez un cours avec le bouton <strong>+</strong>.</p>
-          </div>
-        `;
-        return;
-      }
-
       feed.innerHTML = '';
-      items.forEach(c => {
-        const realIdx = userVault.courses.findIndex(x => x.id === c.id);
-        const card = document.createElement('div');
-        card.className = 'course-card';
 
-        let attachmentsHTML = '';
-        if (c.attachments && c.attachments.length > 0) {
-          attachmentsHTML += '<div class="attachments-shelf">';
-          c.attachments.forEach(att => {
-            const url = att.downloadUrl || att.path;
-            if (att.isImage) {
-              attachmentsHTML += `
-                <div class="img-thumb-container" onclick="openLightbox('${url}')" title="Agrandir le schéma">
-                  <img src="${url}" alt="${att.name}" loading="lazy" />
-                </div>
-              `;
-            } else {
-              attachmentsHTML += `
-                <a href="${url}" target="_blank" download="${att.name}" class="file-badge-download">
-                  <i class="fa-solid fa-file-arrow-down"></i>
-                  <span>${att.name}</span>
-                </a>
-              `;
-            }
-          });
-          attachmentsHTML += '</div>';
+      if (currentSubView === 'mine') {
+        // Affichage des cours du classeur personnel
+        const items = userVault.courses.filter(c => {
+          const matchCat = checkSubjectMatch(c.subject, activeFilter);
+          const matchSearch = !search || c.title.toLowerCase().includes(search) || (c.content || '').toLowerCase().includes(search);
+          return matchCat && matchSearch;
+        });
+
+        counter.innerText = `${items.length} cours personnel${items.length > 1 ? 's' : ''}`;
+
+        if (items.length === 0) {
+          feed.innerHTML = `
+            <div style="text-align: center; padding: 3rem 1rem; color: var(--text-sub);">
+              <i class="fa-solid fa-folder-open" style="font-size: 2.8rem; margin-bottom: 0.75rem; opacity: 0.3;"></i>
+              <p style="font-size: 0.95rem;">Aucun cours dans cette matière.</p>
+              <p style="font-size: 0.8rem; margin-top: 0.3rem;">Ajoutez un cours avec le bouton <strong>+</strong>.</p>
+            </div>`;
+          return;
         }
 
-        card.innerHTML = `
-          <div class="course-card-top">
-            <div>
-              <span class="badge-sub">${c.subject}</span>
-              <h4 class="course-title">${c.title}</h4>
+        items.forEach(c => {
+          const realIdx = userVault.courses.findIndex(x => x.id === c.id);
+          const card = document.createElement('div');
+          card.className = 'course-card';
+
+          let attachmentsHTML = buildAttachmentsHTML(c.attachments);
+
+          card.innerHTML = `
+            <div class="course-card-top">
+              <div>
+                <span class="badge-sub">${escapeHtml(c.subject)}</span>
+                <h4 class="course-title">${escapeHtml(c.title)}</h4>
+              </div>
+              <div style="display: flex; gap: 0.4rem;">
+                <button class="btn btn-share" style="padding: 0.35rem 0.65rem; min-height: 32px;" onclick="openShareModal(${c.id})" title="Partager avec un camarade">
+                  <i class="fa-solid fa-share-nodes"></i> Partager
+                </button>
+                <button class="btn btn-danger" style="padding: 0.35rem 0.6rem; min-height: 32px;" onclick="deleteCourse(${realIdx})">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
             </div>
-            <button class="btn btn-danger" style="padding: 0.35rem 0.6rem; min-height: 32px;" onclick="deleteCourse(${realIdx})">
-              <i class="fa-solid fa-trash-can"></i>
-            </button>
-          </div>
-          <div class="course-body">${marked.parse(c.content || '')}</div>
-          ${attachmentsHTML}
-          <div style="margin-top: 0.85rem; color: var(--text-sub); font-size: 0.72rem;">
-            ${new Date(c.date).toLocaleDateString('fr-FR')} • ${new Date(c.date).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}
-          </div>
-        `;
-        feed.appendChild(card);
-      });
+            <div class="course-body">${marked.parse(c.content || '')}</div>
+            ${attachmentsHTML}
+            <div style="margin-top: 0.85rem; color: var(--text-sub); font-size: 0.72rem;">
+              Enregistré le ${new Date(c.date).toLocaleDateString('fr-FR')} • ${new Date(c.date).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}
+            </div>
+          `;
+          feed.appendChild(card);
+        });
+
+      } else {
+        // Affichage des cours partagés par d'autres élèves
+        const received = allSharedCourses.filter(s => s.toUser === currentSession.username && checkSubjectMatch(s.course.subject, activeFilter) && (!search || s.course.title.toLowerCase().includes(search) || (s.course.content || '').toLowerCase().includes(search)));
+
+        counter.innerText = `${received.length} cours partagé${received.length > 1 ? 's' : ''}`;
+
+        if (received.length === 0) {
+          feed.innerHTML = `
+            <div style="text-align: center; padding: 3rem 1rem; color: var(--text-sub);">
+              <i class="fa-solid fa-inbox" style="font-size: 2.8rem; margin-bottom: 0.75rem; opacity: 0.3;"></i>
+              <p style="font-size: 0.95rem;">Aucun cours reçu dans cette catégorie.</p>
+            </div>`;
+          return;
+        }
+
+        received.forEach(s => {
+          const card = document.createElement('div');
+          card.className = 'course-card';
+          card.style.borderColor = 'rgba(99, 102, 241, 0.4)';
+
+          let attachmentsHTML = buildAttachmentsHTML(s.course.attachments);
+
+          card.innerHTML = `
+            <div class="course-card-top">
+              <div>
+                <span class="badge-sub" style="background: rgba(99, 102, 241, 0.15); color: #a5b4fc; border-color: #6366f1;">
+                  <i class="fa-solid fa-user-tag"></i> Reçu de @${escapeHtml(s.fromUser)} • ${escapeHtml(s.course.subject)}
+                </span>
+                <h4 class="course-title">${escapeHtml(s.course.title)}</h4>
+              </div>
+              <div style="display: flex; gap: 0.4rem;">
+                <button class="btn btn-primary" style="padding: 0.35rem 0.65rem; min-height: 32px; font-size: 0.75rem;" onclick="importSharedCourse('${s.id}')">
+                  <i class="fa-solid fa-file-import"></i> Importer
+                </button>
+                <button class="btn btn-danger" style="padding: 0.35rem 0.6rem; min-height: 32px;" onclick="deleteSharedCourse('${s.id}')">
+                  <i class="fa-solid fa-trash-can"></i>
+                </button>
+              </div>
+            </div>
+            <div class="course-body">${marked.parse(s.course.content || '')}</div>
+            ${attachmentsHTML}
+            <div style="margin-top: 0.85rem; color: var(--text-sub); font-size: 0.72rem;">
+              Envoyé le ${new Date(s.sentAt).toLocaleDateString('fr-FR')} à ${new Date(s.sentAt).toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}
+            </div>
+          `;
+          feed.appendChild(card);
+        });
+      }
     }
 
+    function buildAttachmentsHTML(attachments) {
+      if (!attachments || attachments.length === 0) return '';
+      let html = '<div class="attachments-shelf">';
+      attachments.forEach(att => {
+        const url = att.downloadUrl || att.path;
+        if (att.isImage) {
+          html += `
+            <div class="img-thumb-container" onclick="openLightbox('${url}')" title="Agrandir le schéma">
+              <img src="${url}" alt="${escapeHtml(att.name)}" loading="lazy" />
+            </div>`;
+        } else {
+          html += `
+            <a href="${url}" target="_blank" download="${escapeHtml(att.name)}" class="file-badge-download">
+              <i class="fa-solid fa-file-arrow-down"></i>
+              <span>${escapeHtml(att.name)}</span>
+            </a>`;
+        }
+      });
+      html += '</div>';
+      return html;
+    }
+
+    /* ==========================================================
+       6. CRÉATION DE COURS & UPLOAD DIRECT GITHUB
+       ========================================================== */
     function openCourseModal() {
       pendingFiles = [];
       renderPendingModalFiles();
@@ -1271,7 +1517,7 @@
         chip.style = 'background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 99px; padding: 0.3rem 0.7rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.4rem;';
         chip.innerHTML = `
           <i class="${isImg ? 'fa-solid fa-image' : 'fa-solid fa-file'}" style="color: var(--primary);"></i>
-          <span>${f.name}</span>
+          <span>${escapeHtml(f.name)}</span>
           <i class="fa-solid fa-xmark" style="color: var(--accent-rose); cursor: pointer;" onclick="pendingFiles.splice(${idx},1); renderPendingModalFiles();"></i>
         `;
         box.appendChild(chip);
@@ -1291,17 +1537,12 @@
       const b64 = await fileToBase64(file);
       const clean = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const filename = `${Date.now()}_${clean}`;
-      // Fichiers stockés dans un sous-dossier au nom de l'utilisateur
       const path = `uploads/${currentSession.username}/${filename}`;
       const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/${path}`;
 
       const res = await fetch(url, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${ghConfig.token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/vnd.github.v3+json'
-        },
+        headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' },
         body: JSON.stringify({
           message: `Upload ${currentSession.username}: ${filename}`,
           content: b64,
@@ -1309,7 +1550,7 @@
         })
       });
 
-      if (!res.ok) throw new Error("Erreur téléversement GitHub");
+      if (!res.ok) throw new Error("Erreur téléversement");
       const data = await res.json();
       return {
         name: file.name,
@@ -1327,7 +1568,7 @@
       const btn = document.getElementById('mSubmitBtn');
 
       if (!title) {
-        alert("Indiquez un titre pour ce cours.");
+        alert("Veuillez renseigner un titre.");
         return;
       }
 
@@ -1366,7 +1607,7 @@
     }
 
     function deleteCourse(idx) {
-      if (confirm("Supprimer définitivement ce cours de votre coffre ?")) {
+      if (confirm("Supprimer définitivement ce cours ?")) {
         userVault.courses.splice(idx, 1);
         renderCourses();
         autoSaveUserVault();
@@ -1374,7 +1615,7 @@
     }
 
     /* ==========================================================
-       5. LIGHTBOX SCHÉMAS (CONTRASTE BLANC)
+       7. LIGHTBOX SCHÉMAS (CONTRASTE FOND BLANC)
        ========================================================== */
     function openLightbox(src) {
       document.getElementById('lightboxImg').src = src;
@@ -1386,7 +1627,7 @@
     }
 
     /* ==========================================================
-       6. FLASHCARDS & TODOS DU COFFRE
+       8. FLASHCARDS & TODOS
        ========================================================== */
     function renderFlashcards() {
       const box = document.getElementById('fcDisplayContent');
@@ -1395,7 +1636,7 @@
       const cardEl = document.getElementById('fcInteractiveCard');
 
       if (userVault.flashcards.length === 0) {
-        box.innerHTML = "Aucune flashcard dans votre coffre.";
+        box.innerHTML = "Aucune flashcard enregistrée.";
         counter.innerText = "0 / 0";
         badge.innerText = "Vide";
         cardEl.classList.remove('is-ans');
@@ -1411,10 +1652,10 @@
 
       if (fcFlipped) {
         cardEl.classList.add('is-ans');
-        box.innerHTML = `<span style="color: var(--accent-green); font-size: 0.8rem; text-transform: uppercase;">[Réponse]</span><br>${item.a}`;
+        box.innerHTML = `<span style="color: var(--accent-green); font-size: 0.8rem; text-transform: uppercase;">[Réponse]</span><br>${escapeHtml(item.a)}`;
       } else {
         cardEl.classList.remove('is-ans');
-        box.innerHTML = `<span style="color: var(--primary); font-size: 0.8rem; text-transform: uppercase;">[Question]</span><br>${item.q}`;
+        box.innerHTML = `<span style="color: var(--primary); font-size: 0.8rem; text-transform: uppercase;">[Question]</span><br>${escapeHtml(item.q)}`;
       }
     }
 
@@ -1441,7 +1682,7 @@
       const a = document.getElementById('fcA').value.trim();
 
       if (!q || !a) {
-        alert("Saisissez une question et une réponse.");
+        alert("Saisissez une question et sa réponse.");
         return;
       }
       userVault.flashcards.push({ s, q, a });
@@ -1461,7 +1702,7 @@
     function renderTodos() {
       const feed = document.getElementById('todosFeed');
       if (userVault.todos.length === 0) {
-        feed.innerHTML = `<p style="text-align: center; color: var(--text-sub); padding: 1.5rem 0;">Aucun objectif personnel en attente.</p>`;
+        feed.innerHTML = `<p style="text-align: center; color: var(--text-sub); padding: 1.5rem 0;">Aucun objectif en attente.</p>`;
         return;
       }
       feed.innerHTML = '';
@@ -1471,7 +1712,7 @@
         row.innerHTML = `
           <div style="display:flex; align-items:center; gap:0.75rem; cursor:pointer; flex:1;" onclick="userVault.todos[${i}].done = !userVault.todos[${i}].done; renderTodos(); autoSaveUserVault();">
             <i class="fa-${t.done ? 'solid fa-circle-check' : 'regular fa-circle'}" style="font-size: 1.2rem; color:${t.done ? 'var(--accent-green)' : 'var(--text-sub)'};"></i>
-            <span style="${t.done ? 'text-decoration: line-through; color: var(--text-sub);' : ''}">${t.text}</span>
+            <span style="${t.done ? 'text-decoration: line-through; color: var(--text-sub);' : ''}">${escapeHtml(t.text)}</span>
           </div>
           <button class="btn btn-danger" style="padding: 0.25rem 0.55rem; min-height: 32px;" onclick="userVault.todos.splice(${i}, 1); renderTodos(); autoSaveUserVault();">
             <i class="fa-solid fa-trash-can"></i>
@@ -1491,7 +1732,7 @@
     }
 
     /* ==========================================================
-       7. NAVIGATION ET PARAMÈTRES
+       9. NAVIGATION ET CONFIGURATION
        ========================================================== */
     function showTab(tabId) {
       document.querySelectorAll('.tab-view').forEach(t => t.classList.remove('active'));
@@ -1512,7 +1753,12 @@
       ghConfig.token = document.getElementById('cfgToken').value.trim();
 
       localStorage.setItem('ciel_gh_config', JSON.stringify(ghConfig));
-      alert("Configuration enregistrée.");
+      alert("Configuration enregistrée !");
+    }
+
+    function escapeHtml(text) {
+      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+      return (text || '').replace(/[&<>"']/g, m => map[m]);
     }
   </script>
 </body>
