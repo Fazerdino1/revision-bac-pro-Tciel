@@ -1,0 +1,9 @@
+{
+  "users": {
+    "esteban": {
+      "salt": "e631bc51a252935c439152ab3ba88128",
+      "verifier": "dd2a13b470172f8df3bcff15753e61412a13c069b49a5c4e4db2d7eefdaa25c2",
+      "createdAt": "2026-09-11T09:26:36.136Z"
+    }
+  }
+}
