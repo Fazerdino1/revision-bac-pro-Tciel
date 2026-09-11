@@ -12,9 +12,16 @@
   
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.9/purify.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-  <link rel="stylesheet" href="css/styles.css?v=3.2.0" />
+  <link rel="stylesheet" href="css/styles.css?v=3.3.0" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#080c14" />
 </head>
 <body>
 
@@ -261,15 +268,37 @@
         </div>
       </div>
 
+      <!-- Fil d'Ariane dynamique -->
+      <div class="feed-breadcrumbs" id="feedBreadcrumbs">
+        <span class="bc-item" onclick="setFilter('all')"><i class="fa-solid fa-house"></i> Accueil</span>
+        <i class="fa-solid fa-chevron-right bc-sep"></i>
+        <span class="bc-item active" id="bcActiveCat">Toutes les matières</span>
+        <span class="bc-tag-pill" id="bcActiveTag" style="display:none;" onclick="clearTagFilter()">
+          <span id="bcTagText"></span> <i class="fa-solid fa-xmark"></i>
+        </span>
+      </div>
+
       <div class="feed-status-bar">
         <div class="feed-status-info">
           <i class="fa-solid fa-layer-group"></i>
           <span id="coursesCounter">0 cours</span>
         </div>
-        <button class="btn-sync-action" onclick="syncUserVault(false)" title="Forcer la synchronisation avec le coffre GitHub">
-          <i class="fa-solid fa-rotate"></i>
-          <span>Synchroniser</span>
-        </button>
+
+        <div class="feed-status-controls">
+          <div class="sort-selector-wrap">
+            <i class="fa-solid fa-arrow-down-short-wide"></i>
+            <select id="courseSortSelect" onchange="renderCourses()" class="sort-select" title="Trier les cours">
+              <option value="date-desc">Plus récents</option>
+              <option value="date-asc">Plus anciens</option>
+              <option value="title-asc">Titre (A-Z)</option>
+              <option value="fav-first">⭐ Favoris en tête</option>
+            </select>
+          </div>
+          <button class="btn-sync-action" onclick="syncUserVault(false)" title="Forcer la synchronisation avec le coffre GitHub">
+            <i class="fa-solid fa-rotate"></i>
+            <span>Synchroniser</span>
+          </button>
+        </div>
       </div>
 
       <div id="coursesFeed"></div>
@@ -439,12 +468,86 @@
 
       <div class="form-row">
         <label>Titre de la fiche</label>
-        <input type="text" class="form-input" id="mTitle" placeholder="Ex: TP Masques IPv4 /28 et Switch Cisco" />
+        <input type="text" class="form-input" id="mTitle" placeholder="Ex: TP Masques IPv4 /28 et Switch Cisco" oninput="triggerDraftSave()" />
       </div>
 
       <div class="form-row">
-        <label>Contenu du cours (Markdown supporté)</label>
-        <textarea class="form-input" id="mContent" placeholder="Formules, commandes de configuration, résumés..."></textarea>
+        <label>Tags / Mots-clés (séparés par des virgules)</label>
+        <input type="text" class="form-input" id="mTags" placeholder="Ex: #tp, #cisco, #vlan, #terminale" oninput="triggerDraftSave()" />
+      </div>
+
+      <div class="form-row">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem;">
+          <label style="margin-bottom: 0;">Contenu du cours (Markdown)</label>
+          <div class="md-view-toggles">
+            <button type="button" class="btn-md-mode active" id="btnModeSplit" onclick="setEditorMode('split')" title="Vue scindée (Éditeur + Aperçu)">
+              <i class="fa-solid fa-table-columns"></i> Split
+            </button>
+            <button type="button" class="btn-md-mode" id="btnModeEdit" onclick="setEditorMode('edit')" title="Éditeur seul">
+              <i class="fa-solid fa-code"></i> Écrire
+            </button>
+            <button type="button" class="btn-md-mode" id="btnModePreview" onclick="setEditorMode('preview')" title="Aperçu seul">
+              <i class="fa-solid fa-eye"></i> Aperçu
+            </button>
+          </div>
+        </div>
+
+        <!-- Barre d'outils Markdown rapide -->
+        <div class="md-toolbar" id="mdToolbar">
+          <div class="md-toolbar-group">
+            <button type="button" class="md-tool-btn" onclick="insertMd('**', '**', 'texte en gras')" title="Gras (Ctrl+B)"><i class="fa-solid fa-bold"></i></button>
+            <button type="button" class="md-tool-btn" onclick="insertMd('*', '*', 'texte en italique')" title="Italique (Ctrl+I)"><i class="fa-solid fa-italic"></i></button>
+            <button type="button" class="md-tool-btn" onclick="insertMd('~~', '~~', 'texte barré')" title="Barré"><i class="fa-solid fa-strikethrough"></i></button>
+          </div>
+          <div class="md-toolbar-sep"></div>
+          <div class="md-toolbar-group">
+            <button type="button" class="md-tool-btn" onclick="insertMd('# ', '', 'Titre 1')" title="Titre 1">H1</button>
+            <button type="button" class="md-tool-btn" onclick="insertMd('## ', '', 'Titre 2')" title="Titre 2">H2</button>
+            <button type="button" class="md-tool-btn" onclick="insertMd('### ', '', 'Titre 3')" title="Titre 3">H3</button>
+          </div>
+          <div class="md-toolbar-sep"></div>
+          <div class="md-toolbar-group">
+            <button type="button" class="md-tool-btn" onclick="insertMd('- ', '', 'Élément de liste')" title="Liste à puces"><i class="fa-solid fa-list-ul"></i></button>
+            <button type="button" class="md-tool-btn" onclick="insertMd('1. ', '', 'Élément numéroté')" title="Liste numérotée"><i class="fa-solid fa-list-ol"></i></button>
+            <button type="button" class="md-tool-btn" onclick="insertMd('- [ ] ', '', 'Tâche à réviser')" title="Checklist"><i class="fa-solid fa-square-check"></i></button>
+            <button type="button" class="md-tool-btn" onclick="insertMd('> ', '', 'Citation ou remarque')" title="Citation"><i class="fa-solid fa-quote-left"></i></button>
+          </div>
+          <div class="md-toolbar-sep"></div>
+          <div class="md-toolbar-group">
+            <button type="button" class="md-tool-btn" onclick="insertMd('`', '`', 'commande')" title="Code inline"><i class="fa-solid fa-terminal"></i></button>
+            <button type="button" class="md-tool-btn" onclick="insertCodeBlock('bash')" title="Bloc de code Bash / Cisco">CLI</button>
+            <button type="button" class="md-tool-btn" onclick="insertCodeBlock('python')" title="Bloc de code Python">Py</button>
+            <button type="button" class="md-tool-btn" onclick="insertCodeBlock('c')" title="Bloc de code C/C++">C</button>
+            <button type="button" class="md-tool-btn" onclick="insertTableTemplate()" title="Insérer un tableau"><i class="fa-solid fa-table"></i></button>
+            <button type="button" class="md-tool-btn" onclick="insertMd('$', '$', 'U = R \\cdot I')" title="Formule mathématique"><i class="fa-solid fa-square-root-variable"></i></button>
+          </div>
+          <div class="md-toolbar-sep"></div>
+          <div class="md-toolbar-group">
+            <button type="button" class="md-tool-btn" onclick="editorUndo()" title="Annuler (Ctrl+Z)"><i class="fa-solid fa-rotate-left"></i></button>
+            <button type="button" class="md-tool-btn" onclick="editorRedo()" title="Rétablir (Ctrl+Y)"><i class="fa-solid fa-rotate-right"></i></button>
+          </div>
+        </div>
+
+        <!-- Conteneur Split View -->
+        <div class="md-editor-container split-active" id="mdEditorContainer">
+          <div class="md-editor-pane" id="mdEditorPane">
+            <textarea class="form-input md-textarea" id="mContent" placeholder="Formules, commandes de configuration, résumés..." oninput="handleMarkdownInput()"></textarea>
+          </div>
+          <div class="md-preview-pane" id="mdPreviewPane">
+            <div class="md-preview-header"><i class="fa-regular fa-eye"></i> Aperçu en direct</div>
+            <div class="course-body md-preview-content" id="mContentPreview"></div>
+          </div>
+        </div>
+
+        <!-- Barre de statistiques et de brouillon -->
+        <div class="editor-stats-bar">
+          <div class="editor-stats">
+            <span id="mWordCount"><i class="fa-solid fa-file-lines"></i> 0 mots</span>
+            <span id="mCharCount">0 car.</span>
+            <span id="mReadTime"><i class="fa-regular fa-clock"></i> ~1 min de lecture</span>
+          </div>
+          <div class="draft-indicator" id="mDraftStatus"><i class="fa-solid fa-cloud"></i> Prêt</div>
+        </div>
       </div>
 
       <div class="form-row">
@@ -475,14 +578,59 @@
         Cours à partager : <strong id="shareCourseTitle" style="color: #fff;"></strong>
       </p>
 
-      <div class="form-row">
-        <label>Sélectionnez les élèves destinataires :</label>
-        <div id="recipientsList" style="max-height: 240px; overflow-y: auto; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.5rem;"></div>
+      <!-- Onglets de partage (Camarades / QR Code Mobile) -->
+      <div class="share-tab-pills">
+        <button type="button" class="share-tab-pill active" id="btnTabShareUsers" onclick="switchShareMode('users')">
+          <i class="fa-solid fa-users"></i> Par élève
+        </button>
+        <button type="button" class="share-tab-pill" id="btnTabShareQR" onclick="switchShareMode('qr')">
+          <i class="fa-solid fa-qrcode"></i> Flash QR Code
+        </button>
       </div>
 
-      <button class="btn btn-primary" id="btnConfirmShare" style="width: 100%;" onclick="confirmSendShare()">
-        <i class="fa-solid fa-paper-plane"></i> Envoyer le cours aux élèves choisis
-      </button>
+      <!-- Mode 1 : Sélection des élèves -->
+      <div id="shareModeUsersSection">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+          <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Destinataires :</label>
+          <button type="button" class="btn" style="padding: 0.2rem 0.6rem; min-height: 26px; font-size: 0.72rem;" onclick="toggleSelectAllRecipients()">
+            <i class="fa-solid fa-check-double"></i> Toute la classe
+          </button>
+        </div>
+        <div id="recipientsList" style="max-height: 240px; overflow-y: auto; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.5rem; margin-bottom: 1rem;"></div>
+
+        <button class="btn btn-primary" id="btnConfirmShare" style="width: 100%;" onclick="confirmSendShare()">
+          <i class="fa-solid fa-paper-plane"></i> Envoyer le cours aux élèves choisis
+        </button>
+      </div>
+
+      <!-- Mode 2 : QR Code de transfert instantané -->
+      <div id="shareModeQRSection" style="display: none; text-align: center; padding: 1rem 0;">
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Faites scanner ce QR code avec l'appareil photo d'un smartphone pour ouvrir directement le cours :
+        </p>
+        <div id="shareQRCodeContainer" style="display: inline-flex; padding: 12px; background: #ffffff; border-radius: var(--radius-md); box-shadow: 0 8px 24px rgba(0,0,0,0.5);"></div>
+        <div style="margin-top: 1rem;">
+          <button type="button" class="btn" onclick="copyShareCourseLink()" style="font-size: 0.8rem;">
+            <i class="fa-solid fa-copy"></i> Copier le lien direct
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL MODE FOCUS / PLEIN ÉCRAN -->
+  <div class="modal-backdrop" id="focusModal" onclick="closeFocusModal()">
+    <div class="modal-sheet focus-sheet" onclick="event.stopPropagation()">
+      <div class="focus-header">
+        <div class="focus-meta" id="focusModalMeta"></div>
+        <div class="focus-actions">
+          <button class="btn-card-action" onclick="printFocusCourse()" title="Imprimer ou Exporter en PDF"><i class="fa-solid fa-print"></i></button>
+          <button class="btn-card-action" onclick="closeFocusModal()" title="Quitter le mode Focus"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+      </div>
+      <h2 class="focus-title" id="focusModalTitle"></h2>
+      <div class="course-body focus-body" id="focusModalBody"></div>
+      <div id="focusModalAttachments"></div>
     </div>
   </div>
 
@@ -496,8 +644,13 @@
     </div>
   </div>
 
-  <script src="js/crypto.js?v=3.2.0"></script>
-  <script src="js/github.js?v=3.2.0"></script>
-  <script src="js/app.js?v=3.2.0"></script>
+  <!-- Bouton flottant Retour en Haut -->
+  <button class="back-to-top-btn" id="backToTopBtn" onclick="scrollToTop()" title="Retour en haut de page">
+    <i class="fa-solid fa-arrow-up"></i>
+  </button>
+
+  <script src="js/crypto.js?v=3.3.0"></script>
+  <script src="js/github.js?v=3.3.0"></script>
+  <script src="js/app.js?v=3.3.0"></script>
 </body>
 </html>

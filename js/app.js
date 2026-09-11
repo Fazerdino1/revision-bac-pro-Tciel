@@ -520,10 +520,71 @@ function updateReceivedBadge() {
   if (badge) badge.innerText = received.length;
 }
 
+let shareMode = 'users';
+
+function switchShareMode(mode) {
+  shareMode = mode;
+  const btnUsers = document.getElementById('btnTabShareUsers');
+  const btnQR = document.getElementById('btnTabShareQR');
+  const secUsers = document.getElementById('shareModeUsersSection');
+  const secQR = document.getElementById('shareModeQRSection');
+
+  if (mode === 'users') {
+    btnUsers?.classList.add('active');
+    btnQR?.classList.remove('active');
+    if (secUsers) secUsers.style.display = 'block';
+    if (secQR) secQR.style.display = 'none';
+  } else {
+    btnQR?.classList.add('active');
+    btnUsers?.classList.remove('active');
+    if (secUsers) secUsers.style.display = 'none';
+    if (secQR) secQR.style.display = 'block';
+    if (courseToShare) renderCourseQRCode(courseToShare);
+  }
+}
+
+function renderCourseQRCode(course) {
+  const container = document.getElementById('shareQRCodeContainer');
+  if (!container || typeof QRCode === 'undefined') return;
+  container.innerHTML = '';
+  const shareData = `${window.location.origin}${window.location.pathname}#course-${course.id}`;
+  new QRCode(container, {
+    text: shareData,
+    width: 170,
+    height: 170,
+    colorDark: "#080c14",
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.M
+  });
+}
+
+function copyShareCourseLink() {
+  if (!courseToShare) return;
+  const link = `${window.location.origin}${window.location.pathname}#course-${courseToShare.id}`;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(link).then(() => {
+      showToast("Lien direct copié dans le presse-papier ! 📋", "success");
+    }).catch(() => {
+      prompt("Copiez ce lien de partage :", link);
+    });
+  } else {
+    prompt("Copiez ce lien de partage :", link);
+  }
+}
+
+function toggleSelectAllRecipients() {
+  const checkboxes = document.querySelectorAll('.share-recipient-cb');
+  const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+  checkboxes.forEach(cb => { cb.checked = !allChecked; });
+  showToast(!allChecked ? "Toute la classe sélectionnée !" : "Sélection réinitialisée", "info");
+}
+
 async function openShareModal(courseId) {
   const course = userVault.courses.find(c => c.id === courseId);
   if (!course) return;
   courseToShare = course;
+
+  switchShareMode('users');
 
   const titleEl = document.getElementById('shareCourseTitle');
   if (titleEl) titleEl.innerText = course.title;
@@ -749,21 +810,63 @@ function getSubjectThemeInfo(subject) {
   return { key: 'default', icon: 'fa-solid fa-book-bookmark' };
 }
 
+let activeTagFilter = null;
+
+function filterByTag(tag) {
+  activeTagFilter = tag;
+  const pill = document.getElementById('bcActiveTag');
+  const text = document.getElementById('bcTagText');
+  if (pill && text) {
+    text.innerText = '#' + tag;
+    pill.style.display = 'inline-flex';
+  }
+  renderCourses();
+}
+
+function clearTagFilter() {
+  activeTagFilter = null;
+  const pill = document.getElementById('bcActiveTag');
+  if (pill) pill.style.display = 'none';
+  renderCourses();
+}
+
+function toggleCourseFavorite(id) {
+  const c = userVault.courses.find(x => x.id === id);
+  if (!c) return;
+  c.isFavorite = !c.isFavorite;
+  showToast(c.isFavorite ? "Ajouté aux favoris ⭐" : "Retiré des favoris", "info");
+  renderCourses();
+  triggerAutoSave();
+}
+
 function renderCourses() {
   const feed = document.getElementById('coursesFeed');
   const counter = document.getElementById('coursesCounter');
   if (!feed) return;
   const searchInput = document.getElementById('courseSearch');
   const search = (searchInput?.value || '').toLowerCase();
+  const sortMode = document.getElementById('courseSortSelect')?.value || 'date-desc';
 
   feed.innerHTML = '';
 
   if (currentSubView === 'mine') {
-    const items = userVault.courses.filter(c => {
+    let items = userVault.courses.filter(c => {
       const matchCat = checkSubjectMatch(c.subject, activeFilter);
       const matchSearch = !search || c.title.toLowerCase().includes(search) || (c.content || '').toLowerCase().includes(search);
-      return matchCat && matchSearch;
+      const matchTag = !activeTagFilter || (c.tags && c.tags.includes(activeTagFilter));
+      return matchCat && matchSearch && matchTag;
     });
+
+    // Tri dynamique
+    if (sortMode === 'date-desc') {
+      items.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+    } else if (sortMode === 'date-asc') {
+      items.sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0));
+    } else if (sortMode === 'title-asc') {
+      items.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+    } else if (sortMode === 'fav-first') {
+      items.sort((a, b) => (b.isFavorite ? 1 : 0) - (a.isFavorite ? 1 : 0) || (new Date(b.date || 0) - new Date(a.date || 0)));
+    }
 
     if (counter) counter.innerText = `${items.length} cours personnel${items.length > 1 ? 's' : ''}`;
 
@@ -771,7 +874,7 @@ function renderCourses() {
       feed.innerHTML = `
         <div style="grid-column: 1 / -1; text-align: center; padding: 3.5rem 1rem; color: var(--text-sub);">
           <i class="fa-solid fa-folder-open" style="font-size: 3rem; margin-bottom: 0.85rem; opacity: 0.35;"></i>
-          <p style="font-size: 1rem; font-weight: 600; color: var(--text-muted);">Aucun cours dans cette catégorie.</p>
+          <p style="font-size: 1rem; font-weight: 600; color: var(--text-muted);">Aucun cours dans cette sélection.</p>
           <p style="font-size: 0.82rem; margin-top: 0.35rem;">Ajoutez un cours avec le bouton <strong>+ Nouveau cours</strong>.</p>
         </div>`;
       return;
@@ -786,10 +889,24 @@ function renderCourses() {
       const parsedContent = (typeof marked !== 'undefined' && marked.parse) ? marked.parse(c.content || '') : (c.content || '');
       const sanitizedBody = (typeof DOMPurify !== 'undefined' && DOMPurify.sanitize) ? DOMPurify.sanitize(parsedContent) : parsedContent;
 
+      let tagsHTML = '';
+      if (c.tags && c.tags.length > 0) {
+        tagsHTML = `<div class="card-tags-row">${c.tags.map(t => `<span class="card-tag-pill" onclick="filterByTag('${escapeHtml(t)}')">#${escapeHtml(t)}</span>`).join('')}</div>`;
+      }
+
       card.innerHTML = `
         <div class="course-card-top">
           <span class="badge-sub"><i class="${theme.icon}"></i> ${escapeHtml(c.subject)}</span>
           <div class="card-actions">
+            <button class="btn-card-action btn-action-fav ${c.isFavorite ? 'active' : ''}" onclick="toggleCourseFavorite(${c.id})" title="${c.isFavorite ? 'Retirer des favoris' : 'Marquer comme favori'}">
+              <i class="fa-${c.isFavorite ? 'solid' : 'regular'} fa-star"></i>
+            </button>
+            <button class="btn-card-action btn-action-focus" onclick="openFocusModal(${c.id}, false)" title="Lecture Zen / Plein écran">
+              <i class="fa-solid fa-expand"></i>
+            </button>
+            <button class="btn-card-action btn-action-pdf" onclick="exportCourseToPDF(${c.id})" title="Imprimer ou Exporter en PDF">
+              <i class="fa-solid fa-file-pdf"></i>
+            </button>
             <button class="btn-card-action btn-action-share" onclick="openShareModal(${c.id})" title="Partager avec un camarade">
               <i class="fa-solid fa-share-nodes"></i>
             </button>
@@ -802,6 +919,7 @@ function renderCourses() {
           </div>
         </div>
         <h4 class="course-title">${escapeHtml(c.title)}</h4>
+        ${tagsHTML}
         <div class="course-body">${sanitizedBody}</div>
         ${attachmentsHTML}
         <div class="course-card-footer">
@@ -812,7 +930,12 @@ function renderCourses() {
     });
 
   } else {
-    const received = allSharedCourses.filter(s => s.toUser === currentSession.username && checkSubjectMatch(s.course.subject, activeFilter) && (!search || s.course.title.toLowerCase().includes(search) || (s.course.content || '').toLowerCase().includes(search)));
+    let received = allSharedCourses.filter(s => {
+      const matchCat = checkSubjectMatch(s.course.subject, activeFilter);
+      const matchSearch = !search || s.course.title.toLowerCase().includes(search) || (s.course.content || '').toLowerCase().includes(search);
+      const matchTag = !activeTagFilter || (s.course.tags && s.course.tags.includes(activeTagFilter));
+      return s.toUser === currentSession.username && matchCat && matchSearch && matchTag;
+    });
 
     if (counter) counter.innerText = `${received.length} cours partagé${received.length > 1 ? 's' : ''}`;
 
@@ -820,7 +943,7 @@ function renderCourses() {
       feed.innerHTML = `
         <div style="grid-column: 1 / -1; text-align: center; padding: 3.5rem 1rem; color: var(--text-sub);">
           <i class="fa-solid fa-inbox" style="font-size: 3rem; margin-bottom: 0.85rem; opacity: 0.35;"></i>
-          <p style="font-size: 1rem; font-weight: 600; color: var(--text-muted);">Aucun cours reçu dans cette matière.</p>
+          <p style="font-size: 1rem; font-weight: 600; color: var(--text-muted);">Aucun cours reçu dans cette sélection.</p>
         </div>`;
       return;
     }
@@ -836,6 +959,11 @@ function renderCourses() {
       const parsedContent = (typeof marked !== 'undefined' && marked.parse) ? marked.parse(s.course.content || '') : (s.course.content || '');
       const sanitizedBody = (typeof DOMPurify !== 'undefined' && DOMPurify.sanitize) ? DOMPurify.sanitize(parsedContent) : parsedContent;
 
+      let tagsHTML = '';
+      if (s.course.tags && s.course.tags.length > 0) {
+        tagsHTML = `<div class="card-tags-row">${s.course.tags.map(t => `<span class="card-tag-pill" onclick="filterByTag('${escapeHtml(t)}')">#${escapeHtml(t)}</span>`).join('')}</div>`;
+      }
+
       card.innerHTML = `
         <div class="course-card-top">
           <div class="course-card-sender">
@@ -849,6 +977,12 @@ function renderCourses() {
             </div>
           </div>
           <div class="card-actions">
+            <button class="btn-card-action btn-action-focus" onclick="openFocusModal('${s.id}', true)" title="Lecture Zen / Plein écran">
+              <i class="fa-solid fa-expand"></i>
+            </button>
+            <button class="btn-card-action btn-action-pdf" onclick="openFocusModal('${s.id}', true); setTimeout(()=>window.print(), 350);" title="Imprimer ou Exporter en PDF">
+              <i class="fa-solid fa-file-pdf"></i>
+            </button>
             <button class="btn-card-action btn-action-edit" onclick="importSharedCourse('${s.id}')" title="Importer dans mon classeur">
               <i class="fa-solid fa-file-import"></i>
             </button>
@@ -858,6 +992,7 @@ function renderCourses() {
           </div>
         </div>
         <h4 class="course-title">${escapeHtml(s.course.title)}</h4>
+        ${tagsHTML}
         <div class="course-body">${sanitizedBody}</div>
         ${attachmentsHTML}
         <div class="course-card-footer">
@@ -866,6 +1001,11 @@ function renderCourses() {
       `;
       feed.appendChild(card);
     });
+  }
+
+  // Coloration syntaxique Prism sur tout le flux
+  if (typeof Prism !== 'undefined' && feed) {
+    Prism.highlightAllUnder(feed);
   }
 }
 
@@ -904,183 +1044,241 @@ function buildAttachmentsHTML(attachments) {
   return html;
 }
 
-function openCourseModal() {
-  editingCourseId = null;
-  pendingFiles = [];
-  renderPendingModalFiles();
-  const mTitle = document.getElementById('mTitle');
-  const mContent = document.getElementById('mContent');
-  const mSubmitBtn = document.getElementById('mSubmitBtn');
-  if (mTitle) mTitle.value = '';
-  if (mContent) mContent.value = '';
-  if (mSubmitBtn) mSubmitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Sauvegarder dans mon classeur';
-  const modal = document.getElementById('courseModal');
-  if (modal) modal.classList.add('active');
+// Fonctions Markdown Toolbar, Split-View & Draft Auto-Save
+function insertMd(before, after, defaultText) {
+  const textarea = document.getElementById('mContent');
+  if (!textarea) return;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const val = textarea.value;
+  const selected = val.substring(start, end) || defaultText;
+  const replacement = before + selected + after;
+  textarea.value = val.substring(0, start) + replacement + val.substring(end);
+  const newPos = start + before.length + selected.length;
+  textarea.setSelectionRange(newPos, newPos);
+  textarea.focus();
+  handleMarkdownInput();
 }
 
-function openEditCourseModal(id) {
-  const course = userVault.courses.find(c => c.id === id);
+function insertCodeBlock(lang = 'bash') {
+  const textarea = document.getElementById('mContent');
+  if (!textarea) return;
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const val = textarea.value;
+  const selected = val.substring(start, end) || '// Tapez votre commande ou code ici';
+  const block = `\n\`\`\`${lang}\n${selected}\n\`\`\`\n`;
+  textarea.value = val.substring(0, start) + block + val.substring(end);
+  textarea.focus();
+  handleMarkdownInput();
+}
+
+function insertTableTemplate() {
+  const tpl = `\n| Paramètre / Équipement | Valeur / Configuration | Description |\n|---|---|---|\n| IP / Masque | 192.168.1.1/24 | Passerelle par défaut |\n| VLAN | 10 | Réseau administration |\n`;
+  insertMd('', '', tpl);
+}
+
+function editorUndo() {
+  const textarea = document.getElementById('mContent');
+  if (textarea) {
+    textarea.focus();
+    document.execCommand('undo');
+    handleMarkdownInput();
+  }
+}
+
+function editorRedo() {
+  const textarea = document.getElementById('mContent');
+  if (textarea) {
+    textarea.focus();
+    document.execCommand('redo');
+    handleMarkdownInput();
+  }
+}
+
+function setEditorMode(mode) {
+  const container = document.getElementById('mdEditorContainer');
+  const btnSplit = document.getElementById('btnModeSplit');
+  const btnEdit = document.getElementById('btnModeEdit');
+  const btnPreview = document.getElementById('btnModePreview');
+  if (!container) return;
+
+  container.classList.remove('split-active', 'edit-active', 'preview-active');
+  [btnSplit, btnEdit, btnPreview].forEach(b => b?.classList.remove('active'));
+
+  if (mode === 'split') {
+    container.classList.add('split-active');
+    btnSplit?.classList.add('active');
+  } else if (mode === 'edit') {
+    container.classList.add('edit-active');
+    btnEdit?.classList.add('active');
+  } else if (mode === 'preview') {
+    container.classList.add('preview-active');
+    btnPreview?.classList.add('active');
+  }
+}
+
+let draftSaveTimeout = null;
+function triggerDraftSave() {
+  const title = document.getElementById('mTitle')?.value || '';
+  const subject = document.getElementById('mSubject')?.value || '';
+  const tags = document.getElementById('mTags')?.value || '';
+  const content = document.getElementById('mContent')?.value || '';
+  const status = document.getElementById('mDraftStatus');
+
+  if (status) status.innerHTML = '<i class="fa-solid fa-pen"></i> En cours...';
+
+  clearTimeout(draftSaveTimeout);
+  draftSaveTimeout = setTimeout(() => {
+    if (!editingCourseId && (title || content)) {
+      try {
+        localStorage.setItem('ciel_draft_course', JSON.stringify({ title, subject, tags, content, timestamp: Date.now() }));
+        if (status) status.innerHTML = '<i class="fa-solid fa-check"></i> Brouillon sauvegardé';
+      } catch (e) {}
+    }
+  }, 800);
+}
+
+function restoreDraftIfExists() {
+  const raw = localStorage.getItem('ciel_draft_course');
+  if (!raw) return;
+  try {
+    const draft = JSON.parse(raw);
+    const mTitle = document.getElementById('mTitle');
+    const mSubject = document.getElementById('mSubject');
+    const mTags = document.getElementById('mTags');
+    const mContent = document.getElementById('mContent');
+    const status = document.getElementById('mDraftStatus');
+
+    if (mTitle && draft.title && !mTitle.value) mTitle.value = draft.title;
+    if (mSubject && draft.subject && !mSubject.value) mSubject.value = draft.subject;
+    if (mTags && draft.tags && !mTags.value) mTags.value = draft.tags;
+    if (mContent && draft.content && !mContent.value) mContent.value = draft.content;
+    if (status) status.innerHTML = '<i class="fa-solid fa-clock-rotate-left"></i> Brouillon restauré';
+  } catch (e) {}
+}
+
+function clearDraft() {
+  localStorage.removeItem('ciel_draft_course');
+  const status = document.getElementById('mDraftStatus');
+  if (status) status.innerHTML = '<i class="fa-solid fa-cloud"></i> Prêt';
+}
+
+function handleMarkdownInput() {
+  triggerDraftSave();
+  const content = document.getElementById('mContent')?.value || '';
+  const preview = document.getElementById('mContentPreview');
+  const wordEl = document.getElementById('mWordCount');
+  const charEl = document.getElementById('mCharCount');
+  const readEl = document.getElementById('mReadTime');
+
+  const words = content.trim() ? (content.trim().match(/\S+/g) || []).length : 0;
+  const chars = content.length;
+  const readTime = Math.max(1, Math.ceil(words / 200));
+
+  if (wordEl) wordEl.innerHTML = `<i class="fa-solid fa-file-lines"></i> ${words} mot${words > 1 ? 's' : ''}`;
+  if (charEl) charEl.innerText = `${chars} car.`;
+  if (readEl) readEl.innerHTML = `<i class="fa-regular fa-clock"></i> ~${readTime} min de lecture`;
+
+  if (preview) {
+    const parsed = (typeof marked !== 'undefined' && marked.parse) ? marked.parse(content) : content;
+    preview.innerHTML = (typeof DOMPurify !== 'undefined' && DOMPurify.sanitize) ? DOMPurify.sanitize(parsed) : parsed;
+    if (typeof Prism !== 'undefined') {
+      Prism.highlightAllUnder(preview);
+    }
+  }
+}
+
+// Focus Mode & PDF
+function openFocusModal(id, isShared = false) {
+  let course;
+  if (!isShared) {
+    course = userVault.courses.find(c => c.id === Number(id));
+  } else {
+    const shared = allSharedCourses.find(s => s.id === String(id));
+    course = shared ? shared.course : null;
+  }
   if (!course) return;
 
-  editingCourseId = id;
-  pendingFiles = [];
-  renderPendingModalFiles();
+  const theme = getSubjectThemeInfo(course.subject);
+  const metaEl = document.getElementById('focusModalMeta');
+  const titleEl = document.getElementById('focusModalTitle');
+  const bodyEl = document.getElementById('focusModalBody');
+  const attEl = document.getElementById('focusModalAttachments');
 
-  const mSubject = document.getElementById('mSubject');
-  const mTitle = document.getElementById('mTitle');
-  const mContent = document.getElementById('mContent');
-  const mSubmitBtn = document.getElementById('mSubmitBtn');
+  if (metaEl) {
+    metaEl.innerHTML = `<span class="badge-sub"><i class="${theme.icon}"></i> ${escapeHtml(course.subject)}</span>`;
+  }
+  if (titleEl) titleEl.innerText = course.title;
+  if (bodyEl) {
+    const parsed = (typeof marked !== 'undefined' && marked.parse) ? marked.parse(course.content || '') : (course.content || '');
+    bodyEl.innerHTML = (typeof DOMPurify !== 'undefined' && DOMPurify.sanitize) ? DOMPurify.sanitize(parsed) : parsed;
+    if (typeof Prism !== 'undefined') Prism.highlightAllUnder(bodyEl);
+  }
+  if (attEl) {
+    attEl.innerHTML = buildAttachmentsHTML(course.attachments);
+  }
 
-  if (mSubject) mSubject.value = course.subject;
-  if (mTitle) mTitle.value = course.title;
-  if (mContent) mContent.value = course.content || '';
-  if (mSubmitBtn) mSubmitBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Mettre à jour le cours';
-
-  const modal = document.getElementById('courseModal');
+  const modal = document.getElementById('focusModal');
   if (modal) modal.classList.add('active');
 }
 
-function closeCourseModal() {
-  editingCourseId = null;
-  const modal = document.getElementById('courseModal');
+function closeFocusModal() {
+  const modal = document.getElementById('focusModal');
   if (modal) modal.classList.remove('active');
 }
 
-function handleModalFiles(e) {
-  Array.from(e.target.files).forEach(f => pendingFiles.push(f));
-  renderPendingModalFiles();
-  e.target.value = '';
+function printFocusCourse() {
+  window.print();
 }
 
-function removePendingFile(idx) {
-  pendingFiles.splice(idx, 1);
-  renderPendingModalFiles();
+function exportCourseToPDF(id) {
+  openFocusModal(id, false);
+  setTimeout(() => {
+    window.print();
+  }, 400);
 }
 
-function renderPendingModalFiles() {
-  const box = document.getElementById('mAttachedList');
-  if (!box) return;
-  box.innerHTML = '';
-  pendingFiles.forEach((f, idx) => {
-    const isImg = f.type.startsWith('image/');
-    const chip = document.createElement('span');
-    chip.style = 'background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 99px; padding: 0.3rem 0.7rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.4rem;';
-    chip.innerHTML = `
-      <i class="${isImg ? 'fa-solid fa-image' : 'fa-solid fa-file'}" style="color: var(--primary);"></i>
-      <span>${escapeHtml(f.name)}</span>
-      <i class="fa-solid fa-xmark" style="color: var(--accent-rose); cursor: pointer;" onclick="removePendingFile(${idx})"></i>
-    `;
-    box.appendChild(chip);
-  });
-}
-
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
+// Compression d'image côté client
+async function compressImageIfNeeded(file) {
+  if (!file.type || !file.type.startsWith('image/')) return file;
+  return new Promise(resolve => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = e => reject(e);
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        const maxDim = 1280;
+        if (width > maxDim || height > maxDim) {
+          if (width > height) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(blob => {
+          if (blob && blob.size < file.size) {
+            const compressedFile = new File([blob], file.name, { type: 'image/jpeg' });
+            resolve(compressedFile);
+          } else {
+            resolve(file);
+          }
+        }, 'image/jpeg', 0.82);
+      };
+      img.onerror = () => resolve(file);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(file);
     reader.readAsDataURL(file);
   });
-}
-
-async function uploadToUserUploadsFolder(file) {
-  const b64 = await fileToBase64(file);
-  const clean = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-  const filename = `${Date.now()}_${clean}`;
-  const path = `uploads/${currentSession.username}/${filename}`;
-  const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/${path}`;
-
-  const res = await fetch(url, {
-    method: 'PUT',
-    headers: {
-      'Authorization': `Bearer ${ghConfig.token}`,
-      'Content-Type': 'application/json',
-      'Accept': 'application/vnd.github.v3+json'
-    },
-    body: JSON.stringify({
-      message: `Upload ${currentSession.username}: ${filename}`,
-      content: b64,
-      branch: ghConfig.branch
-    })
-  });
-
-  if (!res.ok) throw new Error("Erreur téléversement GitHub");
-  const data = await res.json();
-  return {
-    name: file.name,
-    path: path,
-    downloadUrl: data.content.download_url,
-    isImage: file.type.startsWith('image/'),
-    size: file.size
-  };
-}
-
-async function submitCourse() {
-  const subjectEl = document.getElementById('mSubject');
-  const titleEl = document.getElementById('mTitle');
-  const contentEl = document.getElementById('mContent');
-  const btn = document.getElementById('mSubmitBtn');
-
-  const subject = subjectEl ? subjectEl.value : '';
-  const title = titleEl ? titleEl.value.trim() : '';
-  const content = contentEl ? contentEl.value.trim() : '';
-
-  if (!title) {
-    showToast("Veuillez renseigner un titre pour votre cours.", "error");
-    return;
-  }
-
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement...';
-  }
-
-  try {
-    const uploadedList = [];
-    for (const file of pendingFiles) {
-      const res = await uploadToUserUploadsFolder(file);
-      uploadedList.push(res);
-    }
-
-    if (editingCourseId) {
-      const target = userVault.courses.find(c => c.id === editingCourseId);
-      if (target) {
-        target.subject = subject;
-        target.title = title;
-        target.content = content;
-        if (uploadedList.length > 0) {
-          target.attachments = (target.attachments || []).concat(uploadedList);
-        }
-      }
-      editingCourseId = null;
-      showToast("Cours mis à jour avec succès !", "success");
-    } else {
-      userVault.courses.unshift({
-        id: Date.now(),
-        subject,
-        title,
-        content,
-        attachments: uploadedList,
-        date: new Date().toISOString()
-      });
-      showToast("Cours enregistré avec succès !", "success");
-    }
-
-    if (titleEl) titleEl.value = '';
-    if (contentEl) contentEl.value = '';
-    pendingFiles = [];
-
-    closeCourseModal();
-    renderCourses();
-    triggerAutoSave();
-  } catch (err) {
-    showToast("Erreur lors de l'enregistrement : " + err.message, "error");
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Sauvegarder dans mon classeur';
-    }
-  }
 }
 
 async function deleteCourseById(courseId) {
@@ -1150,6 +1348,10 @@ function nextFlashcard() {
   fcFlipped = false;
   fcCursor = (fcCursor + 1) % userVault.flashcards.length;
   renderFlashcards();
+  if (fcCursor === 0 && typeof confetti === 'function' && userVault.flashcards.length > 1) {
+    confetti({ particleCount: 50, spread: 70, origin: { y: 0.6 } });
+    showToast("Tour complet de révision terminé ! 🎯", "success");
+  }
 }
 
 function prevFlashcard() {
@@ -1313,8 +1515,15 @@ function clearCourseSearch() {
   }
 }
 
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 if (typeof window !== 'undefined') {
+  // Raccourcis clavier globaux
   window.addEventListener('keydown', (e) => {
+    const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target?.tagName);
+
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
       e.preventDefault();
       const searchInput = document.getElementById('courseSearch');
@@ -1323,13 +1532,82 @@ if (typeof window !== 'undefined') {
         searchInput.focus();
         searchInput.select();
       }
+    } else if (!isInput && e.key.toLowerCase() === 'n') {
+      e.preventDefault();
+      openCourseModal();
+    } else if (!isInput && e.key === ' ') {
+      const tabFc = document.getElementById('tab-flashcards');
+      if (tabFc && tabFc.classList.contains('active')) {
+        e.preventDefault();
+        toggleFlashcardFlip();
+      }
+    } else if (!isInput && e.key === 'ArrowRight') {
+      const tabFc = document.getElementById('tab-flashcards');
+      if (tabFc && tabFc.classList.contains('active')) {
+        e.preventDefault();
+        nextFlashcard();
+      }
+    } else if (!isInput && e.key === 'ArrowLeft') {
+      const tabFc = document.getElementById('tab-flashcards');
+      if (tabFc && tabFc.classList.contains('active')) {
+        e.preventDefault();
+        prevFlashcard();
+      }
+    } else if (e.key === 'Escape') {
+      closeCourseModal();
+      closeShareModal();
+      closeProfileModal();
+      closeLightbox();
+      closeFocusModal();
     }
   });
 
+  // Bouton Retour en haut flottant
+  window.addEventListener('scroll', () => {
+    const btn = document.getElementById('backToTopBtn');
+    if (!btn) return;
+    if (window.scrollY > 280) {
+      btn.classList.add('visible');
+    } else {
+      btn.classList.remove('visible');
+    }
+  }, { passive: true });
+
+  // PWA Service Worker
+  if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').then(reg => {
+        console.log('CIEL Service Worker registered:', reg.scope);
+      }).catch(err => {
+        console.warn('Service Worker registration failed:', err);
+      });
+    });
+  }
+
+  // Bindings globaux pour HTML
   window.toggleSearchClear = toggleSearchClear;
   window.clearCourseSearch = clearCourseSearch;
   window.openEditCourseModal = openEditCourseModal;
   window.getSubjectThemeInfo = getSubjectThemeInfo;
+  window.insertMd = insertMd;
+  window.insertCodeBlock = insertCodeBlock;
+  window.insertTableTemplate = insertTableTemplate;
+  window.editorUndo = editorUndo;
+  window.editorRedo = editorRedo;
+  window.setEditorMode = setEditorMode;
+  window.handleMarkdownInput = handleMarkdownInput;
+  window.triggerDraftSave = triggerDraftSave;
+  window.toggleCourseFavorite = toggleCourseFavorite;
+  window.filterByTag = filterByTag;
+  window.clearTagFilter = clearTagFilter;
+  window.openFocusModal = openFocusModal;
+  window.closeFocusModal = closeFocusModal;
+  window.printFocusCourse = printFocusCourse;
+  window.exportCourseToPDF = exportCourseToPDF;
+  window.switchShareMode = switchShareMode;
+  window.copyShareCourseLink = copyShareCourseLink;
+  window.toggleSelectAllRecipients = toggleSelectAllRecipients;
+  window.scrollToTop = scrollToTop;
 }
 
 /* ==========================================================
