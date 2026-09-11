@@ -19,6 +19,26 @@
           }
         ]
       }
+    },
+    {
+      "id": "share_1789119448401_3vxqi",
+      "fromUser": "esteban",
+      "toUser": "matt",
+      "sentAt": "2026-09-11T09:37:28.401Z",
+      "course": {
+        "subject": "CIEL - Réseaux",
+        "title": "tst",
+        "content": "tst",
+        "attachments": [
+          {
+            "name": "Hebergement Github Pages(1).docx",
+            "path": "uploads/esteban/1789119172178_Hebergement_Github_Pages_1_.docx",
+            "downloadUrl": "https://raw.githubusercontent.com/Fazerdino1/revision-bac-pro-Tciel/main/uploads/esteban/1789119172178_Hebergement_Github_Pages_1_.docx",
+            "isImage": false,
+            "size": 689292
+          }
+        ]
+      }
     }
   ]
 }
