@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Bac Pro CIEL | Espace Personnel de Révision</title>
+  <title>Bac Pro CIEL | Hub de Révision Automatisé</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <!-- Parser Markdown léger -->
+  <!-- Markdown Renderer -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <style>
@@ -18,7 +18,6 @@
       --bg-card-alt: #0d121f;
       --border-color: #1f293d;
       --primary: #38bdf8;
-      --primary-glow: rgba(56, 189, 248, 0.2);
       --accent: #6366f1;
       --accent-green: #10b981;
       --accent-orange: #f59e0b;
@@ -39,9 +38,8 @@
       flex-direction: column;
     }
 
-    /* En-tête */
     header {
-      background: rgba(17, 24, 39, 0.9);
+      background: rgba(17, 24, 39, 0.92);
       backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border-color);
       position: sticky;
@@ -63,11 +61,10 @@
     .brand {
       display: flex;
       align-items: center;
-      gap: 0.6rem;
+      gap: 0.65rem;
       font-weight: 800;
       font-size: 1.2rem;
     }
-
     .brand i { color: var(--primary); text-shadow: 0 0 10px var(--primary); }
 
     .nav-actions {
@@ -80,20 +77,21 @@
     .sync-status {
       display: inline-flex;
       align-items: center;
-      gap: 0.4rem;
-      font-size: 0.78rem;
+      gap: 0.5rem;
+      font-size: 0.8rem;
       font-family: var(--font-mono);
       background: var(--bg-card-alt);
-      padding: 0.4rem 0.8rem;
+      padding: 0.4rem 0.85rem;
       border-radius: 999px;
       border: 1px solid var(--border-color);
     }
-    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #64748b; }
+    .status-dot { width: 9px; height: 9px; border-radius: 50%; background: #64748b; transition: 0.3s; }
     .status-dot.synced { background: var(--accent-green); box-shadow: 0 0 8px var(--accent-green); }
-    .status-dot.unsaved { background: var(--accent-orange); box-shadow: 0 0 8px var(--accent-orange); }
+    .status-dot.saving { background: var(--accent-orange); box-shadow: 0 0 8px var(--accent-orange); animation: pulse 1s infinite alternate; }
     .status-dot.error { background: var(--accent-rose); box-shadow: 0 0 8px var(--accent-rose); }
 
-    /* Navigation */
+    @keyframes pulse { from { opacity: 0.4; } to { opacity: 1; } }
+
     .nav-tabs {
       display: flex;
       gap: 0.5rem;
@@ -122,7 +120,6 @@
       background: rgba(56, 189, 248, 0.08);
     }
 
-    /* Conteneur principal */
     main {
       max-width: 1400px;
       margin: 0 auto;
@@ -131,11 +128,9 @@
       width: 100%;
     }
 
-    .tab-content { display: none; animation: fadeIn 0.2s ease-in-out; }
+    .tab-content { display: none; }
     .tab-content.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Boutons et éléments */
     .btn {
       background: var(--bg-card);
       color: var(--text-main);
@@ -152,13 +147,11 @@
     }
     .btn:hover { background: #1f293d; border-color: var(--primary); }
     .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-    .btn-primary:hover { background: #4f46e5; border-color: #4f46e5; }
+    .btn-primary:hover { background: #4f46e5; }
     .btn-success { background: rgba(16, 185, 129, 0.15); border-color: var(--accent-green); color: #34d399; }
-    .btn-success:hover { background: var(--accent-green); color: #000; }
     .btn-danger { background: rgba(244, 63, 94, 0.15); border-color: var(--accent-rose); color: #fda4af; }
     .btn-danger:hover { background: var(--accent-rose); color: #fff; }
 
-    /* Cartes & Grilles */
     .card {
       background: var(--bg-card);
       border: 1px solid var(--border-color);
@@ -174,10 +167,7 @@
     }
     @media (max-width: 850px) { .grid-2 { grid-template-columns: 1fr; } }
 
-    /* Formulaires */
-    .form-group {
-      margin-bottom: 1rem;
-    }
+    .form-group { margin-bottom: 1rem; }
     .form-group label {
       display: block;
       font-size: 0.8rem;
@@ -199,17 +189,45 @@
     .form-control:focus { outline: none; border-color: var(--primary); }
     textarea.form-control { resize: vertical; min-height: 180px; font-family: var(--font-mono); font-size: 0.85rem; line-height: 1.5; }
 
-    /* Liste de cours */
+    /* Fichiers & Attachments */
+    .file-dropzone {
+      border: 2px dashed var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem;
+      text-align: center;
+      cursor: pointer;
+      transition: 0.2s;
+      background: rgba(13, 18, 31, 0.5);
+    }
+    .file-dropzone:hover { border-color: var(--primary); background: rgba(56, 189, 248, 0.05); }
+    .file-dropzone input { display: none; }
+
+    .attached-preview-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+    .file-chip {
+      background: #1e293b;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 0.3rem 0.6rem;
+      font-size: 0.75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      color: var(--text-main);
+    }
+    .file-chip i.del-icon { cursor: pointer; color: var(--accent-rose); margin-left: 0.3rem; }
+
+    /* Rendu des cours */
     .course-item {
       background: var(--bg-card-alt);
       border: 1px solid var(--border-color);
       border-radius: 10px;
-      padding: 1rem;
-      margin-bottom: 0.85rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 1rem;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
       transition: border-color 0.2s;
     }
     .course-item:hover { border-color: var(--primary); }
@@ -220,10 +238,10 @@
       font-weight: 700;
       border-radius: 999px;
       text-transform: uppercase;
-      background: rgba(56, 189, 248, 0.1);
+      background: rgba(56, 189, 248, 0.12);
       color: var(--primary);
     }
-    .course-title { font-size: 1.1rem; font-weight: 700; margin: 0.35rem 0; }
+    .course-title { font-size: 1.15rem; font-weight: 700; margin: 0.4rem 0; }
     .course-body {
       font-size: 0.9rem;
       color: #cbd5e1;
@@ -233,7 +251,41 @@
     .course-body code { background: #000; padding: 0.15rem 0.35rem; border-radius: 4px; font-family: var(--font-mono); color: var(--primary); }
     .course-body pre { background: #050811; padding: 0.75rem; border-radius: 6px; overflow-x: auto; margin: 0.6rem 0; }
 
-    /* Empty state */
+    .course-attachments {
+      margin-top: 1rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .img-attachment-thumb {
+      max-width: 140px;
+      max-height: 90px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      object-fit: cover;
+      transition: transform 0.2s;
+    }
+    .img-attachment-thumb:hover { transform: scale(1.05); }
+
+    .file-download-link {
+      background: #111827;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 0.4rem 0.75rem;
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-family: var(--font-mono);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: 0.2s;
+    }
+    .file-download-link:hover { background: #1e293b; color: #fff; }
+
     .empty-state {
       text-align: center;
       padding: 3rem 1rem;
@@ -241,7 +293,7 @@
     }
     .empty-state i { font-size: 2.8rem; margin-bottom: 1rem; opacity: 0.4; }
 
-    /* Flashcards */
+    /* Flashcard Box */
     .fc-box {
       max-width: 600px;
       margin: 1.5rem auto;
@@ -264,52 +316,49 @@
 </head>
 <body>
 
-  <!-- Header -->
   <header>
     <div class="nav-container">
       <div class="brand">
-        <i class="fa-solid fa-graduation-cap"></i>
+        <i class="fa-solid fa-cloud-bolt"></i>
         <span>BAC PRO CIEL HUB</span>
       </div>
 
       <div class="nav-actions">
         <div class="sync-status">
           <span class="status-dot" id="statusDot"></span>
-          <span id="statusText">Non connecté à GitHub</span>
+          <span id="statusText">Initialisation...</span>
         </div>
-        <button class="btn btn-success" onclick="saveToGitHub()"><i class="fa-solid fa-cloud-arrow-up"></i> Sauvegarder sur GitHub</button>
-        <button class="btn" onclick="fetchFromGitHub()"><i class="fa-solid fa-cloud-arrow-down"></i> Récupérer</button>
+        <button class="btn" onclick="forceSyncFromGitHub()"><i class="fa-solid fa-arrows-rotate"></i> Recharger</button>
       </div>
     </div>
   </header>
 
   <main>
-    <!-- Navigation Tabs -->
     <div class="nav-tabs">
-      <button class="tab-btn active" onclick="switchTab('tab-courses')"><i class="fa-solid fa-book-bookmark"></i> Mes Cours & Synthèses</button>
-      <button class="tab-btn" onclick="switchTab('tab-flashcards')"><i class="fa-solid fa-clone"></i> Flashcards Personnalisées</button>
-      <button class="tab-btn" onclick="switchTab('tab-todos')"><i class="fa-solid fa-list-check"></i> Objectifs & Planning</button>
+      <button class="tab-btn active" onclick="switchTab('tab-courses')"><i class="fa-solid fa-book-bookmark"></i> Cours & Fichiers</button>
+      <button class="tab-btn" onclick="switchTab('tab-flashcards')"><i class="fa-solid fa-clone"></i> Flashcards</button>
+      <button class="tab-btn" onclick="switchTab('tab-todos')"><i class="fa-solid fa-list-check"></i> To-Do / Planning</button>
       <button class="tab-btn" onclick="switchTab('tab-settings')"><i class="fa-solid fa-gear"></i> Paramètres GitHub</button>
     </div>
 
-    <!-- TAB 1: COURS & FICHES (VIERGE AU DÉPART, AJOUT LIBRE) -->
+    <!-- TAB 1: COURS & FICHIERS -->
     <section id="tab-courses" class="tab-content active">
       <div class="grid-2">
         <!-- Formulaire de saisie -->
         <div class="card">
-          <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-plus-circle" style="color: var(--primary);"></i> Nouveau Cours / Mémo</h3>
-          
+          <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-plus-circle" style="color: var(--primary);"></i> Ajouter un Cours / TP</h3>
+
           <div class="form-group">
-            <label>Matière / Discipline</label>
+            <label>Matière</label>
             <select class="form-control" id="cSubject">
-              <option value="CIEL - Réseaux & Télécoms">CIEL - Réseaux & Télécoms</option>
+              <option value="CIEL - Réseaux & Informatique">CIEL - Réseaux & Informatique</option>
               <option value="CIEL - Cybersécurité">CIEL - Cybersécurité</option>
               <option value="CIEL - Électronique / IoT">CIEL - Électronique / IoT</option>
               <option value="Mathématiques">Mathématiques</option>
               <option value="Physique-Chimie">Physique-Chimie</option>
               <option value="Français">Français</option>
               <option value="Histoire-Géographie & EMC">Histoire-Géographie & EMC</option>
-              <option value="Prévention Santé Environnement (PSE)">PSE</option>
+              <option value="PSE">PSE</option>
               <option value="Économie-Gestion">Économie-Gestion</option>
               <option value="Anglais">Anglais</option>
               <option value="Allemand">Allemand</option>
@@ -317,30 +366,38 @@
           </div>
 
           <div class="form-group">
-            <label>Titre de la leçon / Fiche</label>
-            <input type="text" class="form-control" id="cTitle" placeholder="Ex: Modèle OSI, Routage statique, Dérivées..." />
+            <label>Titre</label>
+            <input type="text" class="form-control" id="cTitle" placeholder="Ex: Configuration VLAN et routage inter-vlan..." />
           </div>
 
           <div class="form-group">
-            <label>Contenu de la fiche (Supporte le texte brut & le Markdown)</label>
-            <textarea class="form-control" id="cContent" placeholder="Écris tes résumés de cours, tes commandes Linux, tes formules mathématiques ici..."></textarea>
+            <label>Contenu (Markdown supporté)</label>
+            <textarea class="form-control" id="cContent" placeholder="Notes, syntaxes de commandes, formules..."></textarea>
+          </div>
+
+          <!-- Zone d'importation de fichiers / images -->
+          <div class="form-group">
+            <label>Joindre des Images ou Fichiers (Schémas, TP, PDF, .pkt...)</label>
+            <div class="file-dropzone" onclick="document.getElementById('fileInput').click()">
+              <i class="fa-solid fa-cloud-arrow-up" style="font-size: 1.5rem; color: var(--primary); margin-bottom: 0.5rem;"></i>
+              <p style="font-size: 0.85rem; color: var(--text-muted);">Clique pour importer des images (PNG, JPG) ou documents (PDF, PKT, Code, ZIP)</p>
+              <input type="file" id="fileInput" multiple onchange="handleFileSelect(event)" />
+            </div>
+            <div class="attached-preview-list" id="attachedPreview"></div>
           </div>
 
           <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="addCourse()">
-            <i class="fa-solid fa-plus"></i> Ajouter ce cours à mon classeur
+            <i class="fa-solid fa-save"></i> Enregistrer le cours (Auto-Sync)
           </button>
         </div>
 
-        <!-- Liste des cours existants -->
+        <!-- Classeur de cours existants -->
         <div>
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h3><i class="fa-solid fa-folder-open" style="color: var(--accent-orange);"></i> Classeur de cours</h3>
-            <span id="courseCount" style="font-size: 0.85rem; color: var(--text-muted);">0 cours</span>
+            <h3><i class="fa-solid fa-folder-open" style="color: var(--accent-orange);"></i> Classeur actif</h3>
+            <span id="courseCount" style="font-size: 0.85rem; color: var(--text-muted); font-family: var(--font-mono);">0 cours</span>
           </div>
-
-          <div id="coursesList">
-            <!-- État vierge injecté par défaut -->
-          </div>
+          <div id="coursesList"></div>
         </div>
       </div>
     </section>
@@ -348,38 +405,36 @@
     <!-- TAB 2: FLASHCARDS -->
     <section id="tab-flashcards" class="tab-content">
       <div class="grid-2">
-        <!-- Ajout de Flashcard -->
         <div class="card">
-          <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-square-plus" style="color: var(--primary);"></i> Créer une Flashcard</h3>
+          <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-square-plus" style="color: var(--primary);"></i> Nouvelle Flashcard</h3>
           <div class="form-group">
-            <label>Matière</label>
-            <input type="text" class="form-control" id="fcSubject" placeholder="Ex: CIEL, Maths, PSE..." />
+            <label>Discipline</label>
+            <input type="text" class="form-control" id="fcSubject" placeholder="Ex: Réseaux CIEL, Maths..." />
           </div>
           <div class="form-group">
-            <label>Question / Recto</label>
-            <input type="text" class="form-control" id="fcQuestion" placeholder="Ex: Port par défaut de SSH ?" />
+            <label>Question (Recto)</label>
+            <input type="text" class="form-control" id="fcQuestion" placeholder="Ex: Quelle est l'adresse de loopback en IPv4 ?" />
           </div>
           <div class="form-group">
-            <label>Réponse / Verso</label>
-            <textarea class="form-control" id="fcAnswer" style="min-height: 100px;" placeholder="Ex: Port 22 (TCP)"></textarea>
+            <label>Réponse (Verso)</label>
+            <textarea class="form-control" id="fcAnswer" style="min-height: 100px;" placeholder="Ex: 127.0.0.1"></textarea>
           </div>
           <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="addFlashcard()">
-            <i class="fa-solid fa-plus"></i> Ajouter la carte
+            <i class="fa-solid fa-plus"></i> Ajouter (Auto-Sync)
           </button>
         </div>
 
-        <!-- Révision interactive -->
         <div class="card" style="text-align: center;">
-          <h3><i class="fa-solid fa-play" style="color: var(--accent-green);"></i> Entraînement</h3>
-          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Clique sur la carte pour basculer Recto/Verso</p>
-          
+          <h3><i class="fa-solid fa-play" style="color: var(--accent-green);"></i> Mode Révision</h3>
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Clique sur la carte pour révéler la réponse</p>
+
           <div class="fc-box" id="fcPlayBox" onclick="toggleFlipCard()">
-            <div id="fcPlayContent" style="font-size: 1.15rem; font-weight: 600;">Ajoute au moins une carte pour démarrer</div>
+            <div id="fcPlayContent" style="font-size: 1.15rem; font-weight: 600;">Aucune carte</div>
           </div>
 
           <div style="display: flex; justify-content: center; gap: 0.75rem; margin-top: 1rem;">
             <button class="btn" onclick="prevFlashcard()"><i class="fa-solid fa-chevron-left"></i> Précédente</button>
-            <button class="btn btn-danger" onclick="deleteCurrentFlashcard()"><i class="fa-solid fa-trash-can"></i> Supprimer</button>
+            <button class="btn btn-danger" onclick="deleteCurrentFlashcard()"><i class="fa-solid fa-trash-can"></i></button>
             <button class="btn btn-primary" onclick="nextFlashcard()">Suivante <i class="fa-solid fa-chevron-right"></i></button>
           </div>
           <div id="fcCounter" style="margin-top: 0.8rem; font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-muted);">0 / 0</div>
@@ -387,28 +442,28 @@
       </div>
     </section>
 
-    <!-- TAB 3: OBJECTIFS & TODO -->
+    <!-- TAB 3: TODOS -->
     <section id="tab-todos" class="tab-content">
       <div class="card" style="max-width: 800px; margin: 0 auto;">
-        <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-tasks" style="color: var(--primary);"></i> Objectifs & Devoirs à réviser</h3>
+        <h3 style="margin-bottom: 1rem;"><i class="fa-solid fa-tasks" style="color: var(--primary);"></i> Objectifs de révision</h3>
         <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem;">
-          <input type="text" class="form-control" id="todoInput" placeholder="Ex: Faire TP routage Cisco, Apprendre chapitre 2 Histoire..." onkeypress="if(event.key==='Enter') addTodo()" />
-          <button class="btn btn-primary" onclick="addTodo()"><i class="fa-solid fa-plus"></i> Ajouter</button>
+          <input type="text" class="form-control" id="todoInput" placeholder="Ex: Faire le schéma Cisco du TP2..." onkeypress="if(event.key==='Enter') addTodo()" />
+          <button class="btn btn-primary" onclick="addTodo()"><i class="fa-solid fa-plus"></i></button>
         </div>
         <div id="todosContainer"></div>
       </div>
     </section>
 
-    <!-- TAB 4: PARAMÈTRES GITHUB -->
+    <!-- TAB 4: SETTINGS GITHUB -->
     <section id="tab-settings" class="tab-content">
       <div class="card" style="max-width: 750px; margin: 0 auto;">
-        <h3 style="margin-bottom: 0.5rem;"><i class="fa-brands fa-github" style="color: var(--primary);"></i> Synchronisation avec GitHub</h3>
+        <h3 style="margin-bottom: 0.5rem;"><i class="fa-brands fa-github" style="color: var(--primary);"></i> Configuration Sauvegarde Auto</h3>
         <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.5rem;">
-          Toutes tes données sont enregistrées en direct dans ton navigateur (localStorage) ET synchronisables dans ton repo GitHub dans un fichier <code>data/bac_data.json</code>.
+          Toutes les modifications sont automatiquement synchronisées sur ton GitHub dans <code>data/bac_data.json</code>.
         </p>
 
         <div class="form-group">
-          <label>Utilisateur / Organisation GitHub</label>
+          <label>Propriétaire du Dépôt</label>
           <input type="text" class="form-control" id="ghOwner" value="fazerdino1" />
         </div>
 
@@ -423,24 +478,21 @@
         </div>
 
         <div class="form-group">
-          <label>GitHub Personal Access Token (PAT)</label>
+          <label>GitHub Personal Access Token (PAT classic)</label>
           <input type="password" class="form-control" id="ghToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
           <small style="color: var(--text-muted); font-size: 0.75rem; display: block; margin-top: 0.35rem;">
-            Créé un token avec la permission <strong>contents: write</strong> sur GitHub (Settings > Developer Settings > Personal Access Tokens). Ce token reste stocké uniquement sur ton propre navigateur.
+            Le token est conservé uniquement dans le stockage local de ton navigateur actuel (jamais écrit en clair sur GitHub).
           </small>
         </div>
 
-        <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
-          <button class="btn btn-primary" onclick="saveSettings()"><i class="fa-solid fa-floppy-disk"></i> Enregistrer les paramètres</button>
-          <button class="btn btn-success" onclick="testGitHubConnection()"><i class="fa-solid fa-network-wired"></i> Tester la connexion</button>
-        </div>
+        <button class="btn btn-primary" onclick="saveSettings()"><i class="fa-solid fa-floppy-disk"></i> Enregistrer et Activer la Synchronisation</button>
       </div>
     </section>
   </main>
 
   <script>
     /* ==========================================================
-       1. DONNÉES LOCALES (VIERGE PAR DÉFAUT)
+       1. ÉTAT DES DONNÉES & CONFIGURATION
        ========================================================== */
     let store = JSON.parse(localStorage.getItem('ciel_app_data')) || {
       courses: [],
@@ -456,27 +508,27 @@
       token: ''
     };
 
+    let pendingFiles = [];
     let currentFileSha = null;
+    let autoSaveTimer = null;
     let fcIndex = 0;
     let isFlipped = false;
 
-    /* ==========================================================
-       2. INITIALISATION ET UI
-       ========================================================== */
-    window.onload = () => {
+    window.onload = async () => {
       document.getElementById('ghOwner').value = ghConfig.owner;
       document.getElementById('ghRepo').value = ghConfig.repo;
       document.getElementById('ghBranch').value = ghConfig.branch;
       document.getElementById('ghToken').value = ghConfig.token;
 
-      updateSyncStatus();
       renderCourses();
       renderFlashcards();
       renderTodos();
 
-      // Si token déjà paramétré, tentative de récupération
       if (ghConfig.token) {
-        fetchFromGitHub(true);
+        setSyncStatus('saving', 'Synchronisation avec GitHub...');
+        await pullFromGitHub(true);
+      } else {
+        setSyncStatus('', 'Token manquant (mode local)');
       }
     };
 
@@ -487,33 +539,179 @@
       const target = document.getElementById(tabId);
       if (target) target.classList.add('active');
 
-      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+      const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick') && b.getAttribute('onclick').includes(tabId));
       if (btn) btn.classList.add('active');
     }
 
-    function saveLocal() {
-      store.lastUpdated = new Date().toISOString();
-      localStorage.setItem('ciel_app_data', JSON.stringify(store));
-      setSyncStatus('unsaved', 'Modifications locales non poussées');
-    }
-
-    function setSyncStatus(type, msg) {
+    function setSyncStatus(state, message) {
       const dot = document.getElementById('statusDot');
-      const text = document.getElementById('statusText');
-      dot.className = `status-dot ${type}`;
-      text.innerText = msg;
-    }
-
-    function updateSyncStatus() {
-      if (!ghConfig.token) {
-        setSyncStatus('', 'Token GitHub manquant');
-      } else {
-        setSyncStatus('synced', 'Connecté à GitHub');
-      }
+      const txt = document.getElementById('statusText');
+      dot.className = 'status-dot';
+      if (state) dot.classList.add(state);
+      txt.innerText = message;
     }
 
     /* ==========================================================
-       3. GESTION DES COURS
+       2. MOTEUR D'AUTO-SAUVEGARDE SUR GITHUB (CONTINU)
+       ========================================================== */
+    function triggerAutoSave() {
+      // 1. Sauvegarde locale immédiate
+      store.lastUpdated = new Date().toISOString();
+      localStorage.setItem('ciel_app_data', JSON.stringify(store));
+
+      if (!ghConfig.token) {
+        setSyncStatus('', 'Sauvegardé en local (pas de token)');
+        return;
+      }
+
+      setSyncStatus('saving', 'Sauvegarde en attente...');
+      clearTimeout(autoSaveTimer);
+
+      // 2. Debounce de 1.8 seconde pour regrouper les frappes et actions
+      autoSaveTimer = setTimeout(() => {
+        commitToGitHub();
+      }, 1800);
+    }
+
+    // Gestion Unicode UTF-8 Base64
+    function utf8ToB64(str) {
+      return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1)));
+    }
+    function b64ToUtf8(str) {
+      return decodeURIComponent(Array.prototype.map.call(atob(str), c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+    }
+
+    async function commitToGitHub() {
+      if (!ghConfig.token) return;
+      setSyncStatus('saving', 'Envoi vers GitHub...');
+
+      const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data/bac_data.json`;
+
+      try {
+        // Obtenir le dernier SHA pour éviter les 409 Conflict
+        const headRes = await fetch(`${url}?ref=${ghConfig.branch}`, {
+          headers: {
+            'Authorization': `Bearer ${ghConfig.token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+        if (headRes.ok) {
+          const headData = await headRes.json();
+          currentFileSha = headData.sha;
+        }
+
+        const payload = {
+          message: `Auto-update CIEL [${new Date().toLocaleTimeString('fr-FR')}]`,
+          content: utf8ToB64(JSON.stringify(store, null, 2)),
+          branch: ghConfig.branch
+        };
+        if (currentFileSha) payload.sha = currentFileSha;
+
+        const putRes = await fetch(url, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${ghConfig.token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/vnd.github.v3+json'
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!putRes.ok) throw new Error(`HTTP ${putRes.status}`);
+
+        const putData = await putRes.json();
+        currentFileSha = putData.content.sha;
+        setSyncStatus('synced', `À jour (${new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})})`);
+      } catch (e) {
+        console.error("AutoSave Error:", e);
+        setSyncStatus('error', 'Erreur synchro GitHub');
+      }
+    }
+
+    async function pullFromGitHub(silent = false) {
+      if (!ghConfig.token) return;
+      const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data/bac_data.json?ref=${ghConfig.branch}`;
+
+      try {
+        const res = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${ghConfig.token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+
+        if (res.status === 404) {
+          setSyncStatus('synced', 'Dépôt connecté (vierge)');
+          return;
+        }
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const json = await res.json();
+        currentFileSha = json.sha;
+        const decoded = b64ToUtf8(json.content.replace(/\n/g, ''));
+        store = JSON.parse(decoded);
+
+        localStorage.setItem('ciel_app_data', JSON.stringify(store));
+        renderCourses();
+        renderFlashcards();
+        renderTodos();
+        setSyncStatus('synced', 'Synchronisé avec GitHub');
+        if (!silent) alert("Données synchronisées depuis GitHub avec succès !");
+      } catch (e) {
+        console.error(e);
+        setSyncStatus('error', 'Erreur de lecture');
+        if (!silent) alert("Erreur de synchronisation : " + e.message);
+      }
+    }
+
+    function forceSyncFromGitHub() {
+      pullFromGitHub(false);
+    }
+
+    /* ==========================================================
+       3. GESTION DES FICHIERS & IMAGES
+       ========================================================== */
+    function handleFileSelect(e) {
+      const files = Array.from(e.target.files);
+      files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          pendingFiles.push({
+            name: file.name,
+            type: file.type,
+            size: file.size,
+            data: event.target.result,
+            isImage: file.type.startsWith('image/')
+          });
+          renderPendingFiles();
+        };
+        reader.readAsDataURL(file);
+      });
+      e.target.value = '';
+    }
+
+    function renderPendingFiles() {
+      const container = document.getElementById('attachedPreview');
+      container.innerHTML = '';
+      pendingFiles.forEach((f, idx) => {
+        const chip = document.createElement('span');
+        chip.className = 'file-chip';
+        chip.innerHTML = `
+          <i class="${f.isImage ? 'fa-solid fa-image' : 'fa-solid fa-file'}"></i>
+          <span>${escapeHtml(f.name)}</span>
+          <i class="fa-solid fa-xmark del-icon" onclick="removePendingFile(${idx})"></i>
+        `;
+        container.appendChild(chip);
+      });
+    }
+
+    function removePendingFile(idx) {
+      pendingFiles.splice(idx, 1);
+      renderPendingFiles();
+    }
+
+    /* ==========================================================
+       4. COURS & CLASSEUR
        ========================================================== */
     function renderCourses() {
       const list = document.getElementById('coursesList');
@@ -524,8 +722,8 @@
         list.innerHTML = `
           <div class="empty-state">
             <i class="fa-solid fa-folder-open"></i>
-            <p><strong>Aucun cours enregistré pour le moment.</strong></p>
-            <p style="font-size: 0.85rem; margin-top: 0.25rem;">Remplis le formulaire à gauche pour ajouter tes premières synthèses.</p>
+            <p><strong>Aucun cours dans ton classeur.</strong></p>
+            <p style="font-size: 0.85rem; margin-top: 0.25rem;">Remplis le formulaire pour ajouter tes leçons et tes schémas.</p>
           </div>
         `;
         return;
@@ -533,20 +731,39 @@
 
       list.innerHTML = '';
       store.courses.forEach((c, idx) => {
-        const item = document.createElement('div');
-        item.className = 'course-item';
-        item.innerHTML = `
-          <div style="flex: 1;">
-            <span class="badge">${escapeHtml(c.subject)}</span>
-            <h4 class="course-title">${escapeHtml(c.title)}</h4>
-            <div class="course-body">${marked.parse(c.content || '')}</div>
-            <small style="color: var(--text-muted); font-size: 0.72rem;">Ajouté le : ${new Date(c.date).toLocaleDateString('fr-FR')}</small>
+        const div = document.createElement('div');
+        div.className = 'course-item';
+
+        let attachHTML = '';
+        if (c.attachments && c.attachments.length > 0) {
+          attachHTML += '<div class="course-attachments">';
+          c.attachments.forEach(att => {
+            if (att.isImage) {
+              attachHTML += `<a href="${att.data}" target="_blank" title="Agrandir l'image"><img src="${att.data}" class="img-attachment-thumb" alt="${escapeHtml(att.name)}" /></a>`;
+            } else {
+              attachHTML += `<a href="${att.data}" download="${escapeHtml(att.name)}" class="file-download-link"><i class="fa-solid fa-download"></i> ${escapeHtml(att.name)}</a>`;
+            }
+          });
+          attachHTML += '</div>';
+        }
+
+        div.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+            <div>
+              <span class="badge">${escapeHtml(c.subject)}</span>
+              <h4 class="course-title">${escapeHtml(c.title)}</h4>
+            </div>
+            <button class="btn btn-danger" style="padding: 0.35rem 0.65rem;" onclick="deleteCourse(${idx})">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
           </div>
-          <button class="btn btn-danger" style="padding: 0.4rem 0.65rem;" onclick="deleteCourse(${idx})">
-            <i class="fa-solid fa-trash-can"></i>
-          </button>
+          <div class="course-body">${marked.parse(c.content || '')}</div>
+          ${attachHTML}
+          <div style="margin-top: 0.6rem; color: var(--text-muted); font-size: 0.72rem;">
+            Enregistré le ${new Date(c.date).toLocaleDateString('fr-FR')} à ${new Date(c.date).toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'})}
+          </div>
         `;
-        list.appendChild(item);
+        list.appendChild(div);
       });
     }
 
@@ -555,8 +772,8 @@
       const title = document.getElementById('cTitle').value.trim();
       const content = document.getElementById('cContent').value.trim();
 
-      if (!title || !content) {
-        alert("Veuillez renseigner au moins un titre et du contenu pour le cours.");
+      if (!title) {
+        alert("Donne au moins un titre à ton cours.");
         return;
       }
 
@@ -565,32 +782,36 @@
         subject,
         title,
         content,
+        attachments: [...pendingFiles],
         date: new Date().toISOString()
       });
 
       document.getElementById('cTitle').value = '';
       document.getElementById('cContent').value = '';
-      saveLocal();
+      pendingFiles = [];
+      renderPendingFiles();
+
       renderCourses();
+      triggerAutoSave();
     }
 
     function deleteCourse(idx) {
-      if (confirm("Supprimer définitivement ce cours ?")) {
+      if (confirm("Supprimer ce cours ?")) {
         store.courses.splice(idx, 1);
-        saveLocal();
         renderCourses();
+        triggerAutoSave();
       }
     }
 
     /* ==========================================================
-       4. GESTION DES FLASHCARDS
+       5. FLASHCARDS
        ========================================================== */
     function renderFlashcards() {
       const box = document.getElementById('fcPlayContent');
       const counter = document.getElementById('fcCounter');
 
       if (store.flashcards.length === 0) {
-        box.innerHTML = "Aucune flashcard créée pour l'instant.";
+        box.innerHTML = "Aucune flashcard enregistrée.";
         counter.innerText = "0 / 0";
         return;
       }
@@ -613,56 +834,50 @@
       isFlipped = !isFlipped;
       renderFlashcards();
     }
-
     function nextFlashcard() {
       if (store.flashcards.length === 0) return;
       isFlipped = false;
       fcIndex = (fcIndex + 1) % store.flashcards.length;
       renderFlashcards();
     }
-
     function prevFlashcard() {
       if (store.flashcards.length === 0) return;
       isFlipped = false;
       fcIndex = (fcIndex - 1 + store.flashcards.length) % store.flashcards.length;
       renderFlashcards();
     }
-
     function addFlashcard() {
       const s = document.getElementById('fcSubject').value.trim() || 'Général';
       const q = document.getElementById('fcQuestion').value.trim();
       const a = document.getElementById('fcAnswer').value.trim();
 
       if (!q || !a) {
-        alert("Veuillez saisir une question et une réponse.");
+        alert("Saisis la question et sa réponse.");
         return;
       }
-
       store.flashcards.push({ s, q, a });
       document.getElementById('fcQuestion').value = '';
       document.getElementById('fcAnswer').value = '';
-      saveLocal();
       renderFlashcards();
+      triggerAutoSave();
     }
-
     function deleteCurrentFlashcard() {
       if (store.flashcards.length === 0) return;
       store.flashcards.splice(fcIndex, 1);
       isFlipped = false;
-      saveLocal();
       renderFlashcards();
+      triggerAutoSave();
     }
 
     /* ==========================================================
-       5. GESTION DES OBJECTIFS (TODOS)
+       6. TODOS
        ========================================================== */
     function renderTodos() {
       const container = document.getElementById('todosContainer');
       if (store.todos.length === 0) {
-        container.innerHTML = `<div class="empty-state"><i class="fa-solid fa-circle-check"></i><p>Aucun objectif pour le moment.</p></div>`;
+        container.innerHTML = `<div class="empty-state"><i class="fa-solid fa-clipboard-check"></i><p>Aucun devoir ou tâche pour le moment.</p></div>`;
         return;
       }
-
       container.innerHTML = '';
       store.todos.forEach((t, i) => {
         const row = document.createElement('div');
@@ -683,25 +898,23 @@
       if (!val) return;
       store.todos.push({ text: val, done: false });
       document.getElementById('todoInput').value = '';
-      saveLocal();
       renderTodos();
+      triggerAutoSave();
     }
-
     function toggleTodo(i) {
       store.todos[i].done = !store.todos[i].done;
-      saveLocal();
       renderTodos();
+      triggerAutoSave();
     }
-
     function deleteTodo(i) {
       store.todos.splice(i, 1);
-      saveLocal();
       renderTodos();
+      triggerAutoSave();
     }
 
     /* ==========================================================
-       6. INTÉGRATION AVEC L'API GITHUB REST
-       ========================================================== */
+       7. PARAMÈTRES
+       ========================================================= */
     function saveSettings() {
       ghConfig.owner = document.getElementById('ghOwner').value.trim();
       ghConfig.repo = document.getElementById('ghRepo').value.trim();
@@ -709,147 +922,8 @@
       ghConfig.token = document.getElementById('ghToken').value.trim();
 
       localStorage.setItem('ciel_gh_config', JSON.stringify(ghConfig));
-      updateSyncStatus();
-      alert("Paramètres GitHub enregistrés.");
-    }
-
-    // Gestion de l'encodage UTF-8 pour Base64
-    function utf8ToB64(str) {
-      return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (match, p1) => String.fromCharCode('0x' + p1)));
-    }
-    function b64ToUtf8(str) {
-      return decodeURIComponent(Array.prototype.map.call(atob(str), c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-    }
-
-    async function fetchFromGitHub(silent = false) {
-      if (!ghConfig.token) {
-        if (!silent) alert("Renseigne ton token GitHub dans l'onglet Paramètres pour synchroniser.");
-        return;
-      }
-
-      setSyncStatus('unsaved', 'Synchronisation en cours...');
-      const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data/bac_data.json?ref=${ghConfig.branch}`;
-
-      try {
-        const res = await fetch(url, {
-          headers: {
-            'Authorization': `Bearer ${ghConfig.token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
-        });
-
-        if (res.status === 404) {
-          if (!silent) alert("Fichier distant non trouvé. Fais 'Sauvegarder sur GitHub' pour le créer automatiquement.");
-          setSyncStatus('synced', 'Dépôt prêt (fichier initial à pousser)');
-          return;
-        }
-
-        if (!res.ok) throw new Error(`Code HTTP ${res.status}`);
-
-        const json = await res.json();
-        currentFileSha = json.sha;
-
-        const decoded = b64ToUtf8(json.content.replace(/\n/g, ''));
-        const remoteData = JSON.parse(decoded);
-
-        store = remoteData;
-        localStorage.setItem('ciel_app_data', JSON.stringify(store));
-
-        renderCourses();
-        renderFlashcards();
-        renderTodos();
-        setSyncStatus('synced', 'À jour avec GitHub');
-        if (!silent) alert("Données récupérées avec succès depuis GitHub !");
-      } catch (err) {
-        console.error(err);
-        setSyncStatus('error', 'Erreur de synchro');
-        if (!silent) alert("Échec de la récupération : " + err.message);
-      }
-    }
-
-    async function saveToGitHub() {
-      if (!ghConfig.token) {
-        alert("Veuillez configurer votre GitHub Personal Access Token (PAT) dans l'onglet Paramètres.");
-        switchTab('tab-settings');
-        return;
-      }
-
-      setSyncStatus('unsaved', 'Envoi vers GitHub...');
-      const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data/bac_data.json`;
-
-      // 1. Récupérer le SHA actuel si non connu pour éviter les conflits
-      if (!currentFileSha) {
-        try {
-          const checkRes = await fetch(`${url}?ref=${ghConfig.branch}`, {
-            headers: {
-              'Authorization': `Bearer ${ghConfig.token}`,
-              'Accept': 'application/vnd.github.v3+json'
-            }
-          });
-          if (checkRes.ok) {
-            const checkJson = await checkRes.json();
-            currentFileSha = checkJson.sha;
-          }
-        } catch (e) {}
-      }
-
-      // 2. Préparation du payload
-      const contentStr = JSON.stringify(store, null, 2);
-      const payload = {
-        message: `Mise à jour des révisions Bac Pro CIEL [${new Date().toLocaleDateString('fr-FR')}]`,
-        content: utf8ToB64(contentStr),
-        branch: ghConfig.branch
-      };
-
-      if (currentFileSha) {
-        payload.sha = currentFileSha;
-      }
-
-      try {
-        const res = await fetch(url, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${ghConfig.token}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/vnd.github.v3+json'
-          },
-          body: JSON.stringify(payload)
-        });
-
-        if (!res.ok) {
-          const errData = await res.json();
-          throw new Error(errData.message || `Code HTTP ${res.status}`);
-        }
-
-        const data = await res.json();
-        currentFileSha = data.content.sha;
-        setSyncStatus('synced', 'Sauvegardé sur GitHub');
-        alert("Sauvegarde réussie sur GitHub (data/bac_data.json) !");
-      } catch (err) {
-        console.error(err);
-        setSyncStatus('error', 'Erreur de sauvegarde');
-        alert("Erreur lors de la sauvegarde sur GitHub : " + err.message);
-      }
-    }
-
-    async function testGitHubConnection() {
-      saveSettings();
-      try {
-        const res = await fetch(`https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}`, {
-          headers: {
-            'Authorization': `Bearer ${ghConfig.token}`,
-            'Accept': 'application/vnd.github.v3+json'
-          }
-        });
-        if (res.ok) {
-          alert("Connexion réussie au dépôt " + ghConfig.owner + "/" + ghConfig.repo + " !");
-          fetchFromGitHub(false);
-        } else {
-          alert("Impossible d'accéder au dépôt. Vérifie le nom ou les permissions de ton token.");
-        }
-      } catch (e) {
-        alert("Erreur réseau : " + e.message);
-      }
+      alert("Paramètres enregistrés. Test de synchronisation immédiat...");
+      pullFromGitHub(false);
     }
 
     function escapeHtml(text) {
