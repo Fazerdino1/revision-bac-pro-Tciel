@@ -123,13 +123,24 @@
     .user-pill {
       display: inline-flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.45rem;
       background: var(--bg-card-elevated);
-      padding: 0.35rem 0.75rem;
+      padding: 0.25rem 0.75rem 0.25rem 0.35rem;
       border-radius: var(--radius-full);
       border: 1px solid var(--border);
-      font-size: 0.78rem;
+      font-size: 0.8rem;
       font-weight: 600;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .user-pill:hover { border-color: var(--primary); }
+
+    .user-avatar-small {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: var(--primary);
     }
 
     .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #64748b; }
@@ -224,7 +235,6 @@
     .btn-primary { background: var(--primary); color: #04101e; border-color: var(--primary); font-weight: 700; }
     .btn-primary:hover { background: var(--primary-hover); color: #fff; }
     .btn-share { background: rgba(99, 102, 241, 0.15); border-color: #6366f1; color: #a5b4fc; }
-    .btn-share:hover { background: #6366f1; color: #fff; }
     .btn-danger { background: rgba(244, 63, 94, 0.15); border-color: var(--accent-rose); color: #fda4af; }
 
     .card {
@@ -408,7 +418,7 @@
       max-width: 100%;
     }
 
-    /* Modal / Formulaire Cours & Partage */
+    /* Modales */
     .modal-backdrop {
       display: none;
       position: fixed;
@@ -532,9 +542,105 @@
       border-radius: var(--radius-sm);
       margin-bottom: 0.5rem;
     }
+
+    /* ==========================================================
+       NOUVEAUX SYSTÈMES : TOASTS ET BOÎTE CONFIRM PERSONNALISÉE
+       ========================================================== */
+    .toast-container {
+      position: fixed;
+      top: 1.25rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      pointer-events: none;
+      width: 90%;
+      max-width: 420px;
+    }
+    .toast {
+      background: #0f172a;
+      border: 1px solid var(--border-light);
+      padding: 0.85rem 1.15rem;
+      border-radius: var(--radius-md);
+      color: #fff;
+      font-size: 0.88rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+      pointer-events: auto;
+      animation: slideToast 0.3s ease-out;
+      transition: opacity 0.3s, transform 0.3s;
+    }
+    .toast.fade-out { opacity: 0; transform: translateY(-10px); }
+    .toast-success { border-color: var(--accent-green); color: #34d399; }
+    .toast-error { border-color: var(--accent-rose); color: #fda4af; }
+    .toast-info { border-color: var(--primary); color: #38bdf8; }
+    @keyframes slideToast { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Boîte de confirmation personnalisée */
+    .confirm-dialog-card {
+      background: #0f172a;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7);
+      text-align: center;
+    }
+
+    /* Photo de profil et Avatar */
+    .avatar-upload-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+    .avatar-preview-lg {
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      border: 3px solid var(--primary);
+      object-fit: cover;
+      background: var(--bg-card-elevated);
+      box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+    }
+    .avatar-upload-btn {
+      background: var(--bg-card-elevated);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      padding: 0.4rem 0.85rem;
+      border-radius: var(--radius-full);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
+
+  <!-- CONTENEUR DES TOASTS PERSONNALISÉS (REMPLACE ALERT) -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- MODALE DE CONFIRMATION PERSONNALISÉE (REMPLACE CONFIRM) -->
+  <div class="modal-backdrop" id="customConfirmModal">
+    <div class="confirm-dialog-card" onclick="event.stopPropagation()">
+      <div style="font-size: 2.2rem; color: var(--accent-orange); margin-bottom: 0.75rem;">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </div>
+      <h3 id="confirmModalTitle" style="font-size: 1.15rem; margin-bottom: 0.5rem; color: #fff;">Confirmation</h3>
+      <p id="confirmModalMsg" style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.5;">Voulez-vous effectuer cette action ?</p>
+      <div style="display: flex; gap: 0.75rem; justify-content: center;">
+        <button class="btn" id="confirmModalCancel" style="flex: 1;">Annuler</button>
+        <button class="btn btn-danger" id="confirmModalOk" style="flex: 1;">Confirmer</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ÉCRAN DE CONNEXION / INSCRIPTION -->
   <div class="auth-overlay" id="authOverlay">
@@ -588,7 +694,9 @@
       </nav>
 
       <div class="header-right">
-        <div class="user-pill">
+        <!-- Pilule utilisateur avec photo de profil cliquable -->
+        <div class="user-pill" onclick="openProfileModal()" title="Modifier mon profil">
+          <img src="" id="headerAvatarImg" class="user-avatar-small" alt="Avatar" />
           <span class="sync-dot" id="syncDot"></span>
           <span id="currentUserLabel">Invité</span>
         </div>
@@ -763,6 +871,38 @@
     </button>
   </nav>
 
+  <!-- MODAL DE PROFIL PERSONNEL (PHOTO & BIO) -->
+  <div class="modal-backdrop" id="profileModal" onclick="closeProfileModal()">
+    <div class="modal-sheet" onclick="event.stopPropagation()" style="max-width: 500px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h3 style="font-size: 1.1rem;"><i class="fa-solid fa-user-gear" style="color: var(--primary);"></i> Mon Profil Élève</h3>
+        <button class="btn" style="padding: 0.4rem 0.7rem; min-height: 36px;" onclick="closeProfileModal()"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="avatar-upload-wrap">
+        <img src="" id="profileModalAvatarImg" class="avatar-preview-lg" alt="Mon Avatar" />
+        <label class="avatar-upload-btn">
+          <i class="fa-solid fa-camera"></i> Changer ma photo
+          <input type="file" id="profileAvatarInput" accept="image/*" style="display: none;" onchange="handleAvatarChange(event)" />
+        </label>
+      </div>
+
+      <div class="form-row">
+        <label>Identifiant</label>
+        <input type="text" class="form-input" id="profileUsernameDisplay" disabled style="opacity: 0.7;" />
+      </div>
+
+      <div class="form-row">
+        <label>Description / Bio</label>
+        <textarea class="form-input" id="profileBioInput" style="min-height: 90px;" placeholder="Ex: Élève en Terminale CIEL. Option Cybersécurité et Réseaux Cisco..."></textarea>
+      </div>
+
+      <button class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;" onclick="saveUserProfile()">
+        <i class="fa-solid fa-floppy-disk"></i> Enregistrer mon profil
+      </button>
+    </div>
+  </div>
+
   <!-- MODAL DE CRÉATION DE COURS -->
   <div class="modal-backdrop" id="courseModal" onclick="closeCourseModal()">
     <div class="modal-sheet" onclick="event.stopPropagation()">
@@ -831,9 +971,7 @@
 
       <div class="form-row">
         <label>Sélectionnez les élèves destinataires :</label>
-        <div id="recipientsList" style="max-height: 180px; overflow-y: auto; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem;">
-          <!-- Injecté dynamiquement depuis users_index.json -->
-        </div>
+        <div id="recipientsList" style="max-height: 220px; overflow-y: auto; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem;"></div>
       </div>
 
       <button class="btn btn-primary" id="btnConfirmShare" style="width: 100%;" onclick="confirmSendShare()">
@@ -854,11 +992,58 @@
 
   <script>
     /* ==========================================================
-       1. CRYPTOGRAPHIE AES-256 ET SESSION
+       1. SYSTÈME DE TOASTS ET DIALOGUES PERSONNALISÉS
+       ========================================================== */
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+
+      let icon = 'fa-circle-info';
+      if (type === 'success') icon = 'fa-circle-check';
+      if (type === 'error') icon = 'fa-circle-exclamation';
+
+      toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${escapeHtml(message)}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.classList.add('fade-out');
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    function customConfirm(title, message, confirmText = 'Confirmer', cancelText = 'Annuler') {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('customConfirmModal');
+        document.getElementById('confirmModalTitle').innerText = title;
+        document.getElementById('confirmModalMsg').innerText = message;
+
+        const okBtn = document.getElementById('confirmModalOk');
+        const cancelBtn = document.getElementById('confirmModalCancel');
+
+        okBtn.innerText = confirmText;
+        cancelBtn.innerText = cancelText;
+
+        modal.classList.add('active');
+
+        const cleanUp = () => {
+          modal.classList.remove('active');
+          okBtn.onclick = null;
+          cancelBtn.onclick = null;
+        };
+
+        okBtn.onclick = () => { cleanUp(); resolve(true); };
+        cancelBtn.onclick = () => { cleanUp(); resolve(false); };
+      });
+    }
+
+    /* ==========================================================
+       2. CRYPTOGRAPHIE AES-256 ET SESSION
        ========================================================== */
     let currentSession = { username: null, aesKey: null, saltHex: null };
-    let userVault = { courses: [], flashcards: [], todos: [], lastUpdated: null };
-    let allSharedCourses = []; // Liste des partages sur GitHub
+    let userVault = { courses: [], flashcards: [], todos: [], profile: { avatar: '', bio: '' }, lastUpdated: null };
+    let allSharedCourses = [];
+    let usersRegistryCache = { users: {} };
 
     let ghConfig = JSON.parse(localStorage.getItem('ciel_gh_config')) || {
       owner: 'fazerdino1',
@@ -872,7 +1057,7 @@
     let sharesFileSha = null;
     let autoSaveTimer = null;
     let authMode = 'login';
-    let currentSubView = 'mine'; // 'mine' ou 'received'
+    let currentSubView = 'mine';
     let activeFilter = 'all';
     let courseToShare = null;
     let fcCursor = 0;
@@ -917,8 +1102,14 @@
       return JSON.parse(new TextDecoder().decode(decrypted));
     }
 
+    /* Générateur SVG d'avatar par défaut */
+    function getDefaultAvatar(username) {
+      const letter = (username || 'U').charAt(0).toUpperCase();
+      return `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%230284c7"/><text x="50" y="62" font-size="44" font-family="Arial,sans-serif" font-weight="bold" fill="white" text-anchor="middle">${letter}</text></svg>`;
+    }
+
     /* ==========================================================
-       2. INITIALISATION & CONNEXION
+       3. INITIALISATION & AUTHENTIFICATION
        ========================================================== */
     window.onload = () => {
       document.getElementById('cfgOwner').value = ghConfig.owner;
@@ -977,15 +1168,28 @@
           const aesKey = await deriveKeyFromPassword(password, salt);
 
           if (!registry.users) registry.users = {};
-          registry.users[username] = { salt: saltHex, verifier: verifier, createdAt: new Date().toISOString() };
+          registry.users[username] = {
+            salt: saltHex,
+            verifier: verifier,
+            avatar: getDefaultAvatar(username),
+            bio: 'Élève Bac Pro CIEL',
+            createdAt: new Date().toISOString()
+          };
 
           await pushUsersRegistry(registry);
 
           currentSession = { username, aesKey, saltHex };
-          userVault = { courses: [], flashcards: [], todos: [], lastUpdated: new Date().toISOString() };
+          userVault = {
+            courses: [],
+            flashcards: [],
+            todos: [],
+            profile: { avatar: getDefaultAvatar(username), bio: 'Élève Bac Pro CIEL' },
+            lastUpdated: new Date().toISOString()
+          };
           await saveEncryptedVaultToGitHub();
 
           openUserSession(username, saltHex, password);
+          showToast(`Bienvenue sur ton espace, ${username} !`, 'success');
         } else {
           if (!registry.users || !registry.users[username]) {
             throw new Error("Nom d'utilisateur inexistant. Créez un compte.");
@@ -1005,6 +1209,7 @@
           await loadEncryptedVaultFromGitHub();
           await fetchSharedCourses();
           openUserSession(username, userRecord.salt, password);
+          showToast(`Bon retour parmi nous, ${username} !`, 'success');
         }
       } catch (err) {
         const alertEl = document.getElementById('authAlert');
@@ -1022,6 +1227,7 @@
       sessionStorage.setItem('ciel_session_key', password);
 
       document.getElementById('currentUserLabel').innerText = username;
+      updateHeaderProfileUI();
       document.getElementById('authOverlay').style.display = 'none';
 
       renderCourses();
@@ -1036,10 +1242,12 @@
       const aesKey = await deriveKeyFromPassword(password, salt);
       currentSession = { username, aesKey, saltHex };
       document.getElementById('currentUserLabel').innerText = username;
-      document.getElementById('authOverlay').style.display = 'none';
 
       await loadEncryptedVaultFromGitHub();
       await fetchSharedCourses();
+      updateHeaderProfileUI();
+      document.getElementById('authOverlay').style.display = 'none';
+
       renderCourses();
       renderFlashcards();
       renderTodos();
@@ -1049,14 +1257,89 @@
     function logout() {
       sessionStorage.clear();
       currentSession = { username: null, aesKey: null, saltHex: null };
-      userVault = { courses: [], flashcards: [], todos: [], lastUpdated: null };
+      userVault = { courses: [], flashcards: [], todos: [], profile: { avatar: '', bio: '' }, lastUpdated: null };
       document.getElementById('authOverlay').style.display = 'flex';
       document.getElementById('currentUserLabel').innerText = "Invité";
+      document.getElementById('headerAvatarImg').src = getDefaultAvatar('Invité');
       setSync('', 'Déconnecté');
+      showToast("Vous avez été déconnecté.", "info");
     }
 
     /* ==========================================================
-       3. SYNCHRONISATION GITHUB (VAULTS ET REGISTRE)
+       4. GESTION DU PROFIL (PHOTO & BIO)
+       ========================================================== */
+    function updateHeaderProfileUI() {
+      const avatarSrc = (userVault.profile && userVault.profile.avatar) ? userVault.profile.avatar : getDefaultAvatar(currentSession.username);
+      document.getElementById('headerAvatarImg').src = avatarSrc;
+    }
+
+    function openProfileModal() {
+      if (!currentSession.username) return;
+      document.getElementById('profileUsernameDisplay').value = currentSession.username;
+      const avatarSrc = (userVault.profile && userVault.profile.avatar) ? userVault.profile.avatar : getDefaultAvatar(currentSession.username);
+      document.getElementById('profileModalAvatarImg').src = avatarSrc;
+      document.getElementById('profileBioInput').value = (userVault.profile && userVault.profile.bio) ? userVault.profile.bio : '';
+      document.getElementById('profileModal').classList.add('active');
+    }
+
+    function closeProfileModal() {
+      document.getElementById('profileModal').classList.remove('active');
+    }
+
+    // Redimensionnement de l'avatar en 120x120 via Canvas pour garantir un poids plume (< 15 Ko)
+    function handleAvatarChange(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = 120;
+          canvas.height = 120;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, 120, 120);
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+          document.getElementById('profileModalAvatarImg').src = compressedDataUrl;
+          if (!userVault.profile) userVault.profile = {};
+          userVault.profile.avatar = compressedDataUrl;
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function saveUserProfile() {
+      if (!userVault.profile) userVault.profile = {};
+      userVault.profile.bio = document.getElementById('profileBioInput').value.trim();
+
+      // Mettre à jour l'avatar si déjà défini
+      if (!userVault.profile.avatar) {
+        userVault.profile.avatar = getDefaultAvatar(currentSession.username);
+      }
+
+      updateHeaderProfileUI();
+      closeProfileModal();
+      autoSaveUserVault();
+
+      // Mise à jour publique du profil dans le registre pour les partages
+      try {
+        const registry = await fetchUsersRegistry();
+        if (registry.users && registry.users[currentSession.username]) {
+          registry.users[currentSession.username].avatar = userVault.profile.avatar;
+          registry.users[currentSession.username].bio = userVault.profile.bio;
+          await pushUsersRegistry(registry);
+        }
+        showToast("Profil enregistré et synchronisé !", "success");
+      } catch (err) {
+        showToast("Profil enregistré en local (erreur registre).", "info");
+      }
+    }
+
+    /* ==========================================================
+       5. SYNCHRONISATION GITHUB (VAULTS ET REGISTRE)
        ========================================================== */
     function setSync(state, msg) {
       const dot = document.getElementById('syncDot');
@@ -1071,7 +1354,8 @@
         const res = await fetch(url, { headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github.v3+json' } });
         if (res.status === 404) return { users: {} };
         const data = await res.json();
-        return JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\n/g, '')))));
+        usersRegistryCache = JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\n/g, '')))));
+        return usersRegistryCache;
       } catch (e) { return { users: {} }; }
     }
 
@@ -1101,7 +1385,13 @@
       try {
         const res = await fetch(url, { headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github.v3+json' } });
         if (res.status === 404) {
-          userVault = { courses: [], flashcards: [], todos: [], lastUpdated: new Date().toISOString() };
+          userVault = {
+            courses: [],
+            flashcards: [],
+            todos: [],
+            profile: { avatar: getDefaultAvatar(currentSession.username), bio: '' },
+            lastUpdated: new Date().toISOString()
+          };
           setSync('synced', 'Nouveau');
           return;
         }
@@ -1109,6 +1399,7 @@
         currentVaultSha = data.sha;
         const decoded = JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\n/g, '')))));
         userVault = await decryptData(decoded, currentSession.aesKey);
+        if (!userVault.profile) userVault.profile = { avatar: getDefaultAvatar(currentSession.username), bio: '' };
         setSync('synced', 'À jour');
       } catch (err) {
         setSync('error', 'Erreur coffre');
@@ -1151,15 +1442,16 @@
     async function syncUserVault(silent = false) {
       await loadEncryptedVaultFromGitHub();
       await fetchSharedCourses();
+      updateHeaderProfileUI();
       renderCourses();
       renderFlashcards();
       renderTodos();
       updateReceivedBadge();
-      if (!silent) alert("Coffre et partages synchronisés avec GitHub !");
+      if (!silent) showToast("Coffre et partages synchronisés avec GitHub !", "success");
     }
 
     /* ==========================================================
-       4. SYSTÈME DE PARTAGE DE COURS ENTRE ÉLÈVES
+       6. SYSTÈME DE PARTAGE AVEC AVATAR & BIO
        ========================================================== */
     async function fetchSharedCourses() {
       if (!ghConfig.token) return;
@@ -1228,9 +1520,20 @@
 
       listEl.innerHTML = '';
       otherUsers.forEach(u => {
+        const uData = registry.users[u];
+        const avatar = (uData && uData.avatar) ? uData.avatar : getDefaultAvatar(u);
+        const bio = (uData && uData.bio) ? uData.bio : 'Élève';
+
         const row = document.createElement('label');
-        row.style = 'display:flex; align-items:center; gap:0.6rem; padding:0.4rem 0; cursor:pointer; font-size:0.9rem; color:#fff;';
-        row.innerHTML = `<input type="checkbox" value="${u}" class="share-recipient-cb" /> <span>@${u}</span>`;
+        row.style = 'display:flex; align-items:center; gap:0.75rem; padding:0.5rem 0; cursor:pointer; border-bottom:1px solid rgba(255,255,255,0.05);';
+        row.innerHTML = `
+          <input type="checkbox" value="${u}" class="share-recipient-cb" />
+          <img src="${avatar}" style="width:26px; height:26px; border-radius:50%; object-fit:cover;" />
+          <div style="display:flex; flex-direction:column; line-height:1.2;">
+            <span style="font-size:0.88rem; font-weight:700; color:#fff;">@${u}</span>
+            <span style="font-size:0.72rem; color:var(--text-muted);">${escapeHtml(bio)}</span>
+          </div>
+        `;
         listEl.appendChild(row);
       });
     }
@@ -1245,7 +1548,7 @@
       const selected = Array.from(document.querySelectorAll('.share-recipient-cb:checked')).map(cb => cb.value);
 
       if (selected.length === 0) {
-        alert("Veuillez cocher au moins un élève destinataire.");
+        showToast("Veuillez cocher au moins un élève destinataire.", "error");
         return;
       }
 
@@ -1254,12 +1557,17 @@
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Envoi en cours...';
 
       try {
-        await fetchSharedCourses(); // Recharger la dernière version
+        await fetchSharedCourses();
+
+        const senderAvatar = (userVault.profile && userVault.profile.avatar) ? userVault.profile.avatar : getDefaultAvatar(currentSession.username);
+        const senderBio = (userVault.profile && userVault.profile.bio) ? userVault.profile.bio : '';
 
         selected.forEach(recipient => {
           allSharedCourses.push({
             id: 'share_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
             fromUser: currentSession.username,
+            senderAvatar: senderAvatar,
+            senderBio: senderBio,
             toUser: recipient,
             sentAt: new Date().toISOString(),
             course: {
@@ -1272,17 +1580,16 @@
         });
 
         await pushSharedCourses(allSharedCourses);
-        alert(`Cours partagé avec succès à : ${selected.join(', ')} !`);
+        showToast(`Cours partagé à ${selected.join(', ')} !`, "success");
         closeShareModal();
       } catch (e) {
-        alert("Erreur de partage : " + e.message);
+        showToast("Erreur de partage : " + e.message, "error");
       } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Envoyer le cours aux élèves choisis';
       }
     }
 
-    // Importer un cours reçu dans son coffre personnel
     function importSharedCourse(shareId) {
       const share = allSharedCourses.find(s => s.id === shareId);
       if (!share) return;
@@ -1297,21 +1604,23 @@
       });
 
       autoSaveUserVault();
-      alert("Ce cours a été importé dans votre classeur personnel !");
+      showToast("Ce cours a été importé dans votre classeur personnel !", "success");
       switchCourseSubView('mine');
     }
 
     async function deleteSharedCourse(shareId) {
-      if (confirm("Supprimer ce partage de votre boîte de réception ?")) {
-        allSharedCourses = allSharedCourses.filter(s => s.id !== shareId);
-        await pushSharedCourses(allSharedCourses);
-        updateReceivedBadge();
-        renderCourses();
-      }
+      const ok = await customConfirm("Supprimer le partage", "Voulez-vous retirer ce cours partagé de votre boîte de réception ?");
+      if (!ok) return;
+
+      allSharedCourses = allSharedCourses.filter(s => s.id !== shareId);
+      await pushSharedCourses(allSharedCourses);
+      updateReceivedBadge();
+      renderCourses();
+      showToast("Partage supprimé de la boîte de réception.", "info");
     }
 
     /* ==========================================================
-       5. FILTRAGE STRICT & RENDU DES COURS
+       7. FILTRAGE ET RENDU DES COURS
        ========================================================== */
     function setFilter(catKey) {
       activeFilter = catKey;
@@ -1321,42 +1630,26 @@
       renderCourses();
     }
 
-    // Vérificateur infaillible de matière
     function checkSubjectMatch(courseSubject, catKey) {
       if (catKey === 'all') return true;
       const sub = (courseSubject || '').toLowerCase();
 
       switch (catKey) {
-        case 'maths':
-          return sub.includes('math');
-        case 'physique':
-          return sub.includes('physique') || sub.includes('chimie');
-        case 'reseaux':
-          return sub.includes('réseaux') || sub.includes('reseaux');
-        case 'secu':
-          return sub.includes('cyber') || sub.includes('sécurité') || sub.includes('securite');
-        case 'elec':
-          return sub.includes('électronique') || sub.includes('electronique') || sub.includes('iot');
-        case 'projet':
-          return sub.includes('projet');
-        case 'francais':
-          return sub.includes('français') || sub.includes('francais');
-        case 'hist-geo':
-          return sub.includes('histoire') || sub.includes('géo') || sub.includes('geo') || sub.includes('emc');
-        case 'pse':
-          return sub.includes('pse') || sub.includes('santé') || sub.includes('environnement');
-        case 'eco':
-          return sub.includes('économie') || sub.includes('economie') || sub.includes('gestion');
-        case 'anglais':
-          return sub.includes('anglais');
-        case 'allemand':
-          return sub.includes('allemand');
-        case 'arts':
-          return sub.includes('arts') || sub.includes('artistique');
-        case 'eps':
-          return sub.includes('eps') || sub.includes('sport');
-        default:
-          return sub.includes(catKey.toLowerCase());
+        case 'maths': return sub.includes('math');
+        case 'physique': return sub.includes('physique') || sub.includes('chimie');
+        case 'reseaux': return sub.includes('réseaux') || sub.includes('reseaux');
+        case 'secu': return sub.includes('cyber') || sub.includes('sécurité') || sub.includes('securite');
+        case 'elec': return sub.includes('électronique') || sub.includes('electronique') || sub.includes('iot');
+        case 'projet': return sub.includes('projet');
+        case 'francais': return sub.includes('français') || sub.includes('francais');
+        case 'hist-geo': return sub.includes('histoire') || sub.includes('géo') || sub.includes('geo') || sub.includes('emc');
+        case 'pse': return sub.includes('pse') || sub.includes('santé') || sub.includes('environnement');
+        case 'eco': return sub.includes('économie') || sub.includes('economie') || sub.includes('gestion');
+        case 'anglais': return sub.includes('anglais');
+        case 'allemand': return sub.includes('allemand');
+        case 'arts': return sub.includes('arts') || sub.includes('artistique');
+        case 'eps': return sub.includes('eps') || sub.includes('sport');
+        default: return sub.includes(catKey.toLowerCase());
       }
     }
 
@@ -1368,7 +1661,6 @@
       feed.innerHTML = '';
 
       if (currentSubView === 'mine') {
-        // Affichage des cours du classeur personnel
         const items = userVault.courses.filter(c => {
           const matchCat = checkSubjectMatch(c.subject, activeFilter);
           const matchSearch = !search || c.title.toLowerCase().includes(search) || (c.content || '').toLowerCase().includes(search);
@@ -1419,7 +1711,6 @@
         });
 
       } else {
-        // Affichage des cours partagés par d'autres élèves
         const received = allSharedCourses.filter(s => s.toUser === currentSession.username && checkSubjectMatch(s.course.subject, activeFilter) && (!search || s.course.title.toLowerCase().includes(search) || (s.course.content || '').toLowerCase().includes(search)));
 
         counter.innerText = `${received.length} cours partagé${received.length > 1 ? 's' : ''}`;
@@ -1439,14 +1730,23 @@
           card.style.borderColor = 'rgba(99, 102, 241, 0.4)';
 
           let attachmentsHTML = buildAttachmentsHTML(s.course.attachments);
+          const senderAvatar = s.senderAvatar || getDefaultAvatar(s.fromUser);
+          const senderBio = s.senderBio ? ` • ${escapeHtml(s.senderBio)}` : '';
 
           card.innerHTML = `
             <div class="course-card-top">
-              <div>
-                <span class="badge-sub" style="background: rgba(99, 102, 241, 0.15); color: #a5b4fc; border-color: #6366f1;">
-                  <i class="fa-solid fa-user-tag"></i> Reçu de @${escapeHtml(s.fromUser)} • ${escapeHtml(s.course.subject)}
-                </span>
-                <h4 class="course-title">${escapeHtml(s.course.title)}</h4>
+              <div style="display:flex; align-items:flex-start; gap:0.6rem;">
+                <img src="${senderAvatar}" style="width:34px; height:34px; border-radius:50%; object-fit:cover; margin-top:2px;" />
+                <div>
+                  <div style="display:flex; align-items:center; gap:0.4rem; flex-wrap:wrap;">
+                    <span style="font-weight:700; color:#fff; font-size:0.85rem;">@${escapeHtml(s.fromUser)}</span>
+                    <span class="badge-sub" style="background: rgba(99, 102, 241, 0.15); color: #a5b4fc; border-color: #6366f1;">
+                      ${escapeHtml(s.course.subject)}
+                    </span>
+                  </div>
+                  <div style="font-size:0.75rem; color:var(--text-sub);">${senderBio}</div>
+                  <h4 class="course-title">${escapeHtml(s.course.title)}</h4>
+                </div>
               </div>
               <div style="display: flex; gap: 0.4rem;">
                 <button class="btn btn-primary" style="padding: 0.35rem 0.65rem; min-height: 32px; font-size: 0.75rem;" onclick="importSharedCourse('${s.id}')">
@@ -1491,7 +1791,7 @@
     }
 
     /* ==========================================================
-       6. CRÉATION DE COURS & UPLOAD DIRECT GITHUB
+       8. CRÉATION DE COURS & UPLOAD DIRECT GITHUB
        ========================================================== */
     function openCourseModal() {
       pendingFiles = [];
@@ -1568,7 +1868,7 @@
       const btn = document.getElementById('mSubmitBtn');
 
       if (!title) {
-        alert("Veuillez renseigner un titre.");
+        showToast("Veuillez renseigner un titre pour votre cours.", "error");
         return;
       }
 
@@ -1598,24 +1898,27 @@
         closeCourseModal();
         renderCourses();
         autoSaveUserVault();
+        showToast("Cours enregistré avec succès !", "success");
       } catch (err) {
-        alert("Erreur : " + err.message);
+        showToast("Erreur lors de l'enregistrement : " + err.message, "error");
       } finally {
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Sauvegarder dans mon coffre';
       }
     }
 
-    function deleteCourse(idx) {
-      if (confirm("Supprimer définitivement ce cours ?")) {
-        userVault.courses.splice(idx, 1);
-        renderCourses();
-        autoSaveUserVault();
-      }
+    async function deleteCourse(idx) {
+      const ok = await customConfirm("Supprimer ce cours", "Êtes-vous sûr de vouloir supprimer définitivement ce cours de votre classeur ?");
+      if (!ok) return;
+
+      userVault.courses.splice(idx, 1);
+      renderCourses();
+      autoSaveUserVault();
+      showToast("Cours supprimé.", "info");
     }
 
     /* ==========================================================
-       7. LIGHTBOX SCHÉMAS (CONTRASTE FOND BLANC)
+       9. LIGHTBOX SCHÉMAS (CONTRASTE FOND BLANC)
        ========================================================== */
     function openLightbox(src) {
       document.getElementById('lightboxImg').src = src;
@@ -1627,7 +1930,7 @@
     }
 
     /* ==========================================================
-       8. FLASHCARDS & TODOS
+       10. FLASHCARDS & TODOS
        ========================================================== */
     function renderFlashcards() {
       const box = document.getElementById('fcDisplayContent');
@@ -1682,7 +1985,7 @@
       const a = document.getElementById('fcA').value.trim();
 
       if (!q || !a) {
-        alert("Saisissez une question et sa réponse.");
+        showToast("Veuillez saisir une question et sa réponse.", "error");
         return;
       }
       userVault.flashcards.push({ s, q, a });
@@ -1690,13 +1993,19 @@
       document.getElementById('fcA').value = '';
       renderFlashcards();
       autoSaveUserVault();
+      showToast("Flashcard ajoutée !", "success");
     }
-    function deleteCurrentFlashcard() {
+
+    async function deleteCurrentFlashcard() {
       if (userVault.flashcards.length === 0) return;
+      const ok = await customConfirm("Supprimer la flashcard", "Voulez-vous supprimer cette carte mémoire ?");
+      if (!ok) return;
+
       userVault.flashcards.splice(fcCursor, 1);
       fcFlipped = false;
       renderFlashcards();
       autoSaveUserVault();
+      showToast("Flashcard supprimée.", "info");
     }
 
     function renderTodos() {
@@ -1714,7 +2023,7 @@
             <i class="fa-${t.done ? 'solid fa-circle-check' : 'regular fa-circle'}" style="font-size: 1.2rem; color:${t.done ? 'var(--accent-green)' : 'var(--text-sub)'};"></i>
             <span style="${t.done ? 'text-decoration: line-through; color: var(--text-sub);' : ''}">${escapeHtml(t.text)}</span>
           </div>
-          <button class="btn btn-danger" style="padding: 0.25rem 0.55rem; min-height: 32px;" onclick="userVault.todos.splice(${i}, 1); renderTodos(); autoSaveUserVault();">
+          <button class="btn btn-danger" style="padding: 0.25rem 0.55rem; min-height: 32px;" onclick="deleteTodoItem(${i})">
             <i class="fa-solid fa-trash-can"></i>
           </button>
         `;
@@ -1731,8 +2040,17 @@
       autoSaveUserVault();
     }
 
+    async function deleteTodoItem(i) {
+      const ok = await customConfirm("Supprimer l'objectif", "Voulez-vous supprimer cet objectif ?");
+      if (!ok) return;
+      userVault.todos.splice(i, 1);
+      renderTodos();
+      autoSaveUserVault();
+      showToast("Objectif supprimé.", "info");
+    }
+
     /* ==========================================================
-       9. NAVIGATION ET CONFIGURATION
+       11. NAVIGATION ET CONFIGURATION
        ========================================================== */
     function showTab(tabId) {
       document.querySelectorAll('.tab-view').forEach(t => t.classList.remove('active'));
@@ -1753,7 +2071,7 @@
       ghConfig.token = document.getElementById('cfgToken').value.trim();
 
       localStorage.setItem('ciel_gh_config', JSON.stringify(ghConfig));
-      alert("Configuration enregistrée !");
+      showToast("Configuration GitHub enregistrée !", "success");
     }
 
     function escapeHtml(text) {
