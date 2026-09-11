@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>CIEL StudyOS | Hub Bac Pro</title>
+  <title>CIEL StudyOS | Espace Révision Sécurisé</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,7 +22,6 @@
       --border-light: rgba(255, 255, 255, 0.15);
       --primary: #38bdf8;
       --primary-hover: #0284c7;
-      --primary-glow: rgba(56, 189, 248, 0.2);
       --accent-purple: #a855f7;
       --accent-green: #10b981;
       --accent-orange: #f59e0b;
@@ -39,13 +38,8 @@
       --nav-mobile-h: 64px;
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      -webkit-tap-highlight-color: transparent;
-    }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    
     body {
       background-color: var(--bg-app);
       color: var(--text-main);
@@ -56,16 +50,12 @@
       line-height: 1.5;
       padding-bottom: calc(var(--nav-mobile-h) + 24px);
     }
+    @media (min-width: 850px) { body { padding-bottom: 40px; } }
 
-    @media (min-width: 850px) {
-      body { padding-bottom: 40px; }
-    }
-
-    /* En-tête mobile et bureau */
+    /* En-tête */
     header {
-      background: rgba(15, 23, 42, 0.9);
+      background: rgba(15, 23, 42, 0.92);
       backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
       border-bottom: 1px solid var(--border);
       position: sticky;
       top: 0;
@@ -92,7 +82,6 @@
       gap: 0.6rem;
       font-weight: 800;
       font-size: 1.15rem;
-      letter-spacing: -0.5px;
     }
     .brand-badge {
       width: 34px;
@@ -103,36 +92,10 @@
       align-items: center;
       justify-content: center;
       color: #fff;
-      font-size: 0.95rem;
     }
 
-    /* Statut Synchronisation */
-    .sync-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.45rem;
-      background: var(--bg-card-elevated);
-      padding: 0.35rem 0.75rem;
-      border-radius: var(--radius-full);
-      border: 1px solid var(--border);
-      font-size: 0.75rem;
-      font-family: var(--font-mono);
-      font-weight: 600;
-    }
-    .dot { width: 8px; height: 8px; border-radius: 50%; background: #64748b; }
-    .dot.synced { background: var(--accent-green); box-shadow: 0 0 8px var(--accent-green); }
-    .dot.saving { background: var(--accent-orange); box-shadow: 0 0 8px var(--accent-orange); animation: pulse 1s infinite alternate; }
-    .dot.error { background: var(--accent-rose); box-shadow: 0 0 8px var(--accent-rose); }
-    @keyframes pulse { from { opacity: 0.3; } to { opacity: 1; } }
-
-    /* Navigation Bureau */
-    .desktop-nav {
-      display: none;
-      gap: 0.4rem;
-    }
-    @media (min-width: 850px) {
-      .desktop-nav { display: flex; }
-    }
+    .desktop-nav { display: none; gap: 0.4rem; }
+    @media (min-width: 850px) { .desktop-nav { display: flex; } }
 
     .nav-btn {
       background: transparent;
@@ -146,12 +109,36 @@
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      transition: all 0.2s;
+      transition: 0.2s;
     }
     .nav-btn:hover { color: #fff; background: var(--bg-card-elevated); }
     .nav-btn.active { color: var(--primary); background: rgba(56, 189, 248, 0.1); }
 
-    /* Navigation Mobile (Barre en bas) */
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .user-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--bg-card-elevated);
+      padding: 0.35rem 0.75rem;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border);
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+
+    .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: #64748b; }
+    .sync-dot.synced { background: var(--accent-green); box-shadow: 0 0 8px var(--accent-green); }
+    .sync-dot.saving { background: var(--accent-orange); box-shadow: 0 0 8px var(--accent-orange); animation: pulse 1s infinite alternate; }
+    .sync-dot.error { background: var(--accent-rose); box-shadow: 0 0 8px var(--accent-rose); }
+    @keyframes pulse { from { opacity: 0.3; } to { opacity: 1; } }
+
+    /* Navigation Mobile */
     .mobile-bar {
       position: fixed;
       bottom: 0;
@@ -160,7 +147,6 @@
       height: var(--nav-mobile-h);
       background: rgba(15, 23, 42, 0.96);
       backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
       border-top: 1px solid var(--border);
       display: flex;
       justify-content: space-around;
@@ -168,9 +154,7 @@
       z-index: 100;
       padding-bottom: env(safe-area-inset-bottom, 0px);
     }
-    @media (min-width: 850px) {
-      .mobile-bar { display: none; }
-    }
+    @media (min-width: 850px) { .mobile-bar { display: none; } }
 
     .mobile-tab {
       background: none;
@@ -186,12 +170,9 @@
       height: 100%;
       width: 25%;
       cursor: pointer;
-      transition: color 0.2s;
     }
-    .mobile-tab i { font-size: 1.2rem; }
     .mobile-tab.active { color: var(--primary); }
 
-    /* Bouton d'action rapide flottant (+) pour mobile */
     .fab-add {
       position: fixed;
       bottom: calc(var(--nav-mobile-h) + 16px);
@@ -207,17 +188,11 @@
       align-items: center;
       justify-content: center;
       font-size: 1.4rem;
-      font-weight: bold;
       cursor: pointer;
       z-index: 80;
-      transition: transform 0.2s;
     }
-    .fab-add:active { transform: scale(0.92); }
-    @media (min-width: 850px) {
-      .fab-add { display: none; }
-    }
+    @media (min-width: 850px) { .fab-add { display: none; } }
 
-    /* Conteneur principal */
     main {
       max-width: 1300px;
       margin: 0 auto;
@@ -226,11 +201,10 @@
       flex: 1;
     }
 
-    .tab-view { display: none; animation: fadeIn 0.15s ease-out; }
+    .tab-view { display: none; }
     .tab-view.active { display: block; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* Éléments Communs */
+    /* Boutons et UI */
     .btn {
       background: var(--bg-card-elevated);
       color: var(--text-main);
@@ -252,223 +226,15 @@
     .btn-primary:hover { background: var(--primary-hover); color: #fff; }
     .btn-danger { background: rgba(244, 63, 94, 0.15); border-color: var(--accent-rose); color: #fda4af; }
 
-    /* Barre de recherche et filtres de cours */
-    .top-controls {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      margin-bottom: 1rem;
-    }
-    @media (min-width: 700px) {
-      .top-controls { flex-direction: row; align-items: center; }
-    }
-
-    .search-box {
-      position: relative;
-      flex: 1;
-    }
-    .search-box i {
-      position: absolute;
-      left: 1rem;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-sub);
-    }
-    .search-box input {
-      width: 100%;
+    .card {
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
-      padding: 0.75rem 1rem 0.75rem 2.5rem;
-      color: #fff;
-      font-size: 16px; /* 16px évite le zoom auto sur iPhone */
-      font-family: var(--font-main);
-    }
-    .search-box input:focus { outline: none; border-color: var(--primary); }
-
-    .category-scroll {
-      display: flex;
-      gap: 0.5rem;
-      overflow-x: auto;
-      padding-bottom: 4px;
-      -webkit-overflow-scrolling: touch;
-    }
-    .cat-chip {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      padding: 0.45rem 0.85rem;
-      border-radius: var(--radius-full);
-      font-size: 0.8rem;
-      font-weight: 600;
-      white-space: nowrap;
-      cursor: pointer;
-      user-select: none;
-      transition: 0.2s;
-    }
-    .cat-chip.active {
-      background: var(--primary);
-      color: #020817;
-      border-color: var(--primary);
-    }
-
-    /* Cartes de Cours */
-    .course-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-md);
-      padding: 1rem 1.15rem;
-      margin-bottom: 1rem;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
-    }
-
-    .course-card-top {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 0.75rem;
-      margin-bottom: 0.6rem;
-    }
-
-    .badge-sub {
-      display: inline-block;
-      padding: 0.25rem 0.65rem;
-      border-radius: var(--radius-full);
-      font-size: 0.72rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
-    }
-    .badge-reseaux { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
-    .badge-secu { background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); }
-    .badge-maths { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
-    .badge-other { background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.3); }
-
-    .course-title {
-      font-size: 1.15rem;
-      font-weight: 700;
-      color: #fff;
-      margin-top: 0.35rem;
-    }
-
-    .course-body {
-      color: #cbd5e1;
-      font-size: 0.92rem;
-      line-height: 1.6;
-    }
-    .course-body code {
-      background: #000;
-      color: var(--primary);
-      padding: 0.15rem 0.4rem;
-      border-radius: 4px;
-      font-family: var(--font-mono);
-      font-size: 0.85rem;
-    }
-    .course-body pre {
-      background: #030712;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: 0.75rem;
-      overflow-x: auto;
-      margin: 0.75rem 0;
-    }
-
-    /* ZONE D'IMAGES ET FICHIERS (FOND CONTRASTÉ CLAIR POUR SCHÉMAS) */
-    .attachments-shelf {
-      margin-top: 1rem;
-      padding-top: 0.85rem;
-      border-top: 1px solid var(--border);
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-    }
-
-    /* CORRECTION MAJEURE : Les images sont sur fond BLANC pour être 100% visibles */
-    .img-thumb-container {
-      background: #ffffff; /* FOND BLANC : essentiel pour les schémas, PNG et tracés noirs */
-      border: 2px solid #334155;
-      border-radius: var(--radius-sm);
-      padding: 4px;
-      width: 140px;
-      height: 95px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-      transition: transform 0.2s, border-color 0.2s;
-    }
-    .img-thumb-container:hover {
-      transform: scale(1.03);
-      border-color: var(--primary);
-    }
-    .img-thumb-container img {
-      max-width: 100%;
-      max-height: 100%;
-      object-fit: contain; /* Empêche de couper les IP ou les composants */
-    }
-
-    .file-badge-download {
-      background: var(--bg-card-elevated);
-      border: 1px solid var(--border-light);
-      border-radius: var(--radius-sm);
-      padding: 0.5rem 0.85rem;
-      color: var(--primary);
-      text-decoration: none;
-      font-size: 0.82rem;
-      font-family: var(--font-mono);
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      max-width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    /* Modal / Formulaire d'ajout de cours (adapté mobile en Slide-up) */
-    .modal-backdrop {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.8);
-      backdrop-filter: blur(8px);
-      z-index: 150;
-      justify-content: center;
-      align-items: flex-end;
-    }
-    @media (min-width: 700px) {
-      .modal-backdrop { align-items: center; padding: 1.5rem; }
-    }
-    .modal-backdrop.active { display: flex; }
-
-    .modal-sheet {
-      background: #0f172a;
-      border: 1px solid var(--border-light);
-      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-      width: 100%;
-      max-width: 750px;
-      max-height: 90vh;
-      overflow-y: auto;
       padding: 1.25rem;
-      box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.6);
-      animation: slideUp 0.25s ease-out;
-    }
-    @media (min-width: 700px) {
-      .modal-sheet { border-radius: var(--radius-lg); }
-    }
-    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-    .modal-sheet-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.25rem;
-      padding-bottom: 0.75rem;
-      border-bottom: 1px solid var(--border);
+      margin-bottom: 1rem;
     }
 
+    /* Formulaires */
     .form-row { margin-bottom: 1rem; }
     .form-row label {
       display: block;
@@ -492,17 +258,142 @@
     .form-input:focus { outline: none; border-color: var(--primary); }
     textarea.form-input { min-height: 140px; font-family: var(--font-mono); font-size: 0.88rem; line-height: 1.5; }
 
-    .file-dropzone-box {
-      border: 2px dashed var(--border-light);
-      border-radius: var(--radius-sm);
-      padding: 1.25rem;
-      text-align: center;
-      cursor: pointer;
-      background: rgba(11, 17, 32, 0.5);
+    /* Barre de recherche & tags */
+    .top-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
     }
-    .file-dropzone-box input { display: none; }
+    @media (min-width: 700px) { .top-controls { flex-direction: row; align-items: center; } }
 
-    /* VISIONNEUSE D'IMAGES (LIGHTBOX) AVEC TOGGLE CLAIR/SOMBRE */
+    .search-box { position: relative; flex: 1; }
+    .search-box i { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-sub); }
+    .search-box input {
+      width: 100%;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 0.75rem 1rem 0.75rem 2.5rem;
+      color: #fff;
+      font-size: 16px;
+      font-family: var(--font-main);
+    }
+
+    .category-scroll {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+    .cat-chip {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 0.45rem 0.85rem;
+      border-radius: var(--radius-full);
+      font-size: 0.8rem;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .cat-chip.active { background: var(--primary); color: #020817; border-color: var(--primary); }
+
+    /* Cartes de cours & fond blanc schémas */
+    .course-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.15rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+    }
+    .course-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; margin-bottom: 0.6rem; }
+
+    .badge-sub {
+      display: inline-block;
+      padding: 0.25rem 0.65rem;
+      border-radius: var(--radius-full);
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .course-title { font-size: 1.15rem; font-weight: 700; color: #fff; margin-top: 0.35rem; }
+    .course-body { color: #cbd5e1; font-size: 0.92rem; line-height: 1.6; }
+    .course-body code { background: #000; color: var(--primary); padding: 0.15rem 0.4rem; border-radius: 4px; font-family: var(--font-mono); font-size: 0.85rem; }
+    .course-body pre { background: #030712; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.75rem; overflow-x: auto; margin: 0.75rem 0; }
+
+    .attachments-shelf {
+      margin-top: 1rem;
+      padding-top: 0.85rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .img-thumb-container {
+      background: #ffffff; /* FOND BLANC POUR VISIBILITÉ SCHÉMAS */
+      border: 2px solid #334155;
+      border-radius: var(--radius-sm);
+      padding: 4px;
+      width: 140px;
+      height: 95px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      overflow: hidden;
+    }
+    .img-thumb-container img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+    .file-badge-download {
+      background: var(--bg-card-elevated);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 0.85rem;
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-family: var(--font-mono);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      max-width: 100%;
+    }
+
+    /* Modal / Formulaire Cours */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(8px);
+      z-index: 150;
+      justify-content: center;
+      align-items: flex-end;
+    }
+    @media (min-width: 700px) { .modal-backdrop { align-items: center; padding: 1.5rem; } }
+    .modal-backdrop.active { display: flex; }
+
+    .modal-sheet {
+      background: #0f172a;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+      width: 100%;
+      max-width: 750px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 1.25rem;
+      animation: slideUp 0.25s ease-out;
+    }
+    @media (min-width: 700px) { .modal-sheet { border-radius: var(--radius-lg); } }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+    /* Visionneuse plein écran */
     .lightbox-modal {
       display: none;
       position: fixed;
@@ -516,32 +407,8 @@
       padding: 1rem;
     }
     .lightbox-modal.active { display: flex; }
-
-    .lightbox-controls {
-      position: absolute;
-      top: 1rem;
-      right: 1rem;
-      display: flex;
-      gap: 0.75rem;
-      z-index: 210;
-    }
-    .lightbox-btn {
-      background: rgba(255, 255, 255, 0.2);
-      border: none;
-      color: #fff;
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      font-size: 1.2rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
-
-    /* Cadre haute visibilité pour zoom schéma */
     .lightbox-frame {
-      background: #ffffff; /* Fond blanc par défaut pour un contraste absolu */
+      background: #ffffff;
       padding: 8px;
       border-radius: var(--radius-md);
       max-width: 96vw;
@@ -549,25 +416,55 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
-      transition: background 0.2s;
     }
-    .lightbox-frame.dark-bg {
-      background: #0f172a; /* Bascule possible si image à fond blanc inversé */
+    .lightbox-frame img { max-width: 100%; max-height: 78vh; object-fit: contain; }
+
+    /* ÉCRAN DE CONNEXION / INSCRIPTION */
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 7, 14, 0.98);
+      backdrop-filter: blur(20px);
+      z-index: 500;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 1.25rem;
     }
-    .lightbox-frame img {
-      max-width: 100%;
-      max-height: 78vh;
-      object-fit: contain;
-      border-radius: 4px;
+    .auth-card {
+      background: #0f172a;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 440px;
+      padding: 2rem;
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.7);
+    }
+    .auth-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      background: var(--bg-input);
+      padding: 4px;
+      border-radius: var(--radius-sm);
+    }
+    .auth-tab-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.6rem;
+      font-weight: 700;
+      font-size: 0.85rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+    }
+    .auth-tab-btn.active {
+      background: var(--bg-card-elevated);
+      color: var(--primary);
     }
 
-    /* Flashcards */
-    .fc-container {
-      max-width: 600px;
-      margin: 1rem auto;
-      text-align: center;
-    }
+    /* Flashcards & Todos */
     .fc-card {
       background: var(--bg-card);
       border: 2px solid var(--border);
@@ -580,12 +477,10 @@
       align-items: center;
       cursor: pointer;
       user-select: none;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-      transition: border-color 0.2s;
+      text-align: center;
     }
     .fc-card.is-ans { border-color: var(--accent-green); background: rgba(16, 185, 129, 0.05); }
 
-    /* Planning / Todos */
     .todo-row {
       display: flex;
       align-items: center;
@@ -600,6 +495,45 @@
   </style>
 </head>
 <body>
+
+  <!-- ÉCRAN DE CONNEXION / INSCRIPTION SÉCURISÉ -->
+  <div class="auth-overlay" id="authOverlay">
+    <div class="auth-card">
+      <div style="text-align: center; margin-bottom: 1.5rem;">
+        <div class="brand-badge" style="width: 48px; height: 48px; margin: 0 auto 0.75rem auto; font-size: 1.3rem;">
+          <i class="fa-solid fa-lock"></i>
+        </div>
+        <h2 style="font-size: 1.35rem; font-weight: 800;">CIEL StudyOS</h2>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.25rem;">Espace de cours isolé et chiffré</p>
+      </div>
+
+      <div class="auth-tabs">
+        <button class="auth-tab-btn active" id="tabBtnLogin" onclick="switchAuthMode('login')">Connexion</button>
+        <button class="auth-tab-btn" id="tabBtnRegister" onclick="switchAuthMode('register')">Créer un compte</button>
+      </div>
+
+      <form id="authForm" onsubmit="handleAuthSubmit(event)">
+        <div class="form-row">
+          <label>Identifiant (Nom d'utilisateur)</label>
+          <input type="text" class="form-input" id="authUsername" placeholder="Ex: esteban" required autocomplete="username" />
+        </div>
+
+        <div class="form-row">
+          <label>Mot de passe</label>
+          <input type="password" class="form-input" id="authPassword" placeholder="••••••••" required autocomplete="current-password" />
+          <small style="color: var(--text-sub); font-size: 0.72rem; display: block; margin-top: 0.35rem;">
+            Vos cours sont chiffrés avec ce mot de passe. Vous seul(e) pouvez les lire.
+          </small>
+        </div>
+
+        <div id="authAlert" style="display: none; padding: 0.6rem; border-radius: 6px; font-size: 0.8rem; margin-bottom: 1rem; background: rgba(244,63,94,0.15); color: #fda4af; border: 1px solid var(--accent-rose);"></div>
+
+        <button type="submit" class="btn btn-primary" id="authSubmitBtn" style="width: 100%;">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> Ouvrir mon espace
+        </button>
+      </form>
+    </div>
+  </div>
 
   <!-- Header -->
   <header>
@@ -616,9 +550,14 @@
         <button class="nav-btn" onclick="showTab('tab-settings')"><i class="fa-solid fa-gear"></i> Paramètres</button>
       </nav>
 
-      <div class="sync-pill">
-        <span class="dot" id="syncDot"></span>
-        <span id="syncText">Initialisation...</span>
+      <div class="header-right">
+        <div class="user-pill">
+          <span class="sync-dot" id="syncDot"></span>
+          <span id="currentUserLabel">Invité</span>
+        </div>
+        <button class="btn" style="padding: 0.3rem 0.65rem; min-height: 32px; font-size: 0.75rem;" onclick="logout()" title="Se déconnecter">
+          <i class="fa-solid fa-power-off"></i>
+        </button>
       </div>
     </div>
   </header>
@@ -630,15 +569,15 @@
       <div class="top-controls">
         <div class="search-box">
           <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="text" id="courseSearch" placeholder="Rechercher un cours, un protocole, une formule..." oninput="renderCourses()" />
+          <input type="text" id="courseSearch" placeholder="Rechercher parmi mes cours..." oninput="renderCourses()" />
         </div>
         <button class="btn btn-primary" style="display: none; min-width: 170px;" id="desktopAddBtn" onclick="openCourseModal()">
           <i class="fa-solid fa-plus"></i> Nouveau cours
         </button>
       </div>
 
-      <div class="category-scroll" id="catFilterShelf">
-        <span class="cat-chip active" onclick="setFilter('all')">Tous les cours</span>
+      <div class="category-scroll">
+        <span class="cat-chip active" onclick="setFilter('all')">Tous mes cours</span>
         <span class="cat-chip" onclick="setFilter('CIEL - Réseaux')">Réseaux IP</span>
         <span class="cat-chip" onclick="setFilter('CIEL - Cybersécurité')">Cybersécurité</span>
         <span class="cat-chip" onclick="setFilter('CIEL - Électronique')">Électronique</span>
@@ -648,9 +587,9 @@
       </div>
 
       <div style="display: flex; justify-content: space-between; align-items: center; margin: 1rem 0 0.75rem 0;">
-        <span style="font-size: 0.85rem; color: var(--text-sub); font-weight: 600;" id="coursesCounter">0 fiche</span>
-        <button class="btn" style="padding: 0.25rem 0.65rem; min-height: 32px; font-size: 0.75rem;" onclick="pullFromGitHub(false)">
-          <i class="fa-solid fa-rotate"></i> Actualiser
+        <span style="font-size: 0.85rem; color: var(--text-sub); font-weight: 600;" id="coursesCounter">0 cours</span>
+        <button class="btn" style="padding: 0.25rem 0.65rem; min-height: 32px; font-size: 0.75rem;" onclick="syncUserVault(false)">
+          <i class="fa-solid fa-rotate"></i> Synchroniser
         </button>
       </div>
 
@@ -659,9 +598,9 @@
 
     <!-- ONGLET 2 : FLASHCARDS -->
     <section id="tab-flashcards" class="tab-view">
-      <div class="fc-container">
-        <div class="course-card" style="text-align: left; margin-bottom: 1.5rem;">
-          <h3 style="font-size: 1rem; margin-bottom: 0.75rem;"><i class="fa-solid fa-plus-circle" style="color: var(--primary);"></i> Ajouter une flashcard</h3>
+      <div style="max-width: 600px; margin: 0 auto; text-align: center;">
+        <div class="card" style="text-align: left; margin-bottom: 1.5rem;">
+          <h3 style="font-size: 1rem; margin-bottom: 0.75rem;"><i class="fa-solid fa-plus-circle" style="color: var(--primary);"></i> Nouvelle flashcard</h3>
           <div class="form-row">
             <input type="text" class="form-input" id="fcSub" placeholder="Matière (ex: Réseaux, Maths...)" />
           </div>
@@ -671,7 +610,7 @@
           <div class="form-row">
             <input type="text" class="form-input" id="fcA" placeholder="Réponse (Verso)" />
           </div>
-          <button class="btn btn-primary" style="width: 100%;" onclick="addFlashcard()">Enregistrer la flashcard</button>
+          <button class="btn btn-primary" style="width: 100%;" onclick="addFlashcard()">Ajouter à mes cartes</button>
         </div>
 
         <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.8rem; color: var(--text-sub);">
@@ -685,20 +624,20 @@
         </div>
 
         <div style="display: flex; gap: 0.75rem; margin-top: 1rem;">
-          <button class="btn" style="flex: 1;" onclick="prevFlashcard()"><i class="fa-solid fa-arrow-left"></i> Précédente</button>
+          <button class="btn" style="flex: 1;" onclick="prevFlashcard()"><i class="fa-solid fa-arrow-left"></i></button>
           <button class="btn btn-danger" onclick="deleteCurrentFlashcard()"><i class="fa-solid fa-trash-can"></i></button>
-          <button class="btn btn-primary" style="flex: 1;" onclick="nextFlashcard()">Suivante <i class="fa-solid fa-arrow-right"></i></button>
+          <button class="btn btn-primary" style="flex: 1;" onclick="nextFlashcard()"><i class="fa-solid fa-arrow-right"></i></button>
         </div>
       </div>
     </section>
 
-    <!-- ONGLET 3 : PLANNING & TODOS -->
+    <!-- ONGLET 3 : TODOS -->
     <section id="tab-todos" class="tab-view">
       <div style="max-width: 650px; margin: 0 auto;">
-        <div class="course-card">
-          <h3 style="font-size: 1.05rem; margin-bottom: 1rem;"><i class="fa-solid fa-list-check" style="color: var(--primary);"></i> Objectifs de révision</h3>
+        <div class="card">
+          <h3 style="font-size: 1.05rem; margin-bottom: 1rem;"><i class="fa-solid fa-list-check" style="color: var(--primary);"></i> Mes Objectifs Personnels</h3>
           <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-            <input type="text" class="form-input" id="todoInputText" placeholder="Ex: Réviser calcul masques /28..." onkeypress="if(event.key==='Enter') createTodo()" />
+            <input type="text" class="form-input" id="todoInputText" placeholder="Ex: Réviser TP Routage..." onkeypress="if(event.key==='Enter') createTodo()" />
             <button class="btn btn-primary" onclick="createTodo()"><i class="fa-solid fa-plus"></i></button>
           </div>
           <div id="todosFeed"></div>
@@ -709,10 +648,10 @@
     <!-- ONGLET 4 : CONFIG GITHUB -->
     <section id="tab-settings" class="tab-view">
       <div style="max-width: 650px; margin: 0 auto;">
-        <div class="course-card">
-          <h3 style="font-size: 1.05rem; margin-bottom: 0.5rem;"><i class="fa-brands fa-github" style="color: var(--primary);"></i> Configuration GitHub</h3>
+        <div class="card">
+          <h3 style="font-size: 1.05rem; margin-bottom: 0.5rem;"><i class="fa-brands fa-github" style="color: var(--primary);"></i> Configuration Dépôt GitHub</h3>
           <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.25rem;">
-            Vos cours et images sont stockés directement sur votre dépôt dans <code>data/bac_data.json</code> et <code>uploads/</code>.
+            Les coffres chiffrés des utilisateurs sont hébergés dans <code>data/vaults/</code>.
           </p>
 
           <div class="form-row">
@@ -731,21 +670,21 @@
             <label>GitHub Personal Access Token (PAT)</label>
             <input type="password" class="form-input" id="cfgToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" />
             <small style="color: var(--text-sub); font-size: 0.72rem; display: block; margin-top: 0.35rem;">
-              Enregistré uniquement dans votre navigateur actuel (localStorage).
+              Token requis pour créer les fichiers des utilisateurs et stocker les schémas.
             </small>
           </div>
           <button class="btn btn-primary" style="width: 100%;" onclick="saveSettings()">
-            <i class="fa-solid fa-floppy-disk"></i> Enregistrer et Synchroniser
+            <i class="fa-solid fa-floppy-disk"></i> Enregistrer la configuration
           </button>
         </div>
       </div>
     </section>
   </main>
 
-  <!-- Bouton mobile (+) d'action rapide -->
+  <!-- Bouton mobile (+) -->
   <button class="fab-add" onclick="openCourseModal()" title="Ajouter un cours"><i class="fa-solid fa-plus"></i></button>
 
-  <!-- Barre de navigation mobile inférieure (Fixe au pouce) -->
+  <!-- Barre de navigation mobile inférieure -->
   <nav class="mobile-bar">
     <button class="mobile-tab active" onclick="showTab('tab-courses')">
       <i class="fa-solid fa-book-open"></i>
@@ -768,7 +707,7 @@
   <!-- MODAL / FORMULAIRE DE CRÉATION DE COURS -->
   <div class="modal-backdrop" id="courseModal" onclick="closeCourseModal()">
     <div class="modal-sheet" onclick="event.stopPropagation()">
-      <div class="modal-sheet-head">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
         <h3 style="font-size: 1.1rem;"><i class="fa-solid fa-pen-to-square" style="color: var(--primary);"></i> Nouveau Cours / TP</h3>
         <button class="btn" style="padding: 0.4rem 0.7rem; min-height: 36px;" onclick="closeCourseModal()"><i class="fa-solid fa-xmark"></i></button>
       </div>
@@ -791,47 +730,51 @@
 
       <div class="form-row">
         <label>Titre de la fiche</label>
-        <input type="text" class="form-input" id="mTitle" placeholder="Ex: Routage statique & masques /28" />
+        <input type="text" class="form-input" id="mTitle" placeholder="Ex: Configuration Trunk & VLANs 10, 20" />
       </div>
 
       <div class="form-row">
-        <label>Contenu de révision (Markdown supporté)</label>
-        <textarea class="form-input" id="mContent" placeholder="Notes, commandes Linux, synthèses, formules..."></textarea>
+        <label>Contenu du cours (Markdown supporté)</label>
+        <textarea class="form-input" id="mContent" placeholder="Commandes, résumés, formules..."></textarea>
       </div>
 
-      <!-- Zone Fichiers / Photos -->
       <div class="form-row">
-        <label>Images et Schémas (Stockés sur GitHub uploads/)</label>
-        <div class="file-dropzone-box" onclick="document.getElementById('mFileInput').click()">
+        <label>Schémas et Fichiers (Stockés dans mon espace uploads/)</label>
+        <div style="border: 2px dashed var(--border-light); border-radius: var(--radius-sm); padding: 1.25rem; text-align: center; cursor: pointer;" onclick="document.getElementById('mFileInput').click()">
           <i class="fa-solid fa-cloud-arrow-up" style="font-size: 1.6rem; color: var(--primary); margin-bottom: 0.4rem;"></i>
-          <p style="font-size: 0.85rem; color: var(--text-muted);">Prendre une photo ou importer un schéma / document</p>
-          <input type="file" id="mFileInput" multiple onchange="handleModalFiles(event)" />
+          <p style="font-size: 0.85rem; color: var(--text-muted);">Joindre des schémas (PNG, JPG) ou TP (PDF, PKT)</p>
+          <input type="file" id="mFileInput" multiple onchange="handleModalFiles(event)" style="display: none;" />
         </div>
         <div id="mAttachedList" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem;"></div>
       </div>
 
       <button class="btn btn-primary" id="mSubmitBtn" style="width: 100%; margin-top: 0.5rem;" onclick="submitCourse()">
-        <i class="fa-solid fa-cloud-arrow-up"></i> Sauvegarder & Téléverser
+        <i class="fa-solid fa-cloud-arrow-up"></i> Sauvegarder dans mon coffre
       </button>
     </div>
   </div>
 
-  <!-- VISIONNEUSE LIGHTBOX HAUTE VISIBILITÉ (FOND BLANC POUR SCHÉMAS) -->
+  <!-- LIGHTBOX SCHÉMAS (FOND BLANC POUR CONTRASTE NET) -->
   <div class="lightbox-modal" id="lightboxModal" onclick="closeLightbox()">
-    <div class="lightbox-controls">
-      <button class="lightbox-btn" onclick="event.stopPropagation(); toggleLightboxBackground()" title="Changer la couleur de fond"><i class="fa-solid fa-circle-half-stroke"></i></button>
-      <button class="lightbox-btn" onclick="closeLightbox()"><i class="fa-solid fa-xmark"></i></button>
+    <div style="position: absolute; top: 1rem; right: 1rem;">
+      <button class="btn" onclick="closeLightbox()" style="border-radius: 50%; width: 44px; height: 44px;"><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <div class="lightbox-frame" id="lightboxFrame" onclick="event.stopPropagation()">
-      <img id="lightboxImg" src="" alt="Aperçu du schéma" />
+    <div class="lightbox-frame" onclick="event.stopPropagation()">
+      <img id="lightboxImg" src="" alt="Aperçu schéma" />
     </div>
   </div>
 
   <script>
     /* ==========================================================
-       1. DONNÉES & INITIALISATION
+       1. MODULE CRYPTOGRAPHIQUE ZERO-KNOWLEDGE (AES-256 + PBKDF2)
        ========================================================== */
-    let store = JSON.parse(localStorage.getItem('ciel_app_data')) || {
+    let currentSession = {
+      username: null,
+      aesKey: null,
+      saltHex: null
+    };
+
+    let userVault = {
       courses: [],
       flashcards: [],
       todos: [],
@@ -846,13 +789,85 @@
     };
 
     let pendingFiles = [];
-    let currentDataSha = null;
-    let autoSaveDebounce = null;
+    let currentVaultSha = null;
+    let autoSaveTimer = null;
+    let authMode = 'login';
+    let activeFilter = 'all';
     let fcCursor = 0;
     let fcFlipped = false;
-    let activeFilter = 'all';
 
-    window.onload = async () => {
+    // Convertisseurs Hex / Base64 / ArrayBuffer
+    function bufToHex(buf) {
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+    function hexToBuf(hex) {
+      const bytes = new Uint8Array(hex.length / 2);
+      for (let i = 0; i < bytes.length; i++) bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
+      return bytes.buffer;
+    }
+    function bufToB64(buf) {
+      return btoa(String.fromCharCode(...new Uint8Array(buf)));
+    }
+    function b64ToBuf(b64) {
+      return Uint8Array.from(atob(b64), c => c.charCodeAt(0)).buffer;
+    }
+
+    // Dérivation de clé AES-256 à partir du mot de passe
+    async function deriveKeyFromPassword(password, saltBuffer) {
+      const enc = new TextEncoder();
+      const baseKey = await crypto.subtle.importKey(
+        'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey', 'deriveBits']
+      );
+      return await crypto.subtle.deriveKey(
+        { name: 'PBKDF2', salt: saltBuffer, iterations: 100000, hash: 'SHA-256' },
+        baseKey,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['encrypt', 'decrypt']
+      );
+    }
+
+    // Hash de vérification (pour valider le mot de passe sans le stocker)
+    async function computePasswordVerifier(password, saltBuffer) {
+      const enc = new TextEncoder();
+      const baseKey = await crypto.subtle.importKey(
+        'raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']
+      );
+      const bits = await crypto.subtle.deriveBits(
+        { name: 'PBKDF2', salt: saltBuffer, iterations: 100000, hash: 'SHA-256' },
+        baseKey, 256
+      );
+      return bufToHex(bits);
+    }
+
+    // Chiffrement AES-GCM d'un objet JSON
+    async function encryptData(obj, aesKey) {
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const encoded = new TextEncoder().encode(JSON.stringify(obj));
+      const ciphertext = await crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv: iv }, aesKey, encoded
+      );
+      return {
+        iv: bufToHex(iv),
+        ciphertext: bufToB64(ciphertext)
+      };
+    }
+
+    // Déchiffrement AES-GCM
+    async function decryptData(encryptedObj, aesKey) {
+      const iv = hexToBuf(encryptedObj.iv);
+      const cipherBuf = b64ToBuf(encryptedObj.ciphertext);
+      const decrypted = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: new Uint8Array(iv) }, aesKey, cipherBuf
+      );
+      const decodedStr = new TextDecoder().decode(decrypted);
+      return JSON.parse(decodedStr);
+    }
+
+    /* ==========================================================
+       2. GESTION DES UTILISATEURS (AUTH & SESSION)
+       ========================================================== */
+    window.onload = () => {
       document.getElementById('cfgOwner').value = ghConfig.owner;
       document.getElementById('cfgRepo').value = ghConfig.repo;
       document.getElementById('cfgBranch').value = ghConfig.branch;
@@ -862,51 +877,294 @@
         document.getElementById('desktopAddBtn').style.display = 'inline-flex';
       }
 
+      // Vérifier si un utilisateur a déjà une session ouverte dans sessionStorage
+      const savedUser = sessionStorage.getItem('ciel_session_user');
+      const savedSalt = sessionStorage.getItem('ciel_session_salt');
+      const savedKeyRaw = sessionStorage.getItem('ciel_session_key');
+
+      if (savedUser && savedSalt && savedKeyRaw) {
+        restoreSession(savedUser, savedSalt, savedKeyRaw);
+      } else {
+        document.getElementById('authOverlay').style.display = 'flex';
+      }
+    };
+
+    function switchAuthMode(mode) {
+      authMode = mode;
+      document.getElementById('tabBtnLogin').classList.toggle('active', mode === 'login');
+      document.getElementById('tabBtnRegister').classList.toggle('active', mode === 'register');
+      document.getElementById('authSubmitBtn').innerHTML = mode === 'login'
+        ? '<i class="fa-solid fa-arrow-right-to-bracket"></i> Ouvrir mon espace'
+        : '<i class="fa-solid fa-user-plus"></i> Créer mon espace personnel';
+      hideAuthAlert();
+    }
+
+    function showAuthAlert(msg) {
+      const el = document.getElementById('authAlert');
+      el.innerText = msg;
+      el.style.display = 'block';
+    }
+    function hideAuthAlert() {
+      document.getElementById('authAlert').style.display = 'none';
+    }
+
+    async function handleAuthSubmit(e) {
+      e.preventDefault();
+      hideAuthAlert();
+      const username = document.getElementById('authUsername').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+      const password = document.getElementById('authPassword').value;
+
+      if (!username || !password) {
+        showAuthAlert("Veuillez renseigner un nom d'utilisateur et un mot de passe.");
+        return;
+      }
+
+      const submitBtn = document.getElementById('authSubmitBtn');
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Traitement sécurisé...';
+
+      try {
+        // 1. Récupération de l'index des utilisateurs sur GitHub
+        const registry = await fetchUsersRegistry();
+
+        if (authMode === 'register') {
+          if (registry.users && registry.users[username]) {
+            throw new Error("Ce nom d'utilisateur existe déjà. Connectez-vous.");
+          }
+
+          // Génération du sel aléatoire
+          const salt = crypto.getRandomValues(new Uint8Array(16));
+          const saltHex = bufToHex(salt);
+          const verifier = await computePasswordVerifier(password, salt);
+          const aesKey = await deriveKeyFromPassword(password, salt);
+
+          // Enregistrement dans l'index des utilisateurs
+          if (!registry.users) registry.users = {};
+          registry.users[username] = {
+            salt: saltHex,
+            verifier: verifier,
+            createdAt: new Date().toISOString()
+          };
+
+          await pushUsersRegistry(registry);
+
+          // Création du coffre vierge chiffré
+          currentSession = { username, aesKey, saltHex };
+          userVault = { courses: [], flashcards: [], todos: [], lastUpdated: new Date().toISOString() };
+          await saveEncryptedVaultToGitHub();
+
+          openUserSession(username, saltHex, password);
+        } else {
+          // Mode Connexion
+          if (!registry.users || !registry.users[username]) {
+            throw new Error("Nom d'utilisateur inexistant. Veuillez créer un compte.");
+          }
+
+          const userRecord = registry.users[username];
+          const salt = hexToBuf(userRecord.salt);
+          const computedVerifier = await computePasswordVerifier(password, salt);
+
+          if (computedVerifier !== userRecord.verifier) {
+            throw new Error("Mot de passe incorrect pour cet utilisateur.");
+          }
+
+          const aesKey = await deriveKeyFromPassword(password, salt);
+          currentSession = { username, aesKey, saltHex: userRecord.salt };
+
+          await loadEncryptedVaultFromGitHub();
+          openUserSession(username, userRecord.salt, password);
+        }
+      } catch (err) {
+        showAuthAlert(err.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = authMode === 'login'
+          ? '<i class="fa-solid fa-arrow-right-to-bracket"></i> Ouvrir mon espace'
+          : '<i class="fa-solid fa-user-plus"></i> Créer mon espace personnel';
+      }
+    }
+
+    async function openUserSession(username, saltHex, password) {
+      sessionStorage.setItem('ciel_session_user', username);
+      sessionStorage.setItem('ciel_session_salt', saltHex);
+      sessionStorage.setItem('ciel_session_key', password);
+
+      document.getElementById('currentUserLabel').innerText = username;
+      document.getElementById('authOverlay').style.display = 'none';
+
       renderCourses();
       renderFlashcards();
       renderTodos();
-
-      if (ghConfig.token) {
-        setSync('saving', 'Synchro...');
-        await pullFromGitHub(true);
-      } else {
-        setSync('', 'Local');
-      }
-    };
-
-    window.onresize = () => {
-      if (window.innerWidth >= 850) {
-        document.getElementById('desktopAddBtn').style.display = 'inline-flex';
-      } else {
-        document.getElementById('desktopAddBtn').style.display = 'none';
-      }
-    };
-
-    /* ==========================================================
-       2. NAVIGATION TABS
-       ========================================================== */
-    function showTab(tabId) {
-      document.querySelectorAll('.tab-view').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.mobile-tab').forEach(b => b.classList.remove('active'));
-
-      const target = document.getElementById(tabId);
-      if (target) target.classList.add('active');
-
-      document.querySelectorAll(`[onclick="showTab('${tabId}')"]`).forEach(b => b.classList.add('active'));
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setSync('synced', 'Connecté');
     }
 
+    async function restoreSession(username, saltHex, password) {
+      const salt = hexToBuf(saltHex);
+      const aesKey = await deriveKeyFromPassword(password, salt);
+      currentSession = { username, aesKey, saltHex };
+      document.getElementById('currentUserLabel').innerText = username;
+      document.getElementById('authOverlay').style.display = 'none';
+
+      await loadEncryptedVaultFromGitHub();
+      renderCourses();
+      renderFlashcards();
+      renderTodos();
+    }
+
+    function logout() {
+      sessionStorage.clear();
+      currentSession = { username: null, aesKey: null, saltHex: null };
+      userVault = { courses: [], flashcards: [], todos: [], lastUpdated: null };
+      document.getElementById('authOverlay').style.display = 'flex';
+      document.getElementById('currentUserLabel').innerText = "Invité";
+      setSync('', 'Déconnecté');
+    }
+
+    /* ==========================================================
+       3. SYNCHRONISATION DU COFFRE CHIFFRÉ GITHUB
+       ========================================================== */
     function setSync(state, msg) {
       const dot = document.getElementById('syncDot');
-      const txt = document.getElementById('syncText');
-      dot.className = 'dot';
+      dot.className = 'sync-dot';
       if (state) dot.classList.add(state);
-      txt.innerText = msg;
+    }
+
+    // Récupérer le registre général des comptes utilisateurs
+    async function fetchUsersRegistry() {
+      if (!ghConfig.token) return { users: {} };
+      const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data/users_index.json?ref=${ghConfig.branch}`;
+      try {
+        const res = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github.v3+json' }
+        });
+        if (res.status === 404) return { users: {} };
+        const data = await res.json();
+        const decoded = decodeURIComponent(escape(atob(data.content.replace(/\n/g, ''))));
+        return JSON.parse(decoded);
+      } catch (e) {
+        return { users: {} };
+      }
+    }
+
+    async function pushUsersRegistry(registryObj) {
+      const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data/users_index.json`;
+      let sha = null;
+      try {
+        const head = await fetch(`${url}?ref=${ghConfig.branch}`, {
+          headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github.v3+json' }
+        });
+        if (head.ok) {
+          const hJson = await head.json();
+          sha = hJson.sha;
+        }
+      } catch (e) {}
+
+      const payload = {
+        message: "Enregistrement utilisateur CIEL",
+        content: btoa(unescape(encodeURIComponent(JSON.stringify(registryObj, null, 2)))),
+        branch: ghConfig.branch
+      };
+      if (sha) payload.sha = sha;
+
+      await fetch(url, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    }
+
+    // Charger le coffre chiffré spécifique à l'utilisateur connecté
+    async function loadEncryptedVaultFromGitHub() {
+      if (!ghConfig.token || !currentSession.username) return;
+      setSync('saving', 'Chargement...');
+
+      const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data/vaults/${currentSession.username}.json?ref=${ghConfig.branch}`;
+      try {
+        const res = await fetch(url, {
+          headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github.v3+json' }
+        });
+
+        if (res.status === 404) {
+          userVault = { courses: [], flashcards: [], todos: [], lastUpdated: new Date().toISOString() };
+          setSync('synced', 'Nouveau coffre');
+          return;
+        }
+
+        const data = await res.json();
+        currentVaultSha = data.sha;
+        const decoded = JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\n/g, '')))));
+
+        // Déchiffrement avec la clé de session
+        userVault = await decryptData(decoded, currentSession.aesKey);
+        setSync('synced', 'À jour');
+      } catch (err) {
+        console.error("Erreur de déchiffrement :", err);
+        setSync('error', 'Erreur coffre');
+      }
+    }
+
+    // Sauvegarder le coffre chiffré sur GitHub
+    async function saveEncryptedVaultToGitHub() {
+      if (!ghConfig.token || !currentSession.username) return;
+      setSync('saving', 'Chiffrement...');
+
+      const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data/vaults/${currentSession.username}.json`;
+
+      try {
+        // 1. Chiffrement AES-256
+        const encryptedPayload = await encryptData(userVault, currentSession.aesKey);
+
+        // 2. Vérification du SHA distant
+        const head = await fetch(`${url}?ref=${ghConfig.branch}`, {
+          headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github.v3+json' }
+        });
+        if (head.ok) {
+          const hJson = await head.json();
+          currentVaultSha = hJson.sha;
+        }
+
+        const body = {
+          message: `Update vault [${currentSession.username}]`,
+          content: btoa(unescape(encodeURIComponent(JSON.stringify(encryptedPayload)))),
+          branch: ghConfig.branch
+        };
+        if (currentVaultSha) body.sha = currentVaultSha;
+
+        const putRes = await fetch(url, {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        if (!putRes.ok) throw new Error("Erreur GitHub " + putRes.status);
+        const resData = await putRes.json();
+        currentVaultSha = resData.content.sha;
+        setSync('synced', 'Chiffré & Sauvegardé');
+      } catch (e) {
+        console.error(e);
+        setSync('error', 'Erreur sauvegarde');
+      }
+    }
+
+    function autoSaveUserVault() {
+      setSync('saving', 'Attente...');
+      clearTimeout(autoSaveTimer);
+      autoSaveTimer = setTimeout(() => {
+        saveEncryptedVaultToGitHub();
+      }, 1500);
+    }
+
+    function syncUserVault(silent = false) {
+      loadEncryptedVaultFromGitHub().then(() => {
+        renderCourses();
+        renderFlashcards();
+        renderTodos();
+        if (!silent) alert("Données chiffrées synchronisées depuis GitHub !");
+      });
     }
 
     /* ==========================================================
-       3. GESTION DES COURS & AFFICHAGE CLAIR DES IMAGES
+       4. GESTION DES COURS PERSONNELS & SCHÉMAS
        ========================================================== */
     function setFilter(cat) {
       activeFilter = cat;
@@ -921,20 +1179,20 @@
       const counter = document.getElementById('coursesCounter');
       const search = (document.getElementById('courseSearch')?.value || '').toLowerCase();
 
-      const items = store.courses.filter(c => {
+      const items = userVault.courses.filter(c => {
         const matchesCat = (activeFilter === 'all') || (c.subject.includes(activeFilter));
         const matchesSearch = !search || c.title.toLowerCase().includes(search) || (c.content || '').toLowerCase().includes(search);
         return matchesCat && matchesSearch;
       });
 
-      counter.innerText = `${items.length} fiche${items.length > 1 ? 's' : ''}`;
+      counter.innerText = `${items.length} cours`;
 
       if (items.length === 0) {
         feed.innerHTML = `
           <div style="text-align: center; padding: 3.5rem 1rem; color: var(--text-sub);">
-            <i class="fa-solid fa-folder-open" style="font-size: 2.8rem; margin-bottom: 0.75rem; opacity: 0.3;"></i>
-            <p style="font-size: 0.95rem;">Aucun cours pour le moment.</p>
-            <p style="font-size: 0.8rem; margin-top: 0.3rem;">Clique sur le bouton <strong>+</strong> pour créer ton premier cours.</p>
+            <i class="fa-solid fa-lock" style="font-size: 2.8rem; margin-bottom: 0.75rem; opacity: 0.3;"></i>
+            <p style="font-size: 0.95rem;">Votre espace est actuellement vide.</p>
+            <p style="font-size: 0.8rem; margin-top: 0.3rem;">Ajoutez un cours avec le bouton <strong>+</strong>.</p>
           </div>
         `;
         return;
@@ -942,34 +1200,26 @@
 
       feed.innerHTML = '';
       items.forEach(c => {
-        const realIdx = store.courses.findIndex(x => x.id === c.id);
+        const realIdx = userVault.courses.findIndex(x => x.id === c.id);
         const card = document.createElement('div');
         card.className = 'course-card';
 
-        // Badge couleur selon la matière
-        let badgeClass = 'badge-other';
-        if (c.subject.includes('Réseaux')) badgeClass = 'badge-reseaux';
-        else if (c.subject.includes('Cybersécurité')) badgeClass = 'badge-secu';
-        else if (c.subject.includes('Math') || c.subject.includes('Physique')) badgeClass = 'badge-maths';
-
-        // Pièces jointes (Schémas et Fichiers)
         let attachmentsHTML = '';
         if (c.attachments && c.attachments.length > 0) {
           attachmentsHTML += '<div class="attachments-shelf">';
           c.attachments.forEach(att => {
             const url = att.downloadUrl || att.path;
             if (att.isImage) {
-              // Cadre blanc à fort contraste pour schémas techniques
               attachmentsHTML += `
                 <div class="img-thumb-container" onclick="openLightbox('${url}')" title="Agrandir le schéma">
-                  <img src="${url}" alt="${escapeHtml(att.name)}" loading="lazy" />
+                  <img src="${url}" alt="${att.name}" loading="lazy" />
                 </div>
               `;
             } else {
               attachmentsHTML += `
-                <a href="${url}" target="_blank" download="${escapeHtml(att.name)}" class="file-badge-download">
+                <a href="${url}" target="_blank" download="${att.name}" class="file-badge-download">
                   <i class="fa-solid fa-file-arrow-down"></i>
-                  <span>${escapeHtml(att.name)}</span>
+                  <span>${att.name}</span>
                 </a>
               `;
             }
@@ -980,8 +1230,8 @@
         card.innerHTML = `
           <div class="course-card-top">
             <div>
-              <span class="badge-sub ${badgeClass}">${escapeHtml(c.subject)}</span>
-              <h4 class="course-title">${escapeHtml(c.title)}</h4>
+              <span class="badge-sub">${c.subject}</span>
+              <h4 class="course-title">${c.title}</h4>
             </div>
             <button class="btn btn-danger" style="padding: 0.35rem 0.6rem; min-height: 32px;" onclick="deleteCourse(${realIdx})">
               <i class="fa-solid fa-trash-can"></i>
@@ -997,9 +1247,6 @@
       });
     }
 
-    /* ==========================================================
-       4. GESTION DE LA MODAL & UPLOAD GITHUB (uploads/)
-       ========================================================== */
     function openCourseModal() {
       pendingFiles = [];
       renderPendingModalFiles();
@@ -1010,8 +1257,7 @@
     }
 
     function handleModalFiles(e) {
-      const files = Array.from(e.target.files);
-      files.forEach(f => pendingFiles.push(f));
+      Array.from(e.target.files).forEach(f => pendingFiles.push(f));
       renderPendingModalFiles();
       e.target.value = '';
     }
@@ -1025,16 +1271,11 @@
         chip.style = 'background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 99px; padding: 0.3rem 0.7rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.4rem;';
         chip.innerHTML = `
           <i class="${isImg ? 'fa-solid fa-image' : 'fa-solid fa-file'}" style="color: var(--primary);"></i>
-          <span>${escapeHtml(f.name)}</span>
-          <i class="fa-solid fa-xmark" style="color: var(--accent-rose); cursor: pointer; margin-left: 4px;" onclick="removePendingFile(${idx})"></i>
+          <span>${f.name}</span>
+          <i class="fa-solid fa-xmark" style="color: var(--accent-rose); cursor: pointer;" onclick="pendingFiles.splice(${idx},1); renderPendingModalFiles();"></i>
         `;
         box.appendChild(chip);
       });
-    }
-
-    function removePendingFile(idx) {
-      pendingFiles.splice(idx, 1);
-      renderPendingModalFiles();
     }
 
     function fileToBase64(file) {
@@ -1046,11 +1287,12 @@
       });
     }
 
-    async function uploadToGitHubUploads(file) {
+    async function uploadToUserUploadsFolder(file) {
       const b64 = await fileToBase64(file);
       const clean = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const filename = `${Date.now()}_${clean}`;
-      const path = `uploads/${filename}`;
+      // Fichiers stockés dans un sous-dossier au nom de l'utilisateur
+      const path = `uploads/${currentSession.username}/${filename}`;
       const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/${path}`;
 
       const res = await fetch(url, {
@@ -1061,16 +1303,13 @@
           'Accept': 'application/vnd.github.v3+json'
         },
         body: JSON.stringify({
-          message: `Upload piece jointe Bac CIEL: ${filename}`,
+          message: `Upload ${currentSession.username}: ${filename}`,
           content: b64,
           branch: ghConfig.branch
         })
       });
 
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message || `Code HTTP ${res.status}`);
-      }
+      if (!res.ok) throw new Error("Erreur téléversement GitHub");
       const data = await res.json();
       return {
         name: file.name,
@@ -1088,29 +1327,21 @@
       const btn = document.getElementById('mSubmitBtn');
 
       if (!title) {
-        alert("Indique au moins un titre pour ta fiche.");
-        return;
-      }
-
-      if (pendingFiles.length > 0 && !ghConfig.token) {
-        alert("Configure ton Token GitHub dans les Paramètres pour stocker tes schémas et images !");
-        showTab('tab-settings');
-        closeCourseModal();
+        alert("Indiquez un titre pour ce cours.");
         return;
       }
 
       btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Téléversement sur GitHub...';
-      setSync('saving', 'Upload images...');
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement chiffré...';
 
-      const uploadedList = [];
       try {
+        const uploadedList = [];
         for (const file of pendingFiles) {
-          const uploaded = await uploadToGitHubUploads(file);
-          uploadedList.push(uploaded);
+          const res = await uploadToUserUploadsFolder(file);
+          uploadedList.push(res);
         }
 
-        store.courses.unshift({
+        userVault.courses.unshift({
           id: Date.now(),
           subject,
           title,
@@ -1125,27 +1356,25 @@
 
         closeCourseModal();
         renderCourses();
-        autoSave();
-      } catch (e) {
-        console.error(e);
-        alert("Erreur lors de l'envoi : " + e.message);
-        setSync('error', 'Erreur upload');
+        autoSaveUserVault();
+      } catch (err) {
+        alert("Erreur : " + err.message);
       } finally {
         btn.disabled = false;
-        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Sauvegarder & Téléverser';
+        btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Sauvegarder dans mon coffre';
       }
     }
 
     function deleteCourse(idx) {
-      if (confirm("Supprimer cette fiche ?")) {
-        store.courses.splice(idx, 1);
+      if (confirm("Supprimer définitivement ce cours de votre coffre ?")) {
+        userVault.courses.splice(idx, 1);
         renderCourses();
-        autoSave();
+        autoSaveUserVault();
       }
     }
 
     /* ==========================================================
-       5. VISIONNEUSE HAUTE VISIBILITÉ (LIGHTBOX)
+       5. LIGHTBOX SCHÉMAS (CONTRASTE BLANC)
        ========================================================== */
     function openLightbox(src) {
       document.getElementById('lightboxImg').src = src;
@@ -1155,12 +1384,9 @@
       document.getElementById('lightboxModal').classList.remove('active');
       document.getElementById('lightboxImg').src = '';
     }
-    function toggleLightboxBackground() {
-      document.getElementById('lightboxFrame').classList.toggle('dark-bg');
-    }
 
     /* ==========================================================
-       6. FLASHCARDS
+       6. FLASHCARDS & TODOS DU COFFRE
        ========================================================== */
     function renderFlashcards() {
       const box = document.getElementById('fcDisplayContent');
@@ -1168,45 +1394,45 @@
       const badge = document.getElementById('fcBadgeLabel');
       const cardEl = document.getElementById('fcInteractiveCard');
 
-      if (store.flashcards.length === 0) {
-        box.innerHTML = "Aucune flashcard enregistrée.";
+      if (userVault.flashcards.length === 0) {
+        box.innerHTML = "Aucune flashcard dans votre coffre.";
         counter.innerText = "0 / 0";
         badge.innerText = "Vide";
         cardEl.classList.remove('is-ans');
         return;
       }
 
-      if (fcCursor >= store.flashcards.length) fcCursor = 0;
-      if (fcCursor < 0) fcCursor = store.flashcards.length - 1;
+      if (fcCursor >= userVault.flashcards.length) fcCursor = 0;
+      if (fcCursor < 0) fcCursor = userVault.flashcards.length - 1;
 
-      const item = store.flashcards[fcCursor];
-      counter.innerText = `${fcCursor + 1} / ${store.flashcards.length}`;
+      const item = userVault.flashcards[fcCursor];
+      counter.innerText = `${fcCursor + 1} / ${userVault.flashcards.length}`;
       badge.innerText = item.s || "Général";
 
       if (fcFlipped) {
         cardEl.classList.add('is-ans');
-        box.innerHTML = `<span style="color: var(--accent-green); font-size: 0.8rem; text-transform: uppercase;">[Réponse]</span><br>${escapeHtml(item.a)}`;
+        box.innerHTML = `<span style="color: var(--accent-green); font-size: 0.8rem; text-transform: uppercase;">[Réponse]</span><br>${item.a}`;
       } else {
         cardEl.classList.remove('is-ans');
-        box.innerHTML = `<span style="color: var(--primary); font-size: 0.8rem; text-transform: uppercase;">[Question]</span><br>${escapeHtml(item.q)}`;
+        box.innerHTML = `<span style="color: var(--primary); font-size: 0.8rem; text-transform: uppercase;">[Question]</span><br>${item.q}`;
       }
     }
 
     function toggleFlashcardFlip() {
-      if (store.flashcards.length === 0) return;
+      if (userVault.flashcards.length === 0) return;
       fcFlipped = !fcFlipped;
       renderFlashcards();
     }
     function nextFlashcard() {
-      if (store.flashcards.length === 0) return;
+      if (userVault.flashcards.length === 0) return;
       fcFlipped = false;
-      fcCursor = (fcCursor + 1) % store.flashcards.length;
+      fcCursor = (fcCursor + 1) % userVault.flashcards.length;
       renderFlashcards();
     }
     function prevFlashcard() {
-      if (store.flashcards.length === 0) return;
+      if (userVault.flashcards.length === 0) return;
       fcFlipped = false;
-      fcCursor = (fcCursor - 1 + store.flashcards.length) % store.flashcards.length;
+      fcCursor = (fcCursor - 1 + userVault.flashcards.length) % userVault.flashcards.length;
       renderFlashcards();
     }
     function addFlashcard() {
@@ -1215,42 +1441,39 @@
       const a = document.getElementById('fcA').value.trim();
 
       if (!q || !a) {
-        alert("Saisis une question et une réponse.");
+        alert("Saisissez une question et une réponse.");
         return;
       }
-      store.flashcards.push({ s, q, a });
+      userVault.flashcards.push({ s, q, a });
       document.getElementById('fcQ').value = '';
       document.getElementById('fcA').value = '';
       renderFlashcards();
-      autoSave();
+      autoSaveUserVault();
     }
     function deleteCurrentFlashcard() {
-      if (store.flashcards.length === 0) return;
-      store.flashcards.splice(fcCursor, 1);
+      if (userVault.flashcards.length === 0) return;
+      userVault.flashcards.splice(fcCursor, 1);
       fcFlipped = false;
       renderFlashcards();
-      autoSave();
+      autoSaveUserVault();
     }
 
-    /* ==========================================================
-       7. PLANNING & TODOS
-       ========================================================== */
     function renderTodos() {
       const feed = document.getElementById('todosFeed');
-      if (store.todos.length === 0) {
-        feed.innerHTML = `<p style="text-align: center; color: var(--text-sub); padding: 1.5rem 0;">Aucun objectif en attente.</p>`;
+      if (userVault.todos.length === 0) {
+        feed.innerHTML = `<p style="text-align: center; color: var(--text-sub); padding: 1.5rem 0;">Aucun objectif personnel en attente.</p>`;
         return;
       }
       feed.innerHTML = '';
-      store.todos.forEach((t, i) => {
+      userVault.todos.forEach((t, i) => {
         const row = document.createElement('div');
         row.className = 'todo-row';
         row.innerHTML = `
-          <div style="display:flex; align-items:center; gap:0.75rem; cursor:pointer; flex:1;" onclick="toggleTodo(${i})">
+          <div style="display:flex; align-items:center; gap:0.75rem; cursor:pointer; flex:1;" onclick="userVault.todos[${i}].done = !userVault.todos[${i}].done; renderTodos(); autoSaveUserVault();">
             <i class="fa-${t.done ? 'solid fa-circle-check' : 'regular fa-circle'}" style="font-size: 1.2rem; color:${t.done ? 'var(--accent-green)' : 'var(--text-sub)'};"></i>
-            <span style="${t.done ? 'text-decoration: line-through; color: var(--text-sub);' : ''}">${escapeHtml(t.text)}</span>
+            <span style="${t.done ? 'text-decoration: line-through; color: var(--text-sub);' : ''}">${t.text}</span>
           </div>
-          <button class="btn btn-danger" style="padding: 0.25rem 0.55rem; min-height: 32px;" onclick="deleteTodo(${i})">
+          <button class="btn btn-danger" style="padding: 0.25rem 0.55rem; min-height: 32px;" onclick="userVault.todos.splice(${i}, 1); renderTodos(); autoSaveUserVault();">
             <i class="fa-solid fa-trash-can"></i>
           </button>
         `;
@@ -1261,119 +1484,25 @@
     function createTodo() {
       const val = document.getElementById('todoInputText').value.trim();
       if (!val) return;
-      store.todos.push({ text: val, done: false });
+      userVault.todos.push({ text: val, done: false });
       document.getElementById('todoInputText').value = '';
       renderTodos();
-      autoSave();
-    }
-    function toggleTodo(i) {
-      store.todos[i].done = !store.todos[i].done;
-      renderTodos();
-      autoSave();
-    }
-    function deleteTodo(i) {
-      store.todos.splice(i, 1);
-      renderTodos();
-      autoSave();
+      autoSaveUserVault();
     }
 
     /* ==========================================================
-       8. AUTO-SYNCHRONISATION GITHUB (data/bac_data.json)
+       7. NAVIGATION ET PARAMÈTRES
        ========================================================== */
-    function autoSave() {
-      store.lastUpdated = new Date().toISOString();
-      localStorage.setItem('ciel_app_data', JSON.stringify(store));
+    function showTab(tabId) {
+      document.querySelectorAll('.tab-view').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.mobile-tab').forEach(b => b.classList.remove('active'));
 
-      if (!ghConfig.token) {
-        setSync('', 'Local');
-        return;
-      }
+      const target = document.getElementById(tabId);
+      if (target) target.classList.add('active');
 
-      setSync('saving', 'Envoi...');
-      clearTimeout(autoSaveDebounce);
-
-      autoSaveDebounce = setTimeout(() => {
-        pushToGitHub();
-      }, 1500);
-    }
-
-    function utf8ToB64(str) {
-      return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, (m, p1) => String.fromCharCode('0x' + p1)));
-    }
-    function b64ToUtf8(str) {
-      return decodeURIComponent(Array.prototype.map.call(atob(str), c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
-    }
-
-    async function pushToGitHub() {
-      if (!ghConfig.token) return;
-      const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data/bac_data.json`;
-
-      try {
-        const head = await fetch(`${url}?ref=${ghConfig.branch}`, {
-          headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github.v3+json' }
-        });
-        if (head.ok) {
-          const hJson = await head.json();
-          currentDataSha = hJson.sha;
-        }
-
-        const payload = {
-          message: `Maj Bac CIEL [${new Date().toLocaleTimeString('fr-FR')}]`,
-          content: utf8ToB64(JSON.stringify(store, null, 2)),
-          branch: ghConfig.branch
-        };
-        if (currentDataSha) payload.sha = currentDataSha;
-
-        const res = await fetch(url, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${ghConfig.token}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/vnd.github.v3+json'
-          },
-          body: JSON.stringify(payload)
-        });
-
-        if (!res.ok) throw new Error(`Code ${res.status}`);
-        const resJson = await res.json();
-        currentDataSha = resJson.content.sha;
-        setSync('synced', `À jour ${new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'})}`);
-      } catch (e) {
-        console.error(e);
-        setSync('error', 'Erreur sync');
-      }
-    }
-
-    async function pullFromGitHub(silent = false) {
-      if (!ghConfig.token) return;
-      const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/data/bac_data.json?ref=${ghConfig.branch}`;
-
-      try {
-        const res = await fetch(url, {
-          headers: { 'Authorization': `Bearer ${ghConfig.token}`, 'Accept': 'application/vnd.github.v3+json' }
-        });
-
-        if (res.status === 404) {
-          setSync('synced', 'Dépôt prêt');
-          return;
-        }
-        if (!res.ok) throw new Error(`Code ${res.status}`);
-
-        const json = await res.json();
-        currentDataSha = json.sha;
-        const decoded = b64ToUtf8(json.content.replace(/\n/g, ''));
-        store = JSON.parse(decoded);
-
-        localStorage.setItem('ciel_app_data', JSON.stringify(store));
-        renderCourses();
-        renderFlashcards();
-        renderTodos();
-        setSync('synced', 'Synchronisé');
-        if (!silent) alert("Données synchronisées !");
-      } catch (e) {
-        console.error(e);
-        setSync('error', 'Erreur');
-      }
+      document.querySelectorAll(`[onclick="showTab('${tabId}')"]`).forEach(b => b.classList.add('active'));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function saveSettings() {
@@ -1383,13 +1512,7 @@
       ghConfig.token = document.getElementById('cfgToken').value.trim();
 
       localStorage.setItem('ciel_gh_config', JSON.stringify(ghConfig));
-      alert("Paramètres enregistrés !");
-      pullFromGitHub(false);
-    }
-
-    function escapeHtml(text) {
-      const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-      return (text || '').replace(/[&<>"']/g, m => map[m]);
+      alert("Configuration enregistrée.");
     }
   </script>
 </body>
