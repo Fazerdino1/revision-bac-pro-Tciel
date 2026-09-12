@@ -18,7 +18,7 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-  <link rel="stylesheet" href="css/styles.css?v=3.3.1" />
+  <link rel="stylesheet" href="css/styles.css?v=3.4.0" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#080c14" />
@@ -176,6 +176,10 @@
           <span class="sync-dot" id="syncDot" title="Statut synchronisation"></span>
         </button>
 
+        <button class="btn btn-settings-icon" id="btnOpenSettings" onclick="openSettingsModal()" aria-label="Paramètres de l'application" title="Paramètres">
+          <i class="fa-solid fa-gear" aria-hidden="true"></i>
+        </button>
+
         <button class="btn btn-logout-icon" onclick="logout()" aria-label="Se déconnecter de StudyOS" title="Se déconnecter">
           <i class="fa-solid fa-power-off" aria-hidden="true"></i>
         </button>
@@ -216,6 +220,22 @@
         <button class="btn btn-primary" style="display: none; min-width: 170px;" id="desktopAddBtn" onclick="openCourseModal()" aria-label="Créer un nouveau cours">
           <i class="fa-solid fa-plus"></i> Nouveau cours
         </button>
+      </div>
+
+      <!-- Barre de gestion et filtres par Dossiers -->
+      <div class="folders-bar-container" id="foldersBarContainer">
+        <div class="folders-bar-header">
+          <div class="folders-bar-title">
+            <i class="fa-solid fa-folder-tree"></i>
+            <span>Dossiers</span>
+          </div>
+          <button type="button" class="btn-new-folder" onclick="openCreateFolderModal()" aria-label="Créer un nouveau dossier" title="Créer un nouveau dossier">
+            <i class="fa-solid fa-folder-plus"></i> <span>Nouveau dossier</span>
+          </button>
+        </div>
+        <div class="folders-chips-scroll" id="foldersChipsList" role="tablist" aria-label="Filtrer par dossier">
+          <!-- Injecté dynamiquement par JS -->
+        </div>
       </div>
 
       <!-- Filtres par matière avec icônes dédiées et clés strictes -->
@@ -472,6 +492,18 @@
       </div>
 
       <div class="form-row">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+          <label for="mFolder" style="margin-bottom: 0;"><i class="fa-solid fa-folder-tree" style="color: var(--primary);"></i> Dossier de rangement</label>
+          <button type="button" class="btn-text-action" onclick="openCreateFolderModal(true)" style="font-size: 0.78rem; color: var(--primary); background: none; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem;">
+            <i class="fa-solid fa-plus"></i> Nouveau dossier
+          </button>
+        </div>
+        <select class="form-input" id="mFolder">
+          <option value="">📁 Aucun dossier (Non classé)</option>
+        </select>
+      </div>
+
+      <div class="form-row">
         <label for="mTitle">Titre de la fiche</label>
         <input type="text" class="form-input" id="mTitle" placeholder="Ex: TP Masques IPv4 /28 et Switch Cisco" oninput="triggerDraftSave()" />
       </div>
@@ -649,14 +681,140 @@
     </div>
   </div>
 
+  <!-- MODALE DE PARAMÈTRES AVEC DERNIÈRE CONNEXION -->
+  <div class="modal-backdrop" id="settingsModal" onclick="closeSettingsModal()" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+    <div class="modal-sheet" onclick="event.stopPropagation()" style="max-width: 540px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h3 id="settingsModalTitle" style="font-size: 1.15rem; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-sliders" style="color: var(--primary);" aria-hidden="true"></i> Paramètres & Sécurité
+        </h3>
+        <button class="btn" style="padding: 0.4rem 0.7rem; min-height: 36px;" onclick="closeSettingsModal()" aria-label="Fermer les paramètres" title="Fermer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Fiche d'information de connexion -->
+      <div class="settings-login-card">
+        <div class="settings-login-header">
+          <div class="settings-shield-icon">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div style="min-width: 0;">
+            <div class="settings-login-user" id="settingsUsernameLabel">@utilisateur</div>
+            <div class="settings-login-status"><span class="status-dot"></span> Session active & chiffrée</div>
+          </div>
+        </div>
+        <div class="settings-login-meta">
+          <div class="settings-meta-item">
+            <i class="fa-regular fa-clock" aria-hidden="true"></i>
+            <div>
+              <span class="meta-label">Dernière connexion enregistrée :</span>
+              <strong class="meta-value" id="settingsLastLoginLabel">Première connexion aujourd'hui</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Options d'affichage et ergonomie -->
+      <div class="settings-section">
+        <h4 class="settings-section-title"><i class="fa-solid fa-display"></i> Affichage & Ergonomie</h4>
+        <div class="settings-toggle-row">
+          <div>
+            <span class="setting-name">Affichage compact des cours</span>
+            <p class="setting-desc">Réduit la hauteur des cartes pour afficher plus de cours simultanément.</p>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="settingCompactMode" onchange="toggleSettingCompactMode(this.checked)" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="settings-toggle-row">
+          <div>
+            <span class="setting-name">Effets visuels et confettis</span>
+            <p class="setting-desc">Animations et confettis festifs lors des révisions et flashcards.</p>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="settingConfetti" onchange="toggleSettingConfetti(this.checked)" checked />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Options de données & sauvegarde -->
+      <div class="settings-section">
+        <h4 class="settings-section-title"><i class="fa-solid fa-database"></i> Sauvegarde & Coffre</h4>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+          <button type="button" class="btn" onclick="exportVaultBackupJSON()" style="flex: 1; min-height: 42px;">
+            <i class="fa-solid fa-download"></i> Exporter mon coffre (.json)
+          </button>
+          <button type="button" class="btn btn-primary" onclick="forceVaultSync()" style="flex: 1; min-height: 42px;">
+            <i class="fa-solid fa-cloud-arrow-up"></i> Forcer la synchronisation
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE CRÉER / RENOMMER UN DOSSIER -->
+  <div class="modal-backdrop" id="folderModal" onclick="closeFolderModal()" role="dialog" aria-modal="true" aria-labelledby="folderModalTitle">
+    <div class="modal-sheet" onclick="event.stopPropagation()" style="max-width: 440px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h3 id="folderModalTitle" style="font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-folder-plus" style="color: var(--primary);" aria-hidden="true"></i> Nouveau dossier
+        </h3>
+        <button class="btn" style="padding: 0.4rem 0.7rem; min-height: 36px;" onclick="closeFolderModal()" aria-label="Fermer la modale dossier" title="Fermer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="folderForm" onsubmit="handleFolderSubmit(event)">
+        <input type="hidden" id="fFolderId" value="" />
+        <div class="form-row" style="margin-bottom: 1.2rem;">
+          <label for="fFolderName">Nom du dossier :</label>
+          <input type="text" id="fFolderName" class="form-input" placeholder="Ex: TP Réseaux Cisco, Fiches Épreuves..." required maxlength="40" />
+        </div>
+
+        <div class="form-row" style="margin-bottom: 1.5rem;">
+          <label>Couleur du dossier :</label>
+          <div class="folder-color-palette" id="folderColorPalette">
+            <!-- Couleurs générées par JS -->
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+          <button type="button" class="btn" onclick="closeFolderModal()">Annuler</button>
+          <button type="submit" class="btn btn-primary" id="fSubmitBtn"><i class="fa-solid fa-check"></i> Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODALE RANGER UN COURS DANS UN DOSSIER -->
+  <div class="modal-backdrop" id="moveCourseModal" onclick="closeMoveCourseModal()" role="dialog" aria-modal="true" aria-labelledby="moveCourseModalTitle">
+    <div class="modal-sheet" onclick="event.stopPropagation()" style="max-width: 440px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h3 id="moveCourseModalTitle" style="font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-folder-tree" style="color: var(--primary);" aria-hidden="true"></i> Ranger dans un dossier
+        </h3>
+        <button class="btn" style="padding: 0.4rem 0.7rem; min-height: 36px;" onclick="closeMoveCourseModal()" aria-label="Fermer" title="Fermer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <p id="moveCourseModalSubtitle" style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem;"></p>
+      <div class="move-folder-options" id="moveFolderOptionsList">
+        <!-- Options injectées par JS -->
+      </div>
+    </div>
+  </div>
+
   <!-- Bouton flottant Retour en Haut -->
   <button class="back-to-top-btn" id="backToTopBtn" onclick="scrollToTop()" aria-label="Retour en haut de page" title="Retour en haut de page">
     <i class="fa-solid fa-arrow-up" aria-hidden="true"></i>
   </button>
 
   <!-- Application logic -->
-  <script src="js/crypto.js?v=3.3.1"></script>
-  <script src="js/github.js?v=3.3.1"></script>
-  <script src="js/app.js?v=3.3.1"></script>
+  <script src="js/crypto.js?v=3.4.0"></script>
+  <script src="js/github.js?v=3.4.0"></script>
+  <script src="js/app.js?v=3.4.0"></script>
 </body>
 </html>

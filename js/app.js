@@ -16,14 +16,18 @@
    1. VARIABLES D'ÉTAT GLOBALES
    ========================================================== */
 let currentSession = { username: null, aesKey: null, saltHex: null };
-let userVault = { courses: [], flashcards: [], todos: [], profile: { avatar: '', bio: '' }, lastUpdated: null };
+let userVault = { courses: [], flashcards: [], todos: [], folders: [], settings: { compactMode: false, confetti: true }, profile: { avatar: '', bio: '' }, lastUpdated: null };
 let allSharedCourses = [];
 let pendingFiles = [];
 let autoSaveTimer = null;
 let authMode = 'login';
 let currentSubView = 'mine';
 let activeFilter = 'all';
+let activeFolderId = 'all';
+let selectedFolderColor = '#38bdf8';
+const FOLDER_COLORS = ['#38bdf8', '#a855f7', '#10b981', '#f59e0b', '#f43f5e', '#ec4899', '#6366f1', '#14b8a6'];
 let courseToShare = null;
+let courseToMoveId = null;
 let editingCourseId = null;
 let fcCursor = 0;
 let fcFlipped = false;
@@ -57,6 +61,7 @@ function renderAvatarHTML(username, avatarUrl, size = 28) {
 }
 
 function showToast(message, type = 'info') {
+  if (typeof document === 'undefined') return;
   const container = document.getElementById('toastContainer');
   if (!container) return;
   const toast = document.createElement('div');
@@ -323,12 +328,15 @@ async function handleAuthSubmit(e) {
 
 function openUserSession(username) {
   localStorage.setItem('ciel_session_user', username);
+  trackUserLoginSession(username);
   const userLabel = document.getElementById('currentUserLabel');
   if (userLabel) userLabel.innerText = username;
   updateHeaderProfileUI();
+  applyUserSettings();
   const authOverlay = document.getElementById('authOverlay');
   if (authOverlay) authOverlay.style.display = 'none';
 
+  renderFoldersBar();
   renderCourses();
   renderFlashcards();
   renderTodos();
@@ -338,6 +346,7 @@ function openUserSession(username) {
 
 async function restoreSession(username) {
   currentSession = { username, aesKey: null, saltHex: null };
+  trackUserLoginSession(username);
   const userLabel = document.getElementById('currentUserLabel');
   if (userLabel) userLabel.innerText = username;
 
@@ -347,6 +356,8 @@ async function restoreSession(username) {
     try {
       userVault = JSON.parse(localData);
       updateHeaderProfileUI();
+      applyUserSettings();
+      renderFoldersBar();
       renderCourses();
       renderFlashcards();
       renderTodos();
@@ -360,6 +371,8 @@ async function restoreSession(username) {
   await loadUserVault();
   await fetchSharedCourses();
   updateHeaderProfileUI();
+  applyUserSettings();
+  renderFoldersBar();
   renderCourses();
   renderFlashcards();
   renderTodos();
@@ -487,12 +500,14 @@ async function loadUserVault() {
       if (!userVault.courses) userVault.courses = [];
       if (!userVault.flashcards) userVault.flashcards = [];
       if (!userVault.todos) userVault.todos = [];
+      if (!userVault.folders) userVault.folders = [];
+      if (!userVault.settings) userVault.settings = { compactMode: false, confetti: true };
       if (!userVault.profile) userVault.profile = { avatar: '', bio: '' };
 
       localStorage.setItem(`ciel_vault_${currentSession.username}`, JSON.stringify(userVault));
       setSync('synced', 'À jour');
     } else {
-      userVault = { courses: [], flashcards: [], todos: [], profile: { avatar: '', bio: '' }, lastUpdated: new Date().toISOString() };
+      userVault = { courses: [], flashcards: [], todos: [], folders: [], settings: { compactMode: false, confetti: true }, profile: { avatar: '', bio: '' }, lastUpdated: new Date().toISOString() };
       setSync('synced', 'Nouveau');
     }
   } catch (err) {
@@ -561,6 +576,12 @@ function switchCourseSubView(mode) {
   const btnReceived = document.getElementById('btnViewReceived');
   if (btnMine) btnMine.classList.toggle('active', mode === 'mine');
   if (btnReceived) btnReceived.classList.toggle('active', mode === 'received');
+
+  const foldersBar = document.getElementById('foldersBarContainer');
+  if (foldersBar) {
+    foldersBar.style.display = mode === 'mine' ? 'block' : 'none';
+  }
+
   renderCourses();
 }
 
@@ -893,6 +914,7 @@ function toggleCourseFavorite(id) {
 }
 
 function renderCourses() {
+  if (typeof document === 'undefined') return;
   const feed = document.getElementById('coursesFeed');
   const counter = document.getElementById('coursesCounter');
   if (!feed) return;
@@ -907,7 +929,16 @@ function renderCourses() {
       const matchCat = checkSubjectMatch(c.subject, activeFilter);
       const matchSearch = !search || c.title.toLowerCase().includes(search) || (c.content || '').toLowerCase().includes(search);
       const matchTag = !activeTagFilter || (c.tags && c.tags.includes(activeTagFilter));
-      return matchCat && matchSearch && matchTag;
+
+      // Filtrage par dossier de rangement
+      let matchFolder = true;
+      if (activeFolderId === 'unassigned') {
+        matchFolder = !c.folderId;
+      } else if (activeFolderId && activeFolderId !== 'all') {
+        matchFolder = c.folderId === activeFolderId;
+      }
+
+      return matchCat && matchSearch && matchTag && matchFolder;
     });
 
     // Tri dynamique
@@ -947,6 +978,14 @@ function renderCourses() {
         tagsHTML = `<div class="card-tags-row">${c.tags.map(t => `<span class="card-tag-pill" onclick="filterByTag('${escapeHtml(t)}')">#${escapeHtml(t)}</span>`).join('')}</div>`;
       }
 
+      let folderHTML = '';
+      if (c.folderId && userVault.folders) {
+        const fol = userVault.folders.find(f => f.id === c.folderId);
+        if (fol) {
+          folderHTML = `<div><span class="course-folder-tag" style="border-color: ${fol.color}50; color: ${fol.color}; cursor: pointer;" onclick="setFolderFilter('${fol.id}')" title="Filtrer par le dossier ${escapeHtml(fol.name)}"><i class="fa-solid fa-folder"></i> ${escapeHtml(fol.name)}</span></div>`;
+        }
+      }
+
       card.innerHTML = `
         <div class="course-card-top">
           <span class="badge-sub"><i class="${theme.icon}"></i> ${escapeHtml(c.subject)}</span>
@@ -960,6 +999,9 @@ function renderCourses() {
             <button class="btn-card-action btn-action-pdf" onclick="exportCourseToPDF(${c.id})" title="Imprimer ou Exporter en PDF">
               <i class="fa-solid fa-file-pdf"></i>
             </button>
+            <button class="btn-card-action btn-action-move" onclick="openMoveCourseModal(${c.id})" title="Ranger dans un dossier">
+              <i class="fa-solid fa-folder-tree"></i>
+            </button>
             <button class="btn-card-action btn-action-share" onclick="openShareModal(${c.id})" title="Partager avec un camarade">
               <i class="fa-solid fa-share-nodes"></i>
             </button>
@@ -972,6 +1014,7 @@ function renderCourses() {
           </div>
         </div>
         <h4 class="course-title">${escapeHtml(c.title)}</h4>
+        ${folderHTML}
         ${tagsHTML}
         <div class="course-body">${sanitizedBody}</div>
         ${attachmentsHTML}
@@ -1344,13 +1387,20 @@ function openCourseModal() {
   editingCourseId = null;
   pendingFiles = [];
   renderPendingModalFiles();
+  updateFolderSelectOptions();
+
   const mTitle = document.getElementById('mTitle');
   const mTags = document.getElementById('mTags');
   const mContent = document.getElementById('mContent');
+  const mFolder = document.getElementById('mFolder');
   const mSubmitBtn = document.getElementById('mSubmitBtn');
+
   if (mTitle) mTitle.value = '';
   if (mTags) mTags.value = '';
   if (mContent) mContent.value = '';
+  if (mFolder) {
+    mFolder.value = (activeFolderId && activeFolderId !== 'all' && activeFolderId !== 'unassigned') ? activeFolderId : '';
+  }
   if (mSubmitBtn) mSubmitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Sauvegarder dans mon classeur';
   
   restoreDraftIfExists();
@@ -1370,14 +1420,17 @@ function openEditCourseModal(id) {
   editingCourseId = id;
   pendingFiles = [];
   renderPendingModalFiles();
+  updateFolderSelectOptions();
 
   const mSubject = document.getElementById('mSubject');
+  const mFolder = document.getElementById('mFolder');
   const mTitle = document.getElementById('mTitle');
   const mTags = document.getElementById('mTags');
   const mContent = document.getElementById('mContent');
   const mSubmitBtn = document.getElementById('mSubmitBtn');
 
   if (mSubject) mSubject.value = course.subject;
+  if (mFolder) mFolder.value = course.folderId || '';
   if (mTitle) mTitle.value = course.title;
   if (mTags) mTags.value = (course.tags || []).join(', ');
   if (mContent) mContent.value = course.content || '';
@@ -1487,12 +1540,14 @@ async function uploadToUserUploadsFolder(file) {
 
 async function submitCourse() {
   const subjectEl = document.getElementById('mSubject');
+  const folderEl = document.getElementById('mFolder');
   const titleEl = document.getElementById('mTitle');
   const tagsEl = document.getElementById('mTags');
   const contentEl = document.getElementById('mContent');
   const btn = document.getElementById('mSubmitBtn');
 
   const subject = subjectEl ? subjectEl.value : '';
+  const folderId = folderEl ? folderEl.value || null : null;
   const title = titleEl ? titleEl.value.trim() : '';
   const tagsRaw = tagsEl ? tagsEl.value : '';
   const tags = tagsRaw.split(',').map(t => t.trim().replace(/^#/, '')).filter(Boolean);
@@ -1519,6 +1574,7 @@ async function submitCourse() {
       const target = userVault.courses.find(c => c.id === editingCourseId);
       if (target) {
         target.subject = subject;
+        target.folderId = folderId;
         target.title = title;
         target.tags = tags;
         target.content = content;
@@ -1532,6 +1588,7 @@ async function submitCourse() {
       userVault.courses.unshift({
         id: Date.now(),
         subject,
+        folderId,
         title,
         tags,
         content,
@@ -1548,6 +1605,7 @@ async function submitCourse() {
     clearDraft();
 
     closeCourseModal();
+    renderFoldersBar();
     renderCourses();
     triggerAutoSave();
   } catch (err) {
@@ -1814,6 +1872,356 @@ function scrollToTop() {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+/* ==========================================================
+   8.2 PARAMÈTRES, DERNIÈRE CONNEXION & EXPÉRIENCE ÉLÈVE
+   ========================================================== */
+function trackUserLoginSession(username) {
+  if (!username || typeof localStorage === 'undefined') return;
+  const currKey = `ciel_curr_login_${username}`;
+  const prevKey = `ciel_prev_login_${username}`;
+
+  const lastRecorded = localStorage.getItem(currKey);
+  if (lastRecorded) {
+    localStorage.setItem(prevKey, lastRecorded);
+  }
+  localStorage.setItem(currKey, new Date().toISOString());
+}
+
+function getFormattedLastLogin(username) {
+  if (!username) return "Session active";
+  if (typeof localStorage === 'undefined') return "Première connexion enregistrée aujourd'hui";
+  const prevKey = `ciel_prev_login_${username}`;
+  const prevIso = localStorage.getItem(prevKey);
+  if (!prevIso) {
+    return "Première connexion enregistrée aujourd'hui";
+  }
+  try {
+    const d = new Date(prevIso);
+    return d.toLocaleDateString('fr-FR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  } catch(e) {
+    return prevIso;
+  }
+}
+
+function applyUserSettings() {
+  const isCompact = userVault.settings?.compactMode || (typeof localStorage !== 'undefined' && localStorage.getItem('ciel_setting_compact') === 'true');
+  const feed = document.getElementById('coursesFeed');
+  if (feed) {
+    if (isCompact) feed.classList.add('compact-mode');
+    else feed.classList.remove('compact-mode');
+  }
+}
+
+function openSettingsModal() {
+  const modal = document.getElementById('settingsModal');
+  if (!modal) return;
+
+  const username = currentSession.username || 'Invité';
+  const uLabel = document.getElementById('settingsUsernameLabel');
+  if (uLabel) uLabel.innerText = `@${username}`;
+
+  const loginLabel = document.getElementById('settingsLastLoginLabel');
+  if (loginLabel) {
+    loginLabel.innerText = getFormattedLastLogin(username);
+  }
+
+  // Synchronisation des cases à cocher
+  const compactToggle = document.getElementById('settingCompactMode');
+  if (compactToggle) {
+    compactToggle.checked = !!(userVault.settings?.compactMode || localStorage.getItem('ciel_setting_compact') === 'true');
+  }
+
+  const confettiToggle = document.getElementById('settingConfetti');
+  if (confettiToggle) {
+    confettiToggle.checked = userVault.settings?.confetti !== false && localStorage.getItem('ciel_setting_confetti') !== 'false';
+  }
+
+  modal.classList.add('active');
+  trapFocusInModal(modal);
+}
+
+function closeSettingsModal() {
+  const modal = document.getElementById('settingsModal');
+  if (modal) {
+    releaseFocusTrap(modal);
+    modal.classList.remove('active');
+  }
+}
+
+function toggleSettingCompactMode(checked) {
+  if (!userVault.settings) userVault.settings = {};
+  userVault.settings.compactMode = !!checked;
+  localStorage.setItem('ciel_setting_compact', checked ? 'true' : 'false');
+  applyUserSettings();
+  triggerAutoSave();
+  showToast(checked ? "Mode compact activé" : "Mode normal activé", "info");
+}
+
+function toggleSettingConfetti(checked) {
+  if (!userVault.settings) userVault.settings = {};
+  userVault.settings.confetti = !!checked;
+  localStorage.setItem('ciel_setting_confetti', checked ? 'true' : 'false');
+  triggerAutoSave();
+  showToast(checked ? "Animations festives activées 🎉" : "Animations festives désactivées", "info");
+}
+
+function exportVaultBackupJSON() {
+  if (!userVault) return;
+  const username = currentSession.username || 'esteban';
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(userVault, null, 2));
+  const downloadAnchor = document.createElement('a');
+  downloadAnchor.setAttribute("href", dataStr);
+  downloadAnchor.setAttribute("download", `ciel_studyos_coffre_${username}_${dateStr}.json`);
+  document.body.appendChild(downloadAnchor);
+  downloadAnchor.click();
+  downloadAnchor.remove();
+  showToast("Sauvegarde exportée avec succès !", "success");
+}
+
+async function forceVaultSync() {
+  await syncUserVault();
+  showToast("Coffre synchronisé avec GitHub !", "success");
+}
+
+/* ==========================================================
+   8.3 SYSTÈME DE DOSSIERS & RANGEMENT INTUITIF
+   ========================================================== */
+function renderFoldersBar() {
+  if (typeof document === 'undefined') return;
+  const container = document.getElementById('foldersChipsList');
+  if (!container) return;
+  if (!userVault.folders) userVault.folders = [];
+
+  const totalCourses = (userVault.courses || []).length;
+  const unassignedCount = (userVault.courses || []).filter(c => !c.folderId).length;
+
+  let html = '';
+
+  // 1. Bouton 'Tous les cours'
+  const isAllActive = activeFolderId === 'all';
+  html += `
+    <button type="button" class="folder-chip ${isAllActive ? 'active' : ''}" onclick="setFolderFilter('all')" role="tab" aria-selected="${isAllActive}">
+      <i class="fa-solid fa-folder-open folder-chip-icon"></i>
+      <span class="folder-chip-name">Tous les cours</span>
+      <span class="folder-chip-count">${totalCourses}</span>
+    </button>
+  `;
+
+  // 2. Dossiers personnalisés
+  userVault.folders.forEach(f => {
+    const count = (userVault.courses || []).filter(c => c.folderId === f.id).length;
+    const isActive = activeFolderId === f.id;
+    const color = f.color || 'var(--primary)';
+    html += `
+      <div class="folder-chip ${isActive ? 'active' : ''}" style="--f-color: ${color}; --f-glow: ${color}40;" onclick="setFolderFilter('${f.id}')" role="tab" aria-selected="${isActive}">
+        <i class="fa-solid fa-folder folder-chip-icon" style="color: ${color};"></i>
+        <span class="folder-chip-name">${escapeHtml(f.name)}</span>
+        <span class="folder-chip-count">${count}</span>
+        <button type="button" class="folder-chip-menu-btn" onclick="event.stopPropagation(); openEditFolderModal('${f.id}')" title="Gérer ce dossier" aria-label="Gérer le dossier ${escapeHtml(f.name)}">
+          <i class="fa-solid fa-ellipsis-vertical"></i>
+        </button>
+      </div>
+    `;
+  });
+
+  // 3. Bouton 'Non classés'
+  if (unassignedCount > 0 && userVault.folders.length > 0) {
+    const isUnassignedActive = activeFolderId === 'unassigned';
+    html += `
+      <button type="button" class="folder-chip ${isUnassignedActive ? 'active' : ''}" onclick="setFolderFilter('unassigned')" role="tab" aria-selected="${isUnassignedActive}">
+        <i class="fa-regular fa-folder folder-chip-icon"></i>
+        <span class="folder-chip-name">Non classés</span>
+        <span class="folder-chip-count">${unassignedCount}</span>
+      </button>
+    `;
+  }
+
+  container.innerHTML = html;
+  updateFolderSelectOptions();
+}
+
+function setFolderFilter(fId) {
+  activeFolderId = fId;
+  renderFoldersBar();
+  renderCourses();
+}
+
+function updateFolderSelectOptions() {
+  if (typeof document === 'undefined') return;
+  const select = document.getElementById('mFolder');
+  if (!select) return;
+  if (!userVault.folders) userVault.folders = [];
+
+  const currentVal = select.value;
+  select.innerHTML = '<option value="">📁 Aucun dossier (Non classé)</option>';
+  userVault.folders.forEach(f => {
+    const opt = document.createElement('option');
+    opt.value = f.id;
+    opt.textContent = `📁 ${f.name}`;
+    select.appendChild(opt);
+  });
+  if (currentVal) select.value = currentVal;
+}
+
+function openCreateFolderModal(fromCourseModal = false) {
+  const modal = document.getElementById('folderModal');
+  if (!modal) return;
+
+  const title = document.getElementById('folderModalTitle');
+  const idInput = document.getElementById('fFolderId');
+  const nameInput = document.getElementById('fFolderName');
+  if (title) title.innerHTML = '<i class="fa-solid fa-folder-plus" style="color: var(--primary);"></i> Nouveau dossier';
+  if (idInput) idInput.value = '';
+  if (nameInput) nameInput.value = '';
+
+  selectedFolderColor = FOLDER_COLORS[0];
+  renderColorPalette();
+
+  modal.classList.add('active');
+  trapFocusInModal(modal);
+  if (nameInput) setTimeout(() => nameInput.focus(), 150);
+}
+
+function openEditFolderModal(folderId) {
+  const folder = userVault.folders.find(f => f.id === folderId);
+  if (!folder) return;
+
+  customConfirm(`Dossier "${folder.name}" : voulez-vous le SUPPRIMER ?\n\n(Vos cours seront conservés intacts dans votre classeur en tant que non-classés)`, () => {
+    deleteFolder(folderId);
+  });
+}
+
+function deleteFolder(folderId) {
+  if (!userVault.folders) return;
+  userVault.folders = userVault.folders.filter(f => f.id !== folderId);
+  (userVault.courses || []).forEach(c => {
+    if (c.folderId === folderId) c.folderId = null;
+  });
+  if (activeFolderId === folderId) activeFolderId = 'all';
+  renderFoldersBar();
+  renderCourses();
+  triggerAutoSave();
+  showToast("Dossier supprimé (vos cours sont conservés).", "info");
+}
+
+function closeFolderModal() {
+  const modal = document.getElementById('folderModal');
+  if (modal) {
+    releaseFocusTrap(modal);
+    modal.classList.remove('active');
+  }
+}
+
+function renderColorPalette() {
+  const palette = document.getElementById('folderColorPalette');
+  if (!palette) return;
+  palette.innerHTML = FOLDER_COLORS.map(color => `
+    <button type="button" class="color-circle ${color === selectedFolderColor ? 'selected' : ''}" style="background: ${color};" onclick="selectFolderColor('${color}')" aria-label="Choisir la couleur ${color}">
+      ${color === selectedFolderColor ? '<i class="fa-solid fa-check" style="color:#fff;"></i>' : ''}
+    </button>
+  `).join('');
+}
+
+function selectFolderColor(color) {
+  selectedFolderColor = color;
+  renderColorPalette();
+}
+
+function handleFolderSubmit(e) {
+  e.preventDefault();
+  const nameInput = document.getElementById('fFolderName');
+  const name = nameInput ? nameInput.value.trim() : '';
+  if (!name) return;
+
+  if (!userVault.folders) userVault.folders = [];
+
+  const newFolder = {
+    id: 'f_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+    name: name,
+    color: selectedFolderColor,
+    createdAt: new Date().toISOString()
+  };
+
+  userVault.folders.push(newFolder);
+  closeFolderModal();
+  renderFoldersBar();
+
+  // Si le formulaire de cours est ouvert, pré-sélectionner le nouveau dossier
+  const mFolder = document.getElementById('mFolder');
+  if (mFolder) {
+    mFolder.value = newFolder.id;
+  }
+
+  triggerAutoSave();
+  showToast(`Dossier "${name}" créé avec succès !`, "success");
+}
+
+function openMoveCourseModal(courseId) {
+  courseToMoveId = courseId;
+  const course = (userVault.courses || []).find(c => c.id === courseId);
+  if (!course) return;
+
+  const modal = document.getElementById('moveCourseModal');
+  const sub = document.getElementById('moveCourseModalSubtitle');
+  const list = document.getElementById('moveFolderOptionsList');
+  if (!modal || !list) return;
+
+  if (sub) sub.innerText = `Déplacer "${course.title}" dans :`;
+
+  let html = `
+    <button type="button" class="move-folder-btn ${!course.folderId ? 'current' : ''}" onclick="assignCourseToFolder(null)">
+      <span><i class="fa-regular fa-folder"></i> Aucun dossier (Non classé)</span>
+      ${!course.folderId ? '<i class="fa-solid fa-check" style="color:var(--accent-green);"></i>' : ''}
+    </button>
+  `;
+
+  if (!userVault.folders) userVault.folders = [];
+  userVault.folders.forEach(f => {
+    const isCurrent = course.folderId === f.id;
+    html += `
+      <button type="button" class="move-folder-btn ${isCurrent ? 'current' : ''}" onclick="assignCourseToFolder('${f.id}')">
+        <span><i class="fa-solid fa-folder" style="color:${f.color};"></i> ${escapeHtml(f.name)}</span>
+        ${isCurrent ? '<i class="fa-solid fa-check" style="color:var(--accent-green);"></i>' : ''}
+      </button>
+    `;
+  });
+
+  list.innerHTML = html;
+  modal.classList.add('active');
+  trapFocusInModal(modal);
+}
+
+function closeMoveCourseModal() {
+  if (typeof document === 'undefined') return;
+  const modal = document.getElementById('moveCourseModal');
+  if (modal) {
+    releaseFocusTrap(modal);
+    modal.classList.remove('active');
+  }
+}
+
+function assignCourseToFolder(folderId) {
+  if (!courseToMoveId) return;
+  const course = (userVault.courses || []).find(c => c.id === courseToMoveId);
+  if (course) {
+    course.folderId = folderId;
+    triggerAutoSave();
+    renderFoldersBar();
+    renderCourses();
+    const fName = folderId ? (userVault.folders.find(f => f.id === folderId)?.name || 'Dossier') : 'Non classé';
+    showToast(`Cours rangé dans "${fName}"`, "success");
+  }
+  closeMoveCourseModal();
+}
+
 if (typeof window !== 'undefined') {
   // Raccourcis clavier globaux
   window.addEventListener('keydown', (e) => {
@@ -1858,6 +2266,9 @@ if (typeof window !== 'undefined') {
       closeCourseModal();
       closeShareModal();
       closeProfileModal();
+      closeSettingsModal();
+      closeFolderModal();
+      closeMoveCourseModal();
       closeLightbox();
       closeFocusModal();
     }
@@ -1971,7 +2382,30 @@ if (typeof window !== 'undefined') {
     switchAuthMode,
     handleAuthSubmit,
     setFilter,
-    switchCourseSubView
+    switchCourseSubView,
+
+    // Paramètres & Dernière Connexion
+    openSettingsModal,
+    closeSettingsModal,
+    toggleSettingCompactMode,
+    toggleSettingConfetti,
+    exportVaultBackupJSON,
+    forceVaultSync,
+
+    // Gestion des Dossiers
+    renderFoldersBar,
+    setFolderFilter,
+    updateFolderSelectOptions,
+    openCreateFolderModal,
+    openEditFolderModal,
+    deleteFolder,
+    closeFolderModal,
+    renderColorPalette,
+    selectFolderColor,
+    handleFolderSubmit,
+    openMoveCourseModal,
+    closeMoveCourseModal,
+    assignCourseToFolder
   };
 
   Object.assign(window, globalBindings);
@@ -1999,8 +2433,12 @@ if (typeof module !== 'undefined' && module.exports) {
     set currentSubView(v) { currentSubView = v; },
     get activeFilter() { return activeFilter; },
     set activeFilter(v) { activeFilter = v; },
+    get activeFolderId() { return activeFolderId; },
+    set activeFolderId(v) { activeFolderId = v; },
     get courseToShare() { return courseToShare; },
     set courseToShare(v) { courseToShare = v; },
+    get courseToMoveId() { return courseToMoveId; },
+    set courseToMoveId(v) { courseToMoveId = v; },
     get editingCourseId() { return editingCourseId; },
     set editingCourseId(v) { editingCourseId = v; },
     get fcCursor() { return fcCursor; },
@@ -2018,18 +2456,44 @@ if (typeof module !== 'undefined' && module.exports) {
     toggleSearchClear,
     clearCourseSearch,
 
-    // Auth & Profil
+    // Auth & Profil & Dernière Connexion
     initApp,
     switchAuthMode,
     handleAuthSubmit,
     openUserSession,
     restoreSession,
     logout,
+    trackUserLoginSession,
+    getFormattedLastLogin,
     updateHeaderProfileUI,
     openProfileModal,
     closeProfileModal,
     handleAvatarChange,
     saveUserProfile,
+
+    // Paramètres
+    openSettingsModal,
+    closeSettingsModal,
+    applyUserSettings,
+    toggleSettingCompactMode,
+    toggleSettingConfetti,
+    exportVaultBackupJSON,
+    forceVaultSync,
+
+    // Dossiers
+    renderFoldersBar,
+    setFolderFilter,
+    updateFolderSelectOptions,
+    openCreateFolderModal,
+    openEditFolderModal,
+    deleteFolder,
+    closeFolderModal,
+    renderColorPalette,
+    selectFolderColor,
+    handleFolderSubmit,
+    openMoveCourseModal,
+    closeMoveCourseModal,
+    assignCourseToFolder,
 
     // Vault & Sync
     loadUserVault,
