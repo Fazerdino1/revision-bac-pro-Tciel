@@ -18,7 +18,7 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-  <link rel="stylesheet" href="css/styles.css?v=3.5.0" />
+  <link rel="stylesheet" href="css/styles.css?v=3.5.1" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#080c14" />
@@ -769,14 +769,7 @@
         </div>
 
         <div class="form-row" style="margin-bottom: 0.5rem;">
-          <label for="settingGeminiApiKey" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem; display: block;">Clé API Gemini :</label>
-          <div style="display: flex; gap: 0.5rem;">
-            <input type="password" id="settingGeminiApiKey" class="form-input" placeholder="Clé intégrée active (ou collez la vôtre)" style="flex: 1;" onchange="handleSettingApiKeyChange(this.value)" />
-            <button type="button" class="btn" id="btnTestGeminiKey" onclick="testCurrentGeminiKey()" style="white-space: nowrap; min-height: 42px;">
-              <i class="fa-solid fa-vial"></i> Tester
-            </button>
-          </div>
-          <small style="display: block; margin-top: 0.35rem; font-size: 0.78rem; color: var(--text-muted);">Une clé Gemini est intégrée par défaut pour le Bac Pro CIEL. Vous pouvez aussi utiliser votre propre clé Google AI Studio.</small>
+          <small style="display: block; font-size: 0.8rem; color: var(--accent-green);"><i class="fa-solid fa-circle-check"></i> Clé Gemini active & service prêt pour les révisions Bac Pro CIEL.</small>
         </div>
       </div>
 
@@ -859,11 +852,11 @@
             <h3 id="aiAssistantModalTitle" style="font-size: 1.15rem; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
               StudyBot CIEL <span class="ai-badge-live">IA Active</span>
             </h3>
-            <div class="ai-active-model-info">
-              <span id="aiHeaderCurrentModelBadge">Gemini 2.5 Flash</span>
-              <button type="button" class="ai-btn-switch-model" onclick="quickSwitchAIModel()" title="Changer de modèle Gemini">
-                <i class="fa-solid fa-repeat"></i> Changer
-              </button>
+            <div class="ai-model-direct-picker">
+              <label for="aiQuickModelSelect" class="ai-picker-label"><i class="fa-solid fa-microchip"></i> Modèle :</label>
+              <select id="aiQuickModelSelect" class="ai-quick-model-select" onchange="handleQuickModelChange(this.value)" title="Choisir le modèle Google Gemini">
+                <!-- Rempli dynamiquement via renderGeminiModelOptions() -->
+              </select>
             </div>
           </div>
         </div>
@@ -1029,9 +1022,9 @@
   </button>
 
   <!-- Application logic -->
-  <script src="js/crypto.js?v=3.5.0"></script>
-  <script src="js/github.js?v=3.5.0"></script>
-  <script src="js/ai.js?v=3.5.0"></script>
-  <script src="js/app.js?v=3.5.0"></script>
+  <script src="js/crypto.js?v=3.5.1"></script>
+  <script src="js/github.js?v=3.5.1"></script>
+  <script src="js/ai.js?v=3.5.1"></script>
+  <script src="js/app.js?v=3.5.1"></script>
 </body>
 </html>

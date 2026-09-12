@@ -1954,10 +1954,6 @@ function openSettingsModal() {
     modelSelect.value = currentModel;
     updateModelEndpointDesc(currentModel);
   }
-  const keyInput = document.getElementById('settingGeminiApiKey');
-  if (keyInput && typeof getCustomGeminiApiKey === 'function') {
-    keyInput.value = getCustomGeminiApiKey() || '';
-  }
 
   modal.classList.add('active');
   trapFocusInModal(modal);
@@ -2249,13 +2245,8 @@ function openAIAssistantModal() {
   const modal = document.getElementById('aiAssistantModal');
   if (!modal) return;
 
-  // Mise à jour de l'indicateur de modèle dans l'en-tête
-  const badge = document.getElementById('aiHeaderCurrentModelBadge');
-  if (badge && typeof getSelectedGeminiModel === 'function') {
-    const currentModelKey = getSelectedGeminiModel();
-    const modelObj = (typeof GEMINI_MODELS !== 'undefined') ? GEMINI_MODELS.find(m => m.id === currentModelKey) : null;
-    badge.innerText = modelObj ? modelObj.name : currentModelKey;
-  }
+  // Mise à jour du sélecteur de modèle direct dans l'en-tête
+  renderQuickModelSelect();
 
   // Rendu des messages existants (ou message de bienvenue)
   renderAIChatMessages();
@@ -2268,6 +2259,29 @@ function openAIAssistantModal() {
     if (input) input.focus();
     scrollAIChatToBottom();
   }, 100);
+}
+
+function renderQuickModelSelect() {
+  const select = document.getElementById('aiQuickModelSelect');
+  if (!select || typeof GEMINI_MODELS === 'undefined') return;
+
+  const currentModel = (typeof getSelectedGeminiModel === 'function') ? getSelectedGeminiModel() : 'gemini-2.5-flash';
+  select.innerHTML = GEMINI_MODELS.map(m => `
+    <option value="${m.id}" ${m.id === currentModel ? 'selected' : ''}>${m.name} (${m.family === '3' ? 'Gemini 3' : '2.5'})</option>
+  `).join('');
+}
+
+function handleQuickModelChange(newModelId) {
+  if (typeof setSelectedGeminiModel === 'function') {
+    setSelectedGeminiModel(newModelId);
+
+    // Synchroniser avec les paramètres si la modale des paramètres est ouverte
+    const settingSelect = document.getElementById('settingGeminiModel');
+    if (settingSelect) settingSelect.value = newModelId;
+    if (typeof updateModelEndpointDesc === 'function') updateModelEndpointDesc(newModelId);
+
+    showToast(`Modèle sélectionné : ${newModelId}`, "info");
+  }
 }
 
 function closeAIAssistantModal() {
@@ -2318,8 +2332,20 @@ function renderAIChatMessages() {
 
     const actionBtnHTML = (!isUser) ? `
       <div class="ai-msg-actions">
+        <button type="button" class="ai-action-btn ai-action-btn-retry" onclick="retryAIMessage(${index}, 'normal')" title="Régénérer cette réponse">
+          <i class="fa-solid fa-rotate-right"></i> Réessayer
+        </button>
+        <button type="button" class="ai-action-btn ai-action-btn-variant" onclick="retryAIMessage(${index}, 'shorter')" title="Régénérer en version plus courte et concise">
+          <i class="fa-solid fa-compress"></i> Plus court
+        </button>
+        <button type="button" class="ai-action-btn ai-action-btn-variant" onclick="retryAIMessage(${index}, 'longer')" title="Régénérer en version plus détaillée avec exemples">
+          <i class="fa-solid fa-expand"></i> Plus long
+        </button>
+        <button type="button" class="ai-action-btn ai-action-btn-model" onclick="promptSwitchModelForMessage(${index})" title="Régénérer avec un autre modèle Gemini">
+          <i class="fa-solid fa-robot"></i> Autre modèle
+        </button>
         <button type="button" class="ai-action-btn" onclick="createCourseFromAIMessage(${index})" title="Créer une fiche de cours à partir de cette réponse">
-          <i class="fa-solid fa-file-circle-plus"></i> Créer une fiche de cours
+          <i class="fa-solid fa-file-circle-plus"></i> Créer fiche
         </button>
         <button type="button" class="ai-action-btn" onclick="copyAIMessageText(${index})" title="Copier la réponse">
           <i class="fa-solid fa-copy"></i> Copier
@@ -2341,6 +2367,65 @@ function renderAIChatMessages() {
 
   if (typeof Prism !== 'undefined') {
     Prism.highlightAllUnder(container);
+  }
+}
+
+async function retryAIMessage(botIndex, mode = 'normal', specificModel = null) {
+  if (isAIGenerating) return;
+
+  const userIndex = botIndex - 1;
+  if (userIndex < 0 || aiChatHistoryState[userIndex]?.role !== 'user') {
+    showToast("Impossible de retrouver la question d'origine.", "error");
+    return;
+  }
+
+  const originalUserText = aiChatHistoryState[userIndex].text;
+
+  // Tronquer pour repartir avant la réponse du bot
+  aiChatHistoryState = aiChatHistoryState.slice(0, userIndex);
+
+  let newPromptText = originalUserText;
+  if (mode === 'shorter') {
+    newPromptText = `${originalUserText}\n\n[Consigne pour l'IA : Réponds de manière très synthétique, concise et percutante, sous forme de mémo d'examen pour le Bac Pro CIEL.]`;
+    showToast("Régénération en version plus courte...", "info");
+  } else if (mode === 'longer') {
+    newPromptText = `${originalUserText}\n\n[Consigne pour l'IA : Réponds de manière très détaillée, exhaustive et approfondie, avec des exemples techniques complets, des commandes et des explications étape par étape pour le Bac Pro CIEL.]`;
+    showToast("Régénération en version détaillée...", "info");
+  } else if (mode === 'normal') {
+    showToast("Régénération de la réponse...", "info");
+  }
+
+  if (specificModel && typeof setSelectedGeminiModel === 'function') {
+    setSelectedGeminiModel(specificModel);
+    const qSelect = document.getElementById('aiQuickModelSelect');
+    if (qSelect) qSelect.value = specificModel;
+    const sSelect = document.getElementById('settingGeminiModel');
+    if (sSelect) sSelect.value = specificModel;
+    showToast(`Régénération avec ${specificModel}...`, "info");
+  }
+
+  await sendAIAssistantMessage(newPromptText);
+}
+
+function promptSwitchModelForMessage(botIndex) {
+  const currentModel = (typeof getSelectedGeminiModel === 'function') ? getSelectedGeminiModel() : 'gemini-2.5-flash';
+  const otherModels = (typeof GEMINI_MODELS !== 'undefined') ? GEMINI_MODELS.filter(m => m.id !== currentModel) : [];
+
+  if (otherModels.length === 0) {
+    retryAIMessage(botIndex, 'normal');
+    return;
+  }
+
+  const listOptions = otherModels.map((m, i) => `${i + 1}. ${m.name} (${m.id})`).join('\n');
+  const chosenIndexStr = prompt(`Choisissez le numéro du modèle pour régénérer la réponse :\n\n${listOptions}`, "1");
+  if (!chosenIndexStr) return;
+
+  const idx = parseInt(chosenIndexStr.trim(), 10) - 1;
+  if (idx >= 0 && idx < otherModels.length) {
+    const chosenModelId = otherModels[idx].id;
+    retryAIMessage(botIndex, 'normal', chosenModelId);
+  } else {
+    showToast("Numéro de modèle non valide.", "error");
   }
 }
 
@@ -3052,7 +3137,11 @@ if (typeof window !== 'undefined') {
     handleSettingModelChange,
     handleSettingApiKeyChange,
     testCurrentGeminiKey,
-    quickSwitchAIModel
+    quickSwitchAIModel,
+    renderQuickModelSelect,
+    handleQuickModelChange,
+    retryAIMessage,
+    promptSwitchModelForMessage
   };
 
   Object.assign(window, globalBindings);
@@ -3214,6 +3303,10 @@ if (typeof module !== 'undefined' && module.exports) {
     handleSettingModelChange,
     handleSettingApiKeyChange,
     testCurrentGeminiKey,
-    quickSwitchAIModel
+    quickSwitchAIModel,
+    renderQuickModelSelect,
+    handleQuickModelChange,
+    retryAIMessage,
+    promptSwitchModelForMessage
   };
 }

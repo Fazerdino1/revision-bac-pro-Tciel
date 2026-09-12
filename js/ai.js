@@ -97,14 +97,8 @@ function getEmbeddedGeminiKey() {
   }
 }
 
-// Récupération de la clé active (priorité à une clé personnalisée par l'utilisateur si définie)
+// Récupération de la clé active (clé intégrée transparente et sécurisée)
 function getGeminiApiKey() {
-  if (typeof localStorage !== 'undefined') {
-    const customKey = localStorage.getItem('ciel_custom_gemini_key');
-    if (customKey && customKey.trim().length > 10) {
-      return customKey.trim();
-    }
-  }
   return getEmbeddedGeminiKey();
 }
 
