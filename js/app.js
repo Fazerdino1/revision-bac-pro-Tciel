@@ -1005,6 +1005,9 @@ function renderCourses() {
             <button class="btn-card-action btn-action-share" onclick="openShareModal(${c.id})" title="Partager avec un camarade">
               <i class="fa-solid fa-share-nodes"></i>
             </button>
+            <button class="btn-card-action btn-action-ai-fc" onclick="generateFlashcardsForCourse(${c.id})" title="Générer des flashcards avec l'IA pour ce cours">
+              <i class="fa-solid fa-wand-magic-sparkles" style="color: #c084fc;"></i>
+            </button>
             <button class="btn-card-action btn-action-edit" onclick="openEditCourseModal(${c.id})" title="Modifier ce cours">
               <i class="fa-solid fa-pen-to-square"></i>
             </button>
@@ -1943,6 +1946,19 @@ function openSettingsModal() {
     confettiToggle.checked = userVault.settings?.confetti !== false && localStorage.getItem('ciel_setting_confetti') !== 'false';
   }
 
+  // Synchronisation des options IA Gemini
+  renderGeminiModelOptions();
+  const currentModel = (typeof getSelectedGeminiModel === 'function') ? getSelectedGeminiModel() : 'gemini-2.5-flash';
+  const modelSelect = document.getElementById('settingGeminiModel');
+  if (modelSelect) {
+    modelSelect.value = currentModel;
+    updateModelEndpointDesc(currentModel);
+  }
+  const keyInput = document.getElementById('settingGeminiApiKey');
+  if (keyInput && typeof getCustomGeminiApiKey === 'function') {
+    keyInput.value = getCustomGeminiApiKey() || '';
+  }
+
   modal.classList.add('active');
   trapFocusInModal(modal);
 }
@@ -2222,6 +2238,608 @@ function assignCourseToFolder(folderId) {
   closeMoveCourseModal();
 }
 
+/* ==========================================================
+   8.4 MODULE ASSISTANT IA (STUDYBOT CIEL)
+   ========================================================== */
+let aiChatHistoryState = [];
+let isAIGenerating = false;
+
+function openAIAssistantModal() {
+  if (typeof document === 'undefined') return;
+  const modal = document.getElementById('aiAssistantModal');
+  if (!modal) return;
+
+  // Mise à jour de l'indicateur de modèle dans l'en-tête
+  const badge = document.getElementById('aiHeaderCurrentModelBadge');
+  if (badge && typeof getSelectedGeminiModel === 'function') {
+    const currentModelKey = getSelectedGeminiModel();
+    const modelObj = (typeof GEMINI_MODELS !== 'undefined') ? GEMINI_MODELS.find(m => m.id === currentModelKey) : null;
+    badge.innerText = modelObj ? modelObj.name : currentModelKey;
+  }
+
+  // Rendu des messages existants (ou message de bienvenue)
+  renderAIChatMessages();
+
+  modal.classList.add('active');
+  trapFocusInModal(modal);
+
+  setTimeout(() => {
+    const input = document.getElementById('aiChatInput');
+    if (input) input.focus();
+    scrollAIChatToBottom();
+  }, 100);
+}
+
+function closeAIAssistantModal() {
+  if (typeof document === 'undefined') return;
+  const modal = document.getElementById('aiAssistantModal');
+  if (modal) {
+    releaseFocusTrap(modal);
+    modal.classList.remove('active');
+  }
+}
+
+function scrollAIChatToBottom() {
+  const body = document.getElementById('aiChatBody');
+  if (body) {
+    body.scrollTop = body.scrollHeight;
+  }
+}
+
+function renderAIChatMessages() {
+  const container = document.getElementById('aiChatHistory');
+  if (!container) return;
+
+  if (aiChatHistoryState.length === 0) {
+    const username = currentSession.username || 'Élève';
+    container.innerHTML = `
+      <div class="ai-message ai-msg-bot">
+        <div class="ai-msg-avatar"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+        <div class="ai-msg-bubble">
+          <p><strong>Bonjour ${escapeHtml(username)} ! 👋</strong></p>
+          <p>Je suis <strong>StudyBot CIEL</strong>, ton assistant propulsé par Google Gemini. Je suis spécialisé dans le programme du <strong>Bac Pro CIEL</strong> (Cybersécurité, Informatique et Réseaux, Électronique) ainsi que les matières générales.</p>
+          <p>Tu peux me poser une question de cours, me demander d'expliquer un protocole (VLAN, STP, OSPF, DNS, TCP/IP), de résoudre un calcul (Loi d'Ohm, Masque /28, Puissance), ou d'analyser un code Arduino/C/Python.</p>
+          <p style="font-size: 0.84rem; color: var(--text-muted); margin-top: 0.5rem;"><em>💡 Clique sur l'une des suggestions ci-dessous ou écris directement ta question.</em></p>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = aiChatHistoryState.map((msg, index) => {
+    const isUser = msg.role === 'user';
+    let formattedText = '';
+    if (isUser) {
+      formattedText = escapeHtml(msg.text).replace(/\n/g, '<br>');
+    } else {
+      const parsed = (typeof marked !== 'undefined' && marked.parse) ? marked.parse(msg.text) : escapeHtml(msg.text);
+      formattedText = (typeof DOMPurify !== 'undefined' && DOMPurify.sanitize) ? DOMPurify.sanitize(parsed) : parsed;
+    }
+
+    const actionBtnHTML = (!isUser) ? `
+      <div class="ai-msg-actions">
+        <button type="button" class="ai-action-btn" onclick="createCourseFromAIMessage(${index})" title="Créer une fiche de cours à partir de cette réponse">
+          <i class="fa-solid fa-file-circle-plus"></i> Créer une fiche de cours
+        </button>
+        <button type="button" class="ai-action-btn" onclick="copyAIMessageText(${index})" title="Copier la réponse">
+          <i class="fa-solid fa-copy"></i> Copier
+        </button>
+      </div>` : '';
+
+    return `
+      <div class="ai-message ${isUser ? 'ai-msg-user' : 'ai-msg-bot'}">
+        <div class="ai-msg-avatar">
+          <i class="fa-solid ${isUser ? 'fa-user' : 'fa-wand-magic-sparkles'}"></i>
+        </div>
+        <div class="ai-msg-bubble">
+          ${formattedText}
+          ${actionBtnHTML}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  if (typeof Prism !== 'undefined') {
+    Prism.highlightAllUnder(container);
+  }
+}
+
+async function handleAIChatSubmit(event) {
+  if (event) event.preventDefault();
+  if (isAIGenerating) return;
+
+  const input = document.getElementById('aiChatInput');
+  if (!input) return;
+  const prompt = input.value.trim();
+  if (!prompt) return;
+
+  input.value = '';
+  await sendAIAssistantMessage(prompt);
+}
+
+function handleAIChatKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    handleAIChatSubmit(e);
+  }
+}
+
+function loadAIQuestionSuggestion(text) {
+  const input = document.getElementById('aiChatInput');
+  if (input) {
+    input.value = text;
+    sendAIAssistantMessage(text);
+  }
+}
+
+async function sendAIAssistantMessage(userText) {
+  if (!userText || isAIGenerating) return;
+
+  isAIGenerating = true;
+  aiChatHistoryState.push({ role: 'user', text: userText, timestamp: Date.now() });
+  renderAIChatMessages();
+
+  // Indicateur de frappe
+  const container = document.getElementById('aiChatHistory');
+  const typingIndicator = document.createElement('div');
+  typingIndicator.className = 'ai-message ai-msg-bot';
+  typingIndicator.id = 'aiTypingIndicator';
+  typingIndicator.innerHTML = `
+    <div class="ai-msg-avatar"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+    <div class="ai-msg-bubble">
+      <div class="ai-typing-indicator">
+        <div class="ai-typing-dot"></div>
+        <div class="ai-typing-dot"></div>
+        <div class="ai-typing-dot"></div>
+      </div>
+    </div>
+  `;
+  container.appendChild(typingIndicator);
+  scrollAIChatToBottom();
+
+  const sendBtn = document.getElementById('btnAISend');
+  if (sendBtn) sendBtn.disabled = true;
+
+  try {
+    if (typeof callGeminiAPI !== 'function') {
+      throw new Error("Module IA (js/ai.js) non disponible.");
+    }
+
+    const reply = await callGeminiAPI(aiChatHistoryState);
+    const ind = document.getElementById('aiTypingIndicator');
+    if (ind) ind.remove();
+
+    aiChatHistoryState.push({ role: 'model', text: reply, timestamp: Date.now() });
+    renderAIChatMessages();
+    scrollAIChatToBottom();
+  } catch (err) {
+    const ind = document.getElementById('aiTypingIndicator');
+    if (ind) ind.remove();
+    console.error("Erreur StudyBot IA:", err);
+    showToast(err.message || "Erreur lors de la communication avec Gemini", "error");
+    aiChatHistoryState.push({
+      role: 'model',
+      text: `⚠️ **Une erreur est survenue lors de la génération :**\n\n${err.message}\n\n*Vérifiez votre connexion internet ou testez votre clé API dans les Paramètres.*`,
+      timestamp: Date.now()
+    });
+    renderAIChatMessages();
+    scrollAIChatToBottom();
+  } finally {
+    isAIGenerating = false;
+    if (sendBtn) sendBtn.disabled = false;
+  }
+}
+
+function clearAIChatHistory() {
+  if (aiChatHistoryState.length === 0) return;
+  customConfirm("Réinitialiser la conversation ?", "Voulez-vous effacer tout l'historique de discussion avec StudyBot CIEL ?", () => {
+    aiChatHistoryState = [];
+    renderAIChatMessages();
+    showToast("Historique de conversation effacé", "info");
+  });
+}
+
+function copyAIMessageText(index) {
+  const msg = aiChatHistoryState[index];
+  if (!msg) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(msg.text).then(() => {
+      showToast("Réponse copiée dans le presse-papiers !", "success");
+    }).catch(() => {
+      showToast("Impossible de copier la réponse", "error");
+    });
+  }
+}
+
+function createCourseFromAIMessage(index) {
+  const msg = aiChatHistoryState[index];
+  if (!msg) return;
+
+  let topicTitle = "Note de cours générée par IA";
+  if (index > 0 && aiChatHistoryState[index - 1]?.role === 'user') {
+    topicTitle = aiChatHistoryState[index - 1].text.slice(0, 45);
+    if (aiChatHistoryState[index - 1].text.length > 45) topicTitle += '...';
+  }
+
+  closeAIAssistantModal();
+  openCourseModal();
+
+  setTimeout(() => {
+    const titleInput = document.getElementById('cTitle');
+    const contentInput = document.getElementById('cContent');
+    const tagsInput = document.getElementById('cTags');
+
+    if (titleInput) titleInput.value = topicTitle;
+    if (contentInput) {
+      contentInput.value = msg.text;
+      if (typeof updateMdPreview === 'function') updateMdPreview();
+    }
+    if (tagsInput) tagsInput.value = 'IA, BacProCIEL, StudyBot';
+
+    showToast("Réponse insérée dans une nouvelle fiche de cours !", "success");
+  }, 200);
+}
+
+/* ==========================================================
+   8.5 GÉNÉRATEUR DE COURS IA & ENHANCE MARKDOWN
+   ========================================================== */
+function openAICoursePrompt() {
+  const modal = document.getElementById('aiCoursePromptModal');
+  if (!modal) return;
+  modal.classList.add('active');
+  trapFocusInModal(modal);
+
+  setTimeout(() => {
+    const input = document.getElementById('aiCourseTopicInput');
+    if (input) input.focus();
+  }, 100);
+}
+
+function closeAICoursePromptModal() {
+  const modal = document.getElementById('aiCoursePromptModal');
+  if (modal) {
+    releaseFocusTrap(modal);
+    modal.classList.remove('active');
+  }
+}
+
+async function handleAICoursePromptSubmit(event) {
+  if (event) event.preventDefault();
+
+  const topicInput = document.getElementById('aiCourseTopicInput');
+  const subjectSelect = document.getElementById('aiCourseSubjectSelect');
+  const formatSelect = document.getElementById('aiCourseFormatSelect');
+  const submitBtn = document.getElementById('btnSubmitAICoursePrompt');
+
+  const topic = topicInput?.value.trim();
+  const subject = subjectSelect?.value || 'Informatique & Réseaux';
+  const format = formatSelect?.value || 'complet';
+
+  if (!topic) {
+    showToast("Veuillez renseigner un sujet de cours.", "error");
+    return;
+  }
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Rédaction par l'IA...`;
+  }
+
+  showToast("Génération du cours complet par Gemini en cours...", "info");
+
+  try {
+    if (typeof generateCourseWithAI !== 'function') {
+      throw new Error("Module de génération de cours non chargé.");
+    }
+
+    const generatedMarkdown = await generateCourseWithAI(topic, subject, { format });
+
+    // Injecter dans le formulaire de cours actuel
+    const titleInput = document.getElementById('cTitle');
+    const subSelect = document.getElementById('cSubject');
+    const contentInput = document.getElementById('cContent');
+    const tagsInput = document.getElementById('cTags');
+
+    if (titleInput && (!titleInput.value || titleInput.value.trim() === '')) {
+      titleInput.value = topic;
+    }
+    if (subSelect) {
+      subSelect.value = subject;
+    }
+    if (contentInput) {
+      contentInput.value = generatedMarkdown;
+      if (typeof updateMdPreview === 'function') updateMdPreview();
+    }
+    if (tagsInput && !tagsInput.value) {
+      tagsInput.value = `${subject.split(' ')[0]}, Synthèse, BacPro`;
+    }
+
+    closeAICoursePromptModal();
+    showToast("Fiche de cours rédigée avec succès par l'IA !", "success");
+  } catch (err) {
+    console.error("Erreur génération cours IA:", err);
+    showToast(err.message || "Erreur lors de la génération du cours", "error");
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Générer le cours`;
+    }
+  }
+}
+
+async function enhanceCurrentContentWithAI() {
+  const contentInput = document.getElementById('cContent');
+  if (!contentInput) return;
+
+  const currentText = contentInput.value.trim();
+  if (!currentText) {
+    showToast("Le contenu du cours est vide. Utilisez 'Rédiger IA' pour créer un cours complet.", "info");
+    return;
+  }
+
+  const subject = document.getElementById('cSubject')?.value || 'Bac Pro CIEL';
+  showToast("Restructuration et amélioration Markdown par l'IA...", "info");
+
+  try {
+    if (typeof callGeminiAPI !== 'function') {
+      throw new Error("Module IA non chargé.");
+    }
+
+    const enhancePrompt = [
+      {
+        role: 'user',
+        text: `Tu es un expert pédagogique du Bac Pro CIEL. Voici des notes ou un cours brut sur la discipline "${subject}".
+Améliore et structure ce contenu en Markdown impeccable :
+- Corrige l'orthographe et la grammaire française
+- Structure clairement avec des titres H2/H3 (#, ##, ###), listes à puces, mots-clés en gras
+- Formate les commandes, adresses IP ou code dans des blocs de code appropriés
+- Ajoute un encadré récapitulatif "À retenir pour l'examen" à la fin
+- Conserve absolument l'ensemble des informations d'origine sans en inventer de contradictoires.
+
+Voici le contenu brut :
+${currentText}`
+      }
+    ];
+
+    const enhanced = await callGeminiAPI(enhancePrompt);
+    contentInput.value = enhanced;
+    if (typeof updateMdPreview === 'function') updateMdPreview();
+    showToast("Notes structurées et enrichies en Markdown !", "success");
+  } catch (err) {
+    console.error("Erreur restructuration IA:", err);
+    showToast(err.message || "Erreur lors de l'amélioration du contenu", "error");
+  }
+}
+
+/* ==========================================================
+   8.6 GÉNÉRATEUR AUTOMATIQUE DE FLASHCARDS IA
+   ========================================================== */
+function openAIFlashcardGeneratorModal() {
+  const modal = document.getElementById('aiFlashcardPromptModal');
+  if (!modal) return;
+
+  // Alimentation de la liste des cours pour la sélection source
+  const courseSelect = document.getElementById('aiFlashcardCourseSelect');
+  if (courseSelect) {
+    const courses = userVault?.courses || [];
+    if (courses.length === 0) {
+      courseSelect.innerHTML = `<option value="">(Aucun cours enregistré dans votre coffre)</option>`;
+    } else {
+      courseSelect.innerHTML = courses.map(c => `
+        <option value="${c.id}">${escapeHtml(c.title)} (${escapeHtml(c.subject)})</option>
+      `).join('');
+    }
+  }
+
+  modal.classList.add('active');
+  trapFocusInModal(modal);
+}
+
+function closeAIFlashcardGeneratorModal() {
+  const modal = document.getElementById('aiFlashcardPromptModal');
+  if (modal) {
+    releaseFocusTrap(modal);
+    modal.classList.remove('active');
+  }
+}
+
+function toggleAIFlashcardSourceType(val) {
+  const themeRow = document.getElementById('aiFcThemeRow');
+  const courseRow = document.getElementById('aiFcCourseRow');
+  if (val === 'course') {
+    if (themeRow) themeRow.style.display = 'none';
+    if (courseRow) courseRow.style.display = 'block';
+  } else {
+    if (themeRow) themeRow.style.display = 'block';
+    if (courseRow) courseRow.style.display = 'none';
+  }
+}
+
+async function handleAIFlashcardPromptSubmit(event) {
+  if (event) event.preventDefault();
+
+  const sourceType = document.getElementById('aiFlashcardSourceSelect')?.value || 'theme';
+  const topicInput = document.getElementById('aiFlashcardTopicInput');
+  const courseSelect = document.getElementById('aiFlashcardCourseSelect');
+  const countSelect = document.getElementById('aiFlashcardCountSelect');
+  const submitBtn = document.getElementById('btnSubmitAIFlashcards');
+
+  const count = parseInt(countSelect?.value || '8', 10);
+  let contentToProcess = '';
+
+  if (sourceType === 'course') {
+    const selectedCourseId = parseInt(courseSelect?.value, 10);
+    const course = (userVault.courses || []).find(c => c.id === selectedCourseId);
+    if (!course) {
+      showToast("Veuillez sélectionner un cours existant.", "error");
+      return;
+    }
+    contentToProcess = `Titre du cours : ${course.title}\nMatière : ${course.subject}\nContenu :\n${course.content}`;
+  } else {
+    contentToProcess = topicInput?.value.trim();
+    if (!contentToProcess) {
+      showToast("Veuillez saisir un sujet ou une notion à réviser.", "error");
+      return;
+    }
+  }
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Création des cartes...`;
+  }
+
+  showToast("Extraction et création des flashcards par l'IA...", "info");
+
+  try {
+    if (typeof generateFlashcardsWithAI !== 'function') {
+      throw new Error("Module de génération de flashcards non disponible.");
+    }
+
+    const cards = await generateFlashcardsWithAI(contentToProcess, count);
+    if (!cards || cards.length === 0) {
+      throw new Error("Aucune flashcard n'a pu être extraite.");
+    }
+
+    if (!userVault.flashcards) userVault.flashcards = [];
+
+    // Ajout des nouvelles flashcards dans le coffre
+    cards.forEach(c => {
+      userVault.flashcards.push({
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        q: c.q,
+        a: c.a,
+        subject: c.subject || 'Bac Pro CIEL',
+        createdAt: new Date().toISOString()
+      });
+    });
+
+    triggerAutoSave();
+    fcCursor = userVault.flashcards.length - cards.length;
+    fcFlipped = false;
+    renderFlashcards();
+
+    closeAIFlashcardGeneratorModal();
+    showTab('tab-flashcards');
+    showToast(`${cards.length} flashcards créées avec succès ! 🎉`, "success");
+  } catch (err) {
+    console.error("Erreur génération flashcards:", err);
+    showToast(err.message || "Erreur lors de la génération des cartes", "error");
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Créer les flashcards`;
+    }
+  }
+}
+
+function generateFlashcardsForCourse(courseId) {
+  const course = (userVault.courses || []).find(c => c.id === courseId);
+  if (!course) return;
+
+  openAIFlashcardGeneratorModal();
+  const sourceSelect = document.getElementById('aiFlashcardSourceSelect');
+  if (sourceSelect) {
+    sourceSelect.value = 'course';
+    toggleAIFlashcardSourceType('course');
+  }
+  const courseSelect = document.getElementById('aiFlashcardCourseSelect');
+  if (courseSelect) {
+    courseSelect.value = courseId.toString();
+  }
+}
+
+/* ==========================================================
+   8.7 PARAMÈTRES IA & GESTION DES MODÈLES GEMINI
+   ========================================================== */
+function renderGeminiModelOptions() {
+  const select = document.getElementById('settingGeminiModel');
+  if (!select) return;
+
+  if (typeof GEMINI_MODELS === 'undefined') return;
+
+  select.innerHTML = GEMINI_MODELS.map(m => `
+    <option value="${m.id}">${m.name} — ${m.badge}</option>
+  `).join('');
+}
+
+function updateModelEndpointDesc(modelId) {
+  const descEl = document.getElementById('settingModelEndpointDesc');
+  if (!descEl) return;
+  if (typeof GEMINI_MODELS === 'undefined') return;
+
+  const found = GEMINI_MODELS.find(m => m.id === modelId);
+  if (found) {
+    descEl.innerText = `Endpoint API : ${found.endpoint} (${found.desc})`;
+  } else {
+    descEl.innerText = `Endpoint API : ${modelId}`;
+  }
+}
+
+function handleSettingModelChange(newModelId) {
+  if (typeof setSelectedGeminiModel === 'function') {
+    setSelectedGeminiModel(newModelId);
+    updateModelEndpointDesc(newModelId);
+
+    // Mettre à jour le badge dans l'en-tête de l'assistant si ouvert
+    const badge = document.getElementById('aiHeaderCurrentModelBadge');
+    if (badge && typeof GEMINI_MODELS !== 'undefined') {
+      const modelObj = GEMINI_MODELS.find(m => m.id === newModelId);
+      badge.innerText = modelObj ? modelObj.name : newModelId;
+    }
+
+    showToast(`Modèle actif configuré sur ${newModelId}`, "info");
+  }
+}
+
+function handleSettingApiKeyChange(newKey) {
+  if (typeof setCustomGeminiApiKey === 'function') {
+    setCustomGeminiApiKey(newKey);
+    showToast(newKey ? "Clé API personnalisée enregistrée" : "Clé intégrée rétablie", "info");
+  }
+}
+
+async function testCurrentGeminiKey() {
+  const testBtn = document.getElementById('btnTestGeminiKey');
+  if (testBtn) {
+    testBtn.disabled = true;
+    testBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Test...`;
+  }
+
+  showToast("Test de connexion avec l'API Gemini...", "info");
+
+  try {
+    if (typeof callGeminiAPI !== 'function') {
+      throw new Error("Module IA non chargé.");
+    }
+
+    const testPrompt = [{ role: 'user', text: "Réponds uniquement par le mot 'CONNECTÉ'." }];
+    const response = await callGeminiAPI(testPrompt, { maxOutputTokens: 10 });
+
+    if (response && response.length > 0) {
+      showToast("Connexion API Gemini réussie à 100% ! ✅", "success");
+    } else {
+      throw new Error("Réponse inattendue de l'API");
+    }
+  } catch (err) {
+    console.error("Test clé API échoué:", err);
+    showToast(`Échec du test : ${err.message || "Vérifiez la clé API"}`, "error");
+  } finally {
+    if (testBtn) {
+      testBtn.disabled = false;
+      testBtn.innerHTML = `<i class="fa-solid fa-vial"></i> Tester`;
+    }
+  }
+}
+
+function quickSwitchAIModel() {
+  closeAIAssistantModal();
+  openSettingsModal();
+  setTimeout(() => {
+    const select = document.getElementById('settingGeminiModel');
+    if (select) select.focus();
+  }, 250);
+}
+
 if (typeof window !== 'undefined') {
   // Raccourcis clavier globaux
   window.addEventListener('keydown', (e) => {
@@ -2269,6 +2887,9 @@ if (typeof window !== 'undefined') {
       closeSettingsModal();
       closeFolderModal();
       closeMoveCourseModal();
+      closeAIAssistantModal();
+      closeAICoursePromptModal();
+      closeAIFlashcardGeneratorModal();
       closeLightbox();
       closeFocusModal();
     }
@@ -2405,7 +3026,33 @@ if (typeof window !== 'undefined') {
     handleFolderSubmit,
     openMoveCourseModal,
     closeMoveCourseModal,
-    assignCourseToFolder
+    assignCourseToFolder,
+
+    // Intelligence Artificielle (Gemini & StudyBot)
+    openAIAssistantModal,
+    closeAIAssistantModal,
+    renderAIChatMessages,
+    handleAIChatSubmit,
+    sendAIAssistantMessage,
+    handleAIChatKeydown,
+    loadAIQuestionSuggestion,
+    clearAIChatHistory,
+    copyAIMessageText,
+    createCourseFromAIMessage,
+    openAICoursePrompt,
+    closeAICoursePromptModal,
+    handleAICoursePromptSubmit,
+    enhanceCurrentContentWithAI,
+    openAIFlashcardGeneratorModal,
+    closeAIFlashcardGeneratorModal,
+    toggleAIFlashcardSourceType,
+    handleAIFlashcardPromptSubmit,
+    generateFlashcardsForCourse,
+    renderGeminiModelOptions,
+    handleSettingModelChange,
+    handleSettingApiKeyChange,
+    testCurrentGeminiKey,
+    quickSwitchAIModel
   };
 
   Object.assign(window, globalBindings);
@@ -2541,6 +3188,32 @@ if (typeof module !== 'undefined' && module.exports) {
     // Navigation & Lightbox
     showTab,
     openLightbox,
-    closeLightbox
+    closeLightbox,
+
+    // Intelligence Artificielle (Gemini & StudyBot)
+    openAIAssistantModal,
+    closeAIAssistantModal,
+    renderAIChatMessages,
+    handleAIChatSubmit,
+    sendAIAssistantMessage,
+    handleAIChatKeydown,
+    loadAIQuestionSuggestion,
+    clearAIChatHistory,
+    copyAIMessageText,
+    createCourseFromAIMessage,
+    openAICoursePrompt,
+    closeAICoursePromptModal,
+    handleAICoursePromptSubmit,
+    enhanceCurrentContentWithAI,
+    openAIFlashcardGeneratorModal,
+    closeAIFlashcardGeneratorModal,
+    toggleAIFlashcardSourceType,
+    handleAIFlashcardPromptSubmit,
+    generateFlashcardsForCourse,
+    renderGeminiModelOptions,
+    handleSettingModelChange,
+    handleSettingApiKeyChange,
+    testCurrentGeminiKey,
+    quickSwitchAIModel
   };
 }

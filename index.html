@@ -18,7 +18,7 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-  <link rel="stylesheet" href="css/styles.css?v=3.4.0" />
+  <link rel="stylesheet" href="css/styles.css?v=3.5.0" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#080c14" />
@@ -165,6 +165,11 @@
 
       <!-- Profil Élève : Anneau Dégradé & Badge Statut En Ligne -->
       <div class="header-right">
+        <button class="btn btn-ai-header" id="btnOpenAIAssistant" onclick="openAIAssistantModal()" aria-label="Ouvrir StudyBot IA" title="Tuteur IA Bac Pro CIEL">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          <span class="btn-ai-label">StudyBot IA</span>
+        </button>
+
         <button type="button" class="user-pill" onclick="openProfileModal()" aria-label="Mon profil élève" title="Mon profil élève">
           <div class="avatar-ring-wrapper">
             <div id="headerAvatarContainer"></div>
@@ -343,7 +348,10 @@
             <input type="text" class="form-input" id="fcA" placeholder="Réponse (Verso)" />
           </div>
           <button class="btn btn-primary" style="width: 100%;" onclick="addFlashcard()" aria-label="Ajouter à mes flashcards">
-            <i class="fa-solid fa-plus" aria-hidden="true"></i> Ajouter à mes flashcards
+            <i class="fa-solid fa-plus" aria-hidden="true"></i> Ajouter manuellement
+          </button>
+          <button type="button" class="btn btn-ai-generate-fc" style="width: 100%; margin-top: 0.65rem;" onclick="openAIFlashcardGeneratorModal()" aria-label="Générer des flashcards avec l'IA">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> ✨ Générer des flashcards avec l'IA
           </button>
         </div>
 
@@ -563,6 +571,15 @@
             <button type="button" class="md-tool-btn" onclick="editorUndo()" title="Annuler (Ctrl+Z)"><i class="fa-solid fa-rotate-left"></i></button>
             <button type="button" class="md-tool-btn" onclick="editorRedo()" title="Rétablir (Ctrl+Y)"><i class="fa-solid fa-rotate-right"></i></button>
           </div>
+          <div class="md-toolbar-sep"></div>
+          <div class="md-toolbar-group md-toolbar-ai-group">
+            <button type="button" class="md-tool-btn btn-tool-ai" onclick="openAICoursePrompt()" title="Générer une fiche complète avec l'IA">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> <span>Rédiger IA</span>
+            </button>
+            <button type="button" class="md-tool-btn btn-tool-ai" onclick="enhanceCurrentContentWithAI()" title="Améliorer et structurer les notes en Markdown avec l'IA">
+              <i class="fa-solid fa-magic"></i> <span>Structurer IA</span>
+            </button>
+          </div>
         </div>
 
         <!-- Conteneur Split View -->
@@ -740,6 +757,29 @@
         </div>
       </div>
 
+      <!-- Configuration Intelligence Artificielle (Gemini) -->
+      <div class="settings-section">
+        <h4 class="settings-section-title"><i class="fa-solid fa-wand-magic-sparkles" style="color: #a855f7;"></i> Intelligence Artificielle (Gemini)</h4>
+        <div class="form-row" style="margin-bottom: 0.85rem;">
+          <label for="settingGeminiModel" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem; display: block;">Modèle Gemini actif :</label>
+          <select id="settingGeminiModel" class="form-input" onchange="handleSettingModelChange(this.value)" style="width: 100%;">
+            <!-- Rempli dynamiquement via renderGeminiModelOptions() -->
+          </select>
+          <small id="settingModelEndpointDesc" style="display: block; margin-top: 0.35rem; font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;"></small>
+        </div>
+
+        <div class="form-row" style="margin-bottom: 0.5rem;">
+          <label for="settingGeminiApiKey" style="font-size: 0.85rem; font-weight: 600; margin-bottom: 0.35rem; display: block;">Clé API Gemini :</label>
+          <div style="display: flex; gap: 0.5rem;">
+            <input type="password" id="settingGeminiApiKey" class="form-input" placeholder="Clé intégrée active (ou collez la vôtre)" style="flex: 1;" onchange="handleSettingApiKeyChange(this.value)" />
+            <button type="button" class="btn" id="btnTestGeminiKey" onclick="testCurrentGeminiKey()" style="white-space: nowrap; min-height: 42px;">
+              <i class="fa-solid fa-vial"></i> Tester
+            </button>
+          </div>
+          <small style="display: block; margin-top: 0.35rem; font-size: 0.78rem; color: var(--text-muted);">Une clé Gemini est intégrée par défaut pour le Bac Pro CIEL. Vous pouvez aussi utiliser votre propre clé Google AI Studio.</small>
+        </div>
+      </div>
+
       <!-- Options de données & sauvegarde -->
       <div class="settings-section">
         <h4 class="settings-section-title"><i class="fa-solid fa-database"></i> Sauvegarde & Coffre</h4>
@@ -807,14 +847,191 @@
     </div>
   </div>
 
+  <!-- MODALE ASSISTANT PEDAGOGIQUE IA (STUDYBOT CIEL) -->
+  <div class="modal-backdrop" id="aiAssistantModal" onclick="closeAIAssistantModal()" role="dialog" aria-modal="true" aria-labelledby="aiAssistantModalTitle">
+    <div class="modal-sheet modal-sheet-ai" onclick="event.stopPropagation()">
+      <div class="ai-modal-header">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div class="ai-bot-avatar">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+          </div>
+          <div>
+            <h3 id="aiAssistantModalTitle" style="font-size: 1.15rem; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+              StudyBot CIEL <span class="ai-badge-live">IA Active</span>
+            </h3>
+            <div class="ai-active-model-info">
+              <span id="aiHeaderCurrentModelBadge">Gemini 2.5 Flash</span>
+              <button type="button" class="ai-btn-switch-model" onclick="quickSwitchAIModel()" title="Changer de modèle Gemini">
+                <i class="fa-solid fa-repeat"></i> Changer
+              </button>
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <button class="btn" style="padding: 0.4rem 0.7rem; min-height: 36px;" onclick="clearAIChatHistory()" aria-label="Effacer la conversation" title="Effacer la conversation">
+            <i class="fa-solid fa-trash-can"></i>
+          </button>
+          <button class="btn" style="padding: 0.4rem 0.7rem; min-height: 36px;" onclick="closeAIAssistantModal()" aria-label="Fermer l'assistant IA" title="Fermer">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Corps du Chat IA -->
+      <div class="ai-chat-body" id="aiChatBody">
+        <div class="ai-chat-history" id="aiChatHistory">
+          <!-- Messages générés dynamiquement par renderAIChatMessages() -->
+        </div>
+
+        <!-- Suggestions de questions rapides -->
+        <div class="ai-quick-prompts-wrapper" id="aiQuickPromptsWrapper">
+          <div class="ai-quick-prompts-title"><i class="fa-regular fa-lightbulb"></i> Suggestions de révision rapide :</div>
+          <div class="ai-quick-prompts-chips" id="aiQuickPromptsChips">
+            <button type="button" class="ai-chip" onclick="loadAIQuestionSuggestion('Explique-moi la différence concrète entre un Switch (Commutateur) et un Routeur pour l\'épreuve Bac Pro CIEL.')">
+              Switch vs Routeur
+            </button>
+            <button type="button" class="ai-chip" onclick="loadAIQuestionSuggestion('Comment calculer le masque de sous-réseau et le nombre d\'hôtes pour une adresse IP avec un préfixe /27 ?')">
+              Calcul de sous-réseau /27
+            </button>
+            <button type="button" class="ai-chip" onclick="loadAIQuestionSuggestion('Explique la formule du pont diviseur de tension et comment l\'appliquer sur un capteur analogique.')">
+              Diviseur de tension
+            </button>
+            <button type="button" class="ai-chip" onclick="loadAIQuestionSuggestion('Qu\'est-ce qu\'un VLAN par port (802.1Q) et pourquoi créer un trunk pour un réseau d\'entreprise ?')">
+              VLAN & Trunk 802.1Q
+            </button>
+            <button type="button" class="ai-chip" onclick="loadAIQuestionSuggestion('Quelles sont les 5 règles d\'or de cybersécurité à respecter sur un serveur Linux d\'administration ?')">
+              Sécurité serveur Linux
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Zone de saisie du message -->
+      <form class="ai-chat-footer" id="aiChatForm" onsubmit="handleAIChatSubmit(event)">
+        <div class="ai-input-wrapper">
+          <textarea id="aiChatInput" class="ai-input" placeholder="Pose ta question sur le programme CIEL, colle un extrait de TP..." rows="1" onkeydown="handleAIChatKeydown(event)"></textarea>
+          <button type="submit" class="btn btn-primary ai-btn-send" id="btnAISend" aria-label="Envoyer le message">
+            <i class="fa-solid fa-paper-plane" id="aiSendIcon"></i>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODALE GENERATION DE COURS IA -->
+  <div class="modal-backdrop" id="aiCoursePromptModal" onclick="closeAICoursePromptModal()" role="dialog" aria-modal="true" aria-labelledby="aiCoursePromptTitle">
+    <div class="modal-sheet" onclick="event.stopPropagation()" style="max-width: 480px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h3 id="aiCoursePromptTitle" style="font-size: 1.15rem; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-wand-magic-sparkles" style="color: #a855f7;"></i> Rédiger un cours avec l'IA
+        </h3>
+        <button class="btn" style="padding: 0.4rem 0.7rem; min-height: 36px;" onclick="closeAICoursePromptModal()" aria-label="Fermer" title="Fermer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      
+      <form id="aiCoursePromptForm" onsubmit="handleAICoursePromptSubmit(event)">
+        <div class="form-row" style="margin-bottom: 1rem;">
+          <label for="aiCourseTopicInput" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.35rem;">Sujet ou Chapitre du cours :</label>
+          <input type="text" id="aiCourseTopicInput" class="form-input" placeholder="Ex: Configuration du protocole Spanning-Tree (STP) sur Cisco" required />
+        </div>
+
+        <div class="form-row" style="margin-bottom: 1rem;">
+          <label for="aiCourseSubjectSelect" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.35rem;">Discipline / Matière :</label>
+          <select id="aiCourseSubjectSelect" class="form-input" style="width: 100%;">
+            <option value="Informatique & Réseaux">Informatique & Réseaux</option>
+            <option value="Électronique & Systèmes">Électronique & Systèmes</option>
+            <option value="Cybersécurité">Cybersécurité</option>
+            <option value="Mathématiques">Mathématiques</option>
+            <option value="Physique-Chimie">Physique-Chimie</option>
+            <option value="Économie-Gestion">Économie-Gestion</option>
+            <option value="Français">Français</option>
+            <option value="Histoire-Géo">Histoire-Géo</option>
+            <option value="Anglais (LV1)">Anglais (LV1)</option>
+            <option value="Autre">Autre</option>
+          </select>
+        </div>
+
+        <div class="form-row" style="margin-bottom: 1.5rem;">
+          <label for="aiCourseFormatSelect" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.35rem;">Format souhaité :</label>
+          <select id="aiCourseFormatSelect" class="form-input" style="width: 100%;">
+            <option value="complet">Cours complet structuré (Définitions, Commandes & QCM)</option>
+            <option value="synthese">Fiche ultra-synthétique (Essentiel Bac Pro)</option>
+            <option value="tp">Procédure de Travaux Pratiques pas-à-pas</option>
+          </select>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+          <button type="button" class="btn" onclick="closeAICoursePromptModal()">Annuler</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitAICoursePrompt">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Générer le cours
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODALE GENERATION DE FLASHCARDS IA -->
+  <div class="modal-backdrop" id="aiFlashcardPromptModal" onclick="closeAIFlashcardGeneratorModal()" role="dialog" aria-modal="true" aria-labelledby="aiFlashcardPromptTitle">
+    <div class="modal-sheet" onclick="event.stopPropagation()" style="max-width: 480px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h3 id="aiFlashcardPromptTitle" style="font-size: 1.15rem; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-wand-magic-sparkles" style="color: #a855f7;"></i> Générer des Flashcards avec l'IA
+        </h3>
+        <button class="btn" style="padding: 0.4rem 0.7rem; min-height: 36px;" onclick="closeAIFlashcardGeneratorModal()" aria-label="Fermer" title="Fermer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="aiFlashcardPromptForm" onsubmit="handleAIFlashcardPromptSubmit(event)">
+        <div class="form-row" style="margin-bottom: 1rem;">
+          <label for="aiFlashcardSourceSelect" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.35rem;">Source pour les cartes :</label>
+          <select id="aiFlashcardSourceSelect" class="form-input" onchange="toggleAIFlashcardSourceType(this.value)" style="width: 100%;">
+            <option value="theme">Sur un sujet libre / notion Bac Pro CIEL</option>
+            <option value="course">À partir d'un de mes cours existants</option>
+          </select>
+        </div>
+
+        <div class="form-row" id="aiFcThemeRow" style="margin-bottom: 1rem;">
+          <label for="aiFlashcardTopicInput" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.35rem;">Notion ou chapitre à réviser :</label>
+          <input type="text" id="aiFlashcardTopicInput" class="form-input" placeholder="Ex: Modèle OSI, Routage OSPF, Adressage IPv6, Capteurs I2C..." />
+        </div>
+
+        <div class="form-row" id="aiFcCourseRow" style="margin-bottom: 1rem; display: none;">
+          <label for="aiFlashcardCourseSelect" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.35rem;">Choisir le cours :</label>
+          <select id="aiFlashcardCourseSelect" class="form-input" style="width: 100%;">
+            <!-- Rempli dynamiquement -->
+          </select>
+        </div>
+
+        <div class="form-row" style="margin-bottom: 1.5rem;">
+          <label for="aiFlashcardCountSelect" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.35rem;">Nombre de flashcards :</label>
+          <select id="aiFlashcardCountSelect" class="form-input" style="width: 100%;">
+            <option value="5">5 flashcards clés (Rapide)</option>
+            <option value="8" selected>8 flashcards (Équilibré)</option>
+            <option value="12">12 flashcards (Exhaustif)</option>
+          </select>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+          <button type="button" class="btn" onclick="closeAIFlashcardGeneratorModal()">Annuler</button>
+          <button type="submit" class="btn btn-primary" id="btnSubmitAIFlashcards">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Créer les flashcards
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Bouton flottant Retour en Haut -->
   <button class="back-to-top-btn" id="backToTopBtn" onclick="scrollToTop()" aria-label="Retour en haut de page" title="Retour en haut de page">
     <i class="fa-solid fa-arrow-up" aria-hidden="true"></i>
   </button>
 
   <!-- Application logic -->
-  <script src="js/crypto.js?v=3.4.0"></script>
-  <script src="js/github.js?v=3.4.0"></script>
-  <script src="js/app.js?v=3.4.0"></script>
+  <script src="js/crypto.js?v=3.5.0"></script>
+  <script src="js/github.js?v=3.5.0"></script>
+  <script src="js/ai.js?v=3.5.0"></script>
+  <script src="js/app.js?v=3.5.0"></script>
 </body>
 </html>
