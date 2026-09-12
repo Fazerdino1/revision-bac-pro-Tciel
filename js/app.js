@@ -1901,53 +1901,80 @@ if (typeof window !== 'undefined') {
     }
   }, { passive: true });
 
-  // PWA Service Worker
+  // PWA Service Worker avec mise à jour forcée
   if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').then(reg => {
         console.log('CIEL Service Worker registered:', reg.scope);
+        // Forcer la vérification immédiate de nouvelle version
+        reg.update().catch(() => {});
       }).catch(err => {
         console.warn('Service Worker registration failed:', err);
       });
     });
   }
 
-  // Bindings globaux pour HTML
-  window.toggleSearchClear = toggleSearchClear;
-  window.clearCourseSearch = clearCourseSearch;
-  window.openCourseModal = openCourseModal;
-  window.openEditCourseModal = openEditCourseModal;
-  window.closeCourseModal = closeCourseModal;
-  window.handleModalFiles = handleModalFiles;
-  window.removePendingFile = removePendingFile;
-  window.submitCourse = submitCourse;
-  window.openProfileModal = openProfileModal;
-  window.closeProfileModal = closeProfileModal;
-  window.saveUserProfile = saveUserProfile;
-  window.handleAvatarChange = handleAvatarChange;
-  window.getSubjectThemeInfo = getSubjectThemeInfo;
-  window.insertMd = insertMd;
-  window.insertCodeBlock = insertCodeBlock;
-  window.insertTableTemplate = insertTableTemplate;
-  window.editorUndo = editorUndo;
-  window.editorRedo = editorRedo;
-  window.setEditorMode = setEditorMode;
-  window.handleMarkdownInput = handleMarkdownInput;
-  window.triggerDraftSave = triggerDraftSave;
-  window.toggleCourseFavorite = toggleCourseFavorite;
-  window.filterByTag = filterByTag;
-  window.clearTagFilter = clearTagFilter;
-  window.openFocusModal = openFocusModal;
-  window.closeFocusModal = closeFocusModal;
-  window.printFocusCourse = printFocusCourse;
-  window.exportCourseToPDF = exportCourseToPDF;
-  window.openShareModal = openShareModal;
-  window.closeShareModal = closeShareModal;
-  window.switchShareMode = switchShareMode;
-  window.copyShareCourseLink = copyShareCourseLink;
-  window.toggleSelectAllRecipients = toggleSelectAllRecipients;
-  window.confirmSendShare = confirmSendShare;
-  window.scrollToTop = scrollToTop;
+  // Bindings globaux pour les gestionnaires d'événements HTML
+  const globalBindings = {
+    toggleSearchClear,
+    clearCourseSearch,
+    openCourseModal,
+    openEditCourseModal,
+    closeCourseModal,
+    handleModalFiles,
+    removePendingFile,
+    submitCourse,
+    openProfileModal,
+    closeProfileModal,
+    saveUserProfile,
+    handleAvatarChange,
+    getSubjectThemeInfo,
+    insertMd,
+    insertCodeBlock,
+    insertTableTemplate,
+    editorUndo,
+    editorRedo,
+    setEditorMode,
+    handleMarkdownInput,
+    triggerDraftSave,
+    toggleCourseFavorite,
+    filterByTag,
+    clearTagFilter,
+    openFocusModal,
+    closeFocusModal,
+    printFocusCourse,
+    exportCourseToPDF,
+    openShareModal,
+    closeShareModal,
+    switchShareMode,
+    copyShareCourseLink,
+    toggleSelectAllRecipients,
+    confirmSendShare,
+    scrollToTop,
+    showTab,
+    openLightbox,
+    closeLightbox,
+    importSharedCourse,
+    deleteSharedCourse,
+    deleteCourseById,
+    toggleFlashcardFlip,
+    nextFlashcard,
+    prevFlashcard,
+    addFlashcard,
+    deleteCurrentFlashcard,
+    renderTodos,
+    createTodo,
+    toggleTodo,
+    deleteTodo,
+    deleteTodoItem,
+    logout,
+    switchAuthMode,
+    handleAuthSubmit,
+    setFilter,
+    switchCourseSubView
+  };
+
+  Object.assign(window, globalBindings);
 }
 
 /* ==========================================================
