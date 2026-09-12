@@ -18,7 +18,7 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-  <link rel="stylesheet" href="css/styles.css?v=3.5.3" />
+  <link rel="stylesheet" href="css/styles.css?v=3.5.4" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#080c14" />
@@ -768,33 +768,141 @@
           <small id="settingModelEndpointDesc" style="display: block; margin-top: 0.35rem; font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;"></small>
         </div>
 
-        <!-- Cartes Quota dans les Paramètres -->
-        <div class="settings-quota-box" id="settingsQuotaBox" style="margin-bottom: 0.85rem;">
-          <div class="ai-quota-card" style="margin-bottom: 0.5rem;">
-            <div class="ai-quota-title-row">
-              <span class="ai-quota-name"><i class="fa-solid fa-bolt" style="color: #38bdf8;"></i> Tokens consommés (Fenêtre 5h)</span>
-              <span class="ai-quota-percent" id="settingQuota5hPct">0% utilisé</span>
+        <!-- Cartes Quotas par Groupe de Modèles dans les Paramètres (3 Familles avec 5h et 7j distincts) -->
+        <div class="settings-quota-box" id="settingsQuotaBox" style="margin-bottom: 0.85rem; display: flex; flex-direction: column; gap: 0.75rem;">
+          
+          <!-- GROUPE 1 : FAMILLE GEMINI 2.5 -->
+          <div class="ai-tier-card" id="tierCard_tier_25">
+            <div class="ai-tier-header">
+              <div class="ai-tier-title-wrap">
+                <i class="fa-solid fa-bolt" style="color: #38bdf8;"></i>
+                <div>
+                  <div class="ai-tier-title">Famille Gemini 2.5</div>
+                  <div class="ai-tier-models-list">Flash, Flash-Lite, Pro</div>
+                </div>
+              </div>
+              <span class="ai-tier-status-pill" id="tierBadge_tier_25">Inactif</span>
             </div>
-            <div class="ai-quota-track">
-              <div class="ai-quota-fill" id="settingQuota5hBar" style="width: 0%;"></div>
-            </div>
-            <div class="ai-quota-countdown" id="settingQuota5hReset">
-              <i class="fa-regular fa-clock"></i> Réinitialisation à --:--
+
+            <div class="ai-tier-bars-grid">
+              <!-- Barre 5h -->
+              <div class="ai-subbar-box">
+                <div class="ai-quota-title-row">
+                  <span class="ai-subbar-label"><i class="fa-regular fa-clock" style="color: #38bdf8;"></i> Fenêtre 5h</span>
+                  <span class="ai-quota-percent" id="quota_tier_25_5h_pct">0% (0 / 60k tokens)</span>
+                </div>
+                <div class="ai-quota-track">
+                  <div class="ai-quota-fill" id="quota_tier_25_5h_bar" style="width: 0%;"></div>
+                </div>
+                <div class="ai-quota-countdown" id="quota_tier_25_5h_reset">
+                  <i class="fa-regular fa-clock"></i> Quota complet disponible
+                </div>
+              </div>
+
+              <!-- Barre 7j -->
+              <div class="ai-subbar-box">
+                <div class="ai-quota-title-row">
+                  <span class="ai-subbar-label"><i class="fa-regular fa-calendar-days" style="color: #a855f7;"></i> Quota 7 jours</span>
+                  <span class="ai-quota-percent" id="quota_tier_25_7d_pct">0% (0 / 250k tokens)</span>
+                </div>
+                <div class="ai-quota-track">
+                  <div class="ai-quota-fill" id="quota_tier_25_7d_bar" style="width: 0%;"></div>
+                </div>
+                <div class="ai-quota-countdown" id="quota_tier_25_7d_reset">
+                  <i class="fa-regular fa-calendar-check"></i> Quota complet disponible
+                </div>
+              </div>
             </div>
           </div>
 
-          <div class="ai-quota-card">
-            <div class="ai-quota-title-row">
-              <span class="ai-quota-name"><i class="fa-solid fa-calendar-days" style="color: #a855f7;"></i> Quota hebdomadaire (7 jours)</span>
-              <span class="ai-quota-percent" id="settingQuota7dPct">0% utilisé</span>
+          <!-- GROUPE 2 : FAMILLE GEMINI 3.0 À 3.5 -->
+          <div class="ai-tier-card" id="tierCard_tier_30">
+            <div class="ai-tier-header">
+              <div class="ai-tier-title-wrap">
+                <i class="fa-solid fa-microchip" style="color: #a855f7;"></i>
+                <div>
+                  <div class="ai-tier-title">Famille Gemini 3.0 à 3.5</div>
+                  <div class="ai-tier-models-list">3 Flash, 3.1 Lite, 3.1 Pro, 3.5 Flash, 3.5 Lite</div>
+                </div>
+              </div>
+              <span class="ai-tier-status-pill" id="tierBadge_tier_30">Inactif</span>
             </div>
-            <div class="ai-quota-track">
-              <div class="ai-quota-fill" id="settingQuota7dBar" style="width: 0%;"></div>
-            </div>
-            <div class="ai-quota-countdown" id="settingQuota7dReset">
-              <i class="fa-regular fa-calendar-check"></i> Réinitialisation le -- à --:--
+
+            <div class="ai-tier-bars-grid">
+              <!-- Barre 5h -->
+              <div class="ai-subbar-box">
+                <div class="ai-quota-title-row">
+                  <span class="ai-subbar-label"><i class="fa-regular fa-clock" style="color: #38bdf8;"></i> Fenêtre 5h</span>
+                  <span class="ai-quota-percent" id="quota_tier_30_5h_pct">0% (0 / 40k tokens)</span>
+                </div>
+                <div class="ai-quota-track">
+                  <div class="ai-quota-fill" id="quota_tier_30_5h_bar" style="width: 0%;"></div>
+                </div>
+                <div class="ai-quota-countdown" id="quota_tier_30_5h_reset">
+                  <i class="fa-regular fa-clock"></i> Quota complet disponible
+                </div>
+              </div>
+
+              <!-- Barre 7j -->
+              <div class="ai-subbar-box">
+                <div class="ai-quota-title-row">
+                  <span class="ai-subbar-label"><i class="fa-regular fa-calendar-days" style="color: #a855f7;"></i> Quota 7 jours</span>
+                  <span class="ai-quota-percent" id="quota_tier_30_7d_pct">0% (0 / 160k tokens)</span>
+                </div>
+                <div class="ai-quota-track">
+                  <div class="ai-quota-fill" id="quota_tier_30_7d_bar" style="width: 0%;"></div>
+                </div>
+                <div class="ai-quota-countdown" id="quota_tier_30_7d_reset">
+                  <i class="fa-regular fa-calendar-check"></i> Quota complet disponible
+                </div>
+              </div>
             </div>
           </div>
+
+          <!-- GROUPE 3 : FAMILLE GEMINI 3.6 & 3.7 -->
+          <div class="ai-tier-card" id="tierCard_tier_36">
+            <div class="ai-tier-header">
+              <div class="ai-tier-title-wrap">
+                <i class="fa-solid fa-wand-magic-sparkles" style="color: #ec4899;"></i>
+                <div>
+                  <div class="ai-tier-title">Famille Gemini 3.6 & 3.7</div>
+                  <div class="ai-tier-models-list">3.6 Flash, 3.7 Flash</div>
+                </div>
+              </div>
+              <span class="ai-tier-status-pill" id="tierBadge_tier_36">Inactif</span>
+            </div>
+
+            <div class="ai-tier-bars-grid">
+              <!-- Barre 5h -->
+              <div class="ai-subbar-box">
+                <div class="ai-quota-title-row">
+                  <span class="ai-subbar-label"><i class="fa-regular fa-clock" style="color: #38bdf8;"></i> Fenêtre 5h</span>
+                  <span class="ai-quota-percent" id="quota_tier_36_5h_pct">0% (0 / 25k tokens)</span>
+                </div>
+                <div class="ai-quota-track">
+                  <div class="ai-quota-fill" id="quota_tier_36_5h_bar" style="width: 0%;"></div>
+                </div>
+                <div class="ai-quota-countdown" id="quota_tier_36_5h_reset">
+                  <i class="fa-regular fa-clock"></i> Quota complet disponible
+                </div>
+              </div>
+
+              <!-- Barre 7j -->
+              <div class="ai-subbar-box">
+                <div class="ai-quota-title-row">
+                  <span class="ai-subbar-label"><i class="fa-regular fa-calendar-days" style="color: #a855f7;"></i> Quota 7 jours</span>
+                  <span class="ai-quota-percent" id="quota_tier_36_7d_pct">0% (0 / 100k tokens)</span>
+                </div>
+                <div class="ai-quota-track">
+                  <div class="ai-quota-fill" id="quota_tier_36_7d_bar" style="width: 0%;"></div>
+                </div>
+                <div class="ai-quota-countdown" id="quota_tier_36_7d_reset">
+                  <i class="fa-regular fa-calendar-check"></i> Quota complet disponible
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
 
         <div class="form-row" style="margin-bottom: 0.5rem;">
@@ -904,6 +1012,11 @@
 
       <!-- Volet rétractable des Quotas IA (Fenêtre 5h & 7 jours) -->
       <div class="ai-quota-panel" id="aiQuotaPanel">
+        <div class="ai-quota-panel-header-tabs">
+          <button class="ai-quota-tab-btn active" id="sbTab_tier_25" onclick="switchStudyBotQuotaTab('tier_25')"><i class="fa-solid fa-bolt" style="color: #38bdf8;"></i> Gemini 2.5</button>
+          <button class="ai-quota-tab-btn" id="sbTab_tier_30" onclick="switchStudyBotQuotaTab('tier_30')"><i class="fa-solid fa-microchip" style="color: #a855f7;"></i> Gemini 3.0-3.5</button>
+          <button class="ai-quota-tab-btn" id="sbTab_tier_36" onclick="switchStudyBotQuotaTab('tier_36')"><i class="fa-solid fa-wand-magic-sparkles" style="color: #ec4899;"></i> Gemini 3.6-3.7</button>
+        </div>
         <div class="ai-quota-panel-inner">
           <div class="ai-quota-card">
             <div class="ai-quota-title-row">
@@ -1085,9 +1198,9 @@
   </button>
 
   <!-- Application logic -->
-  <script src="js/crypto.js?v=3.5.3"></script>
-  <script src="js/github.js?v=3.5.3"></script>
-  <script src="js/ai.js?v=3.5.3"></script>
-  <script src="js/app.js?v=3.5.3"></script>
+  <script src="js/crypto.js?v=3.5.4"></script>
+  <script src="js/github.js?v=3.5.4"></script>
+  <script src="js/ai.js?v=3.5.4"></script>
+  <script src="js/app.js?v=3.5.4"></script>
 </body>
 </html>

@@ -186,9 +186,19 @@ function recordAIUsage(modelId, tokenUsage = {}) {
   }
 }
 
-function getAIQuotaInfo(modelId) {
-  const modelObj = GEMINI_MODELS.find(m => m.id === modelId) || GEMINI_MODELS[0];
-  const tierConfig = AI_TIERS[modelObj.tier] || AI_TIERS.tier_25;
+function getAIQuotaInfo(modelIdOrTier) {
+  let tierId = 'tier_25';
+  let modelObj = null;
+
+  if (modelIdOrTier && AI_TIERS[modelIdOrTier]) {
+    tierId = modelIdOrTier;
+    modelObj = GEMINI_MODELS.find(m => m.tier === tierId) || GEMINI_MODELS[0];
+  } else {
+    modelObj = GEMINI_MODELS.find(m => m.id === modelIdOrTier) || GEMINI_MODELS[0];
+    tierId = modelObj.tier;
+  }
+
+  const tierConfig = AI_TIERS[tierId] || AI_TIERS.tier_25;
   const log = getAIRequestsLog();
   const now = Date.now();
 
@@ -196,7 +206,7 @@ function getAIQuotaInfo(modelId) {
   const window7dMs = 7 * 24 * 60 * 60 * 1000;
 
   // Filtrer les requêtes spécifiques à ce tier
-  const tierRequests = log.filter(r => r.tier === modelObj.tier);
+  const tierRequests = log.filter(r => r.tier === tierId);
 
   // Fenêtre 5 heures (Somme des tokens consommés)
   const reqs5h = tierRequests.filter(r => (now - r.timestamp) <= window5hMs);
@@ -277,6 +287,15 @@ function checkAIQuota(modelId) {
   if (quota.isBlocked) {
     throw new Error(quota.blockReason);
   }
+}
+
+// Obtenir l'état complet des quotas pour les 3 familles en un seul appel
+function getAllAIQuotas() {
+  return {
+    tier_25: getAIQuotaInfo('tier_25'),
+    tier_30: getAIQuotaInfo('tier_30'),
+    tier_36: getAIQuotaInfo('tier_36')
+  };
 }
 
 // Déchiffrement de la clé API intégrée (masque réversible XOR en mémoire vive)
@@ -531,6 +550,7 @@ if (typeof window !== 'undefined') {
   window.getAIRequestsLog = getAIRequestsLog;
   window.recordAIUsage = recordAIUsage;
   window.getAIQuotaInfo = getAIQuotaInfo;
+  window.getAllAIQuotas = getAllAIQuotas;
   window.checkAIQuota = checkAIQuota;
   window.callGeminiAPI = callGeminiAPI;
   window.generateCourseWithAI = generateCourseWithAI;
@@ -550,6 +570,7 @@ if (typeof module !== 'undefined' && module.exports) {
     getAIRequestsLog,
     recordAIUsage,
     getAIQuotaInfo,
+    getAllAIQuotas,
     checkAIQuota,
     callGeminiAPI,
     generateCourseWithAI,

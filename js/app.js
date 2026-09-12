@@ -2251,6 +2251,18 @@ function openAIAssistantModal() {
   // Mise à jour du sélecteur de modèle direct dans l'en-tête
   renderQuickModelSelect();
 
+  // Synchroniser l'onglet du volet StudyBot sur le tier actif
+  const currentModel = (typeof getSelectedGeminiModel === 'function') ? getSelectedGeminiModel() : 'gemini-2.5-flash';
+  const modelObj = (typeof GEMINI_MODELS !== 'undefined') ? GEMINI_MODELS.find(m => m.id === currentModel) : null;
+  studyBotQuotaActiveTab = modelObj ? modelObj.tier : 'tier_25';
+  ['tier_25', 'tier_30', 'tier_36'].forEach(t => {
+    const btn = document.getElementById(`sbTab_${t}`);
+    if (btn) {
+      if (t === studyBotQuotaActiveTab) btn.classList.add('active');
+      else btn.classList.remove('active');
+    }
+  });
+
   // Mise à jour des jauges de quotas
   updateAIQuotaUI();
 
@@ -2301,11 +2313,26 @@ function toggleAIQuotaPanel() {
   updateAIQuotaUI();
 }
 
+let studyBotQuotaActiveTab = 'tier_25';
+
+function switchStudyBotQuotaTab(tierId) {
+  studyBotQuotaActiveTab = tierId;
+  const tabs = ['tier_25', 'tier_30', 'tier_36'];
+  tabs.forEach(t => {
+    const btn = document.getElementById(`sbTab_${t}`);
+    if (btn) {
+      if (t === tierId) btn.classList.add('active');
+      else btn.classList.remove('active');
+    }
+  });
+  updateAIQuotaUI();
+}
+
 function updateAIQuotaUI() {
   if (typeof getAIQuotaInfo !== 'function') return;
   const currentModel = (typeof getSelectedGeminiModel === 'function') ? getSelectedGeminiModel() : 'gemini-2.5-flash';
-  const info = getAIQuotaInfo(currentModel);
-  if (!info) return;
+  const modelObj = (typeof GEMINI_MODELS !== 'undefined') ? GEMINI_MODELS.find(m => m.id === currentModel) : null;
+  const activeTierId = modelObj ? modelObj.tier : 'tier_25';
 
   const fmt = (typeof formatTokens === 'function') ? formatTokens : (n) => typeof n === 'number' ? n.toLocaleString('fr-FR') : '0';
 
@@ -2330,18 +2357,48 @@ function updateAIQuotaUI() {
     }
   };
 
-  // 1. Volet de quotas dans StudyBot
-  applyToBar('aiQuota5hPct', 'aiQuota5hBar', 'aiQuota5hReset', info.pct5h, info.usedTokens5h, info.limitTokens5h, info.reset5hText, 'fa-regular fa-clock');
-  applyToBar('aiQuota7dPct', 'aiQuota7dBar', 'aiQuota7dReset', info.pct7d, info.usedTokens7d, info.limitTokens7d, info.reset7dText, 'fa-regular fa-calendar-check');
+  // 1. Mise à jour des 3 cartes de familles dans les Paramètres (#settingsQuotaBox)
+  const allTiers = ['tier_25', 'tier_30', 'tier_36'];
+  allTiers.forEach(tId => {
+    const qInfo = getAIQuotaInfo(tId);
+    if (!qInfo) return;
 
-  // 2. Section quotas dans les Paramètres
-  applyToBar('settingQuota5hPct', 'settingQuota5hBar', 'settingQuota5hReset', info.pct5h, info.usedTokens5h, info.limitTokens5h, info.reset5hText, 'fa-regular fa-clock');
-  applyToBar('settingQuota7dPct', 'settingQuota7dBar', 'settingQuota7dReset', info.pct7d, info.usedTokens7d, info.limitTokens7d, info.reset7dText, 'fa-regular fa-calendar-check');
+    // Barre 5h
+    applyToBar(`quota_${tId}_5h_pct`, `quota_${tId}_5h_bar`, `quota_${tId}_5h_reset`, qInfo.pct5h, qInfo.usedTokens5h, qInfo.limitTokens5h, qInfo.reset5hText, 'fa-regular fa-clock');
+    // Barre 7j
+    applyToBar(`quota_${tId}_7d_pct`, `quota_${tId}_7d_bar`, `quota_${tId}_7d_reset`, qInfo.pct7d, qInfo.usedTokens7d, qInfo.limitTokens7d, qInfo.reset7dText, 'fa-regular fa-calendar-check');
 
-  // 3. Bouton pillule dans l'en-tête StudyBot
+    // Mise en surbrillance de la carte active
+    const card = document.getElementById(`tierCard_${tId}`);
+    const badge = document.getElementById(`tierBadge_${tId}`);
+    if (card) {
+      if (tId === activeTierId) card.classList.add('active-tier');
+      else card.classList.remove('active-tier');
+    }
+    if (badge) {
+      if (tId === activeTierId) {
+        badge.innerText = '⚡ Modèle actif';
+        badge.style.color = '#38bdf8';
+      } else {
+        badge.innerText = 'Disponible';
+        badge.style.color = 'var(--text-muted)';
+      }
+    }
+  });
+
+  // 2. Mise à jour du volet StudyBot (#aiQuotaPanel)
+  const currentTabTier = studyBotQuotaActiveTab || activeTierId;
+  const sbInfo = getAIQuotaInfo(currentTabTier);
+  if (sbInfo) {
+    applyToBar('aiQuota5hPct', 'aiQuota5hBar', 'aiQuota5hReset', sbInfo.pct5h, sbInfo.usedTokens5h, sbInfo.limitTokens5h, sbInfo.reset5hText, 'fa-regular fa-clock');
+    applyToBar('aiQuota7dPct', 'aiQuota7dBar', 'aiQuota7dReset', sbInfo.pct7d, sbInfo.usedTokens7d, sbInfo.limitTokens7d, sbInfo.reset7dText, 'fa-regular fa-calendar-check');
+  }
+
+  // 3. Bouton pillule dans l'en-tête StudyBot (reflète le modèle actuellement sélectionné)
+  const activeInfo = getAIQuotaInfo(activeTierId);
   const miniText = document.getElementById('aiHeaderQuotaMiniText');
-  if (miniText) {
-    miniText.innerText = `Tokens (${fmt(info.usedTokens5h)}/${fmt(info.limitTokens5h)})`;
+  if (miniText && activeInfo) {
+    miniText.innerText = `Tokens (${fmt(activeInfo.usedTokens5h)}/${fmt(activeInfo.limitTokens5h)})`;
   }
 }
 
@@ -2354,7 +2411,13 @@ function handleQuickModelChange(newModelId) {
     if (settingSelect) settingSelect.value = newModelId;
     if (typeof updateModelEndpointDesc === 'function') updateModelEndpointDesc(newModelId);
 
-    updateAIQuotaUI();
+    const modelObj = (typeof GEMINI_MODELS !== 'undefined') ? GEMINI_MODELS.find(m => m.id === newModelId) : null;
+    if (modelObj && typeof switchStudyBotQuotaTab === 'function') {
+      switchStudyBotQuotaTab(modelObj.tier);
+    } else {
+      updateAIQuotaUI();
+    }
+
     showToast(`Modèle sélectionné : ${newModelId}`, "info");
   }
 }
@@ -2977,7 +3040,10 @@ function handleSettingModelChange(newModelId) {
     const quickSelect = document.getElementById('aiQuickModelSelect');
     if (quickSelect) quickSelect.value = newModelId;
 
-    if (typeof updateAIQuotaUI === 'function') {
+    const modelObj = (typeof GEMINI_MODELS !== 'undefined') ? GEMINI_MODELS.find(m => m.id === newModelId) : null;
+    if (modelObj && typeof switchStudyBotQuotaTab === 'function') {
+      switchStudyBotQuotaTab(modelObj.tier);
+    } else if (typeof updateAIQuotaUI === 'function') {
       updateAIQuotaUI();
     }
 
@@ -3250,6 +3316,7 @@ if (typeof window !== 'undefined') {
     renderQuickModelSelect,
     handleQuickModelChange,
     toggleAIQuotaPanel,
+    switchStudyBotQuotaTab,
     updateAIQuotaUI,
     retryAIMessage,
     promptSwitchModelForMessage
@@ -3418,6 +3485,7 @@ if (typeof module !== 'undefined' && module.exports) {
     renderQuickModelSelect,
     handleQuickModelChange,
     toggleAIQuotaPanel,
+    switchStudyBotQuotaTab,
     updateAIQuotaUI,
     retryAIMessage,
     promptSwitchModelForMessage
