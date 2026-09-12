@@ -11,6 +11,13 @@
       "salt": "f768ddf324cf1626e97b852c032d1662",
       "verifier": "ea9087c6ce25567a141a5864ed1d36d939ad0f9fe2dbb4743aa6a69f3a75972d",
       "createdAt": "2026-09-11T09:34:18.025Z"
+    },
+    "esteban2": {
+      "salt": "358ba1b3408d9aeaa27a0cf6d723a05c",
+      "verifier": "11630f35c20062aaa6502498e9aca0e2501ca3d0011d54b3c427ee9690020b63",
+      "avatar": "",
+      "bio": "Élève Bac Pro CIEL",
+      "createdAt": "2026-09-12T05:41:18.639Z"
     }
   }
 }
