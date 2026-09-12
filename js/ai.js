@@ -23,24 +23,24 @@ const AI_TIERS = {
     title: 'Famille Gemini 2.5',
     subtitle: 'Vitesse & Révision Quotidienne',
     icon: 'fa-bolt',
-    limit5h: 35,  // 35 requêtes par fenêtre de 5 heures
-    limit7d: 150  // 150 requêtes sur 7 jours
+    limitTokens5h: 60000,   // 60 000 tokens par fenêtre de 5 heures
+    limitTokens7d: 250000   // 250 000 tokens sur 7 jours
   },
   tier_30: {
     id: 'tier_30',
     title: 'Famille Gemini 3.0 à 3.5',
     subtitle: 'Polyvalence & Synthèses',
     icon: 'fa-microchip',
-    limit5h: 25,  // 25 requêtes par fenêtre de 5 heures
-    limit7d: 100  // 100 requêtes sur 7 jours
+    limitTokens5h: 40000,   // 40 000 tokens par fenêtre de 5 heures
+    limitTokens7d: 160000   // 160 000 tokens sur 7 jours
   },
   tier_36: {
     id: 'tier_36',
     title: 'Famille Gemini 3.6 & 3.7',
     subtitle: 'Haute Précision & Raisonnement Épreuve',
     icon: 'fa-wand-magic-sparkles',
-    limit5h: 15,  // 15 requêtes par fenêtre de 5 heures
-    limit7d: 60   // 60 requêtes sur 7 jours
+    limitTokens5h: 25000,   // 25 000 tokens par fenêtre de 5 heures
+    limitTokens7d: 100000   // 100 000 tokens sur 7 jours
   }
 };
 
@@ -147,15 +147,38 @@ function getAIRequestsLog() {
   }
 }
 
-function recordAIUsage(modelId) {
+// Formater un nombre de tokens de manière élégante (ex: 1 450, 24.5k)
+function formatTokens(tokens) {
+  if (typeof tokens !== 'number' || isNaN(tokens)) return '0';
+  if (tokens >= 100000) {
+    const k = Math.round(tokens / 1000);
+    return `${k}k`;
+  }
+  if (tokens >= 10000) {
+    const k = (Math.round(tokens / 100) / 10).toFixed(tokens % 1000 === 0 ? 0 : 1);
+    return `${k}k`;
+  }
+  return tokens.toLocaleString('fr-FR');
+}
+
+function recordAIUsage(modelId, tokenUsage = {}) {
   if (typeof localStorage === 'undefined') return;
   try {
     const log = getAIRequestsLog();
     const modelObj = GEMINI_MODELS.find(m => m.id === modelId) || GEMINI_MODELS[0];
+
+    // Si totalTokens n'est pas fourni, valeur estimée par défaut de 800 tokens
+    const tokens = typeof tokenUsage.totalTokens === 'number' && tokenUsage.totalTokens > 0
+      ? tokenUsage.totalTokens
+      : (typeof tokenUsage === 'number' ? tokenUsage : 800);
+
     log.push({
       timestamp: Date.now(),
       model: modelObj.id,
-      tier: modelObj.tier
+      tier: modelObj.tier,
+      tokens: tokens,
+      promptTokens: tokenUsage.promptTokens || 0,
+      candidatesTokens: tokenUsage.candidatesTokens || 0
     });
     localStorage.setItem('ciel_ai_requests_log', JSON.stringify(log));
   } catch (e) {
@@ -175,22 +198,22 @@ function getAIQuotaInfo(modelId) {
   // Filtrer les requêtes spécifiques à ce tier
   const tierRequests = log.filter(r => r.tier === modelObj.tier);
 
-  // Fenêtre 5 heures
+  // Fenêtre 5 heures (Somme des tokens consommés)
   const reqs5h = tierRequests.filter(r => (now - r.timestamp) <= window5hMs);
-  const count5h = reqs5h.length;
-  const limit5h = tierConfig.limit5h;
-  const pct5h = Math.min(100, Math.round((count5h / limit5h) * 100));
+  const usedTokens5h = reqs5h.reduce((sum, r) => sum + (typeof r.tokens === 'number' ? r.tokens : 800), 0);
+  const limitTokens5h = tierConfig.limitTokens5h;
+  const pct5h = Math.min(100, Math.round((usedTokens5h / limitTokens5h) * 100));
 
-  // Fenêtre 7 jours
+  // Fenêtre 7 jours (Somme des tokens consommés)
   const reqs7d = tierRequests.filter(r => (now - r.timestamp) <= window7dMs);
-  const count7d = reqs7d.length;
-  const limit7d = tierConfig.limit7d;
-  const pct7d = Math.min(100, Math.round((count7d / limit7d) * 100));
+  const usedTokens7d = reqs7d.reduce((sum, r) => sum + (typeof r.tokens === 'number' ? r.tokens : 800), 0);
+  const limitTokens7d = tierConfig.limitTokens7d;
+  const pct7d = Math.min(100, Math.round((usedTokens7d / limitTokens7d) * 100));
 
   // Reset 5h
   let reset5hText = 'Quota complet disponible';
   let reset5hCountdown = '';
-  if (count5h > 0) {
+  if (usedTokens5h > 0 && reqs5h.length > 0) {
     const oldest5h = Math.min(...reqs5h.map(r => r.timestamp));
     const reset5hDate = new Date(oldest5h + window5hMs);
     const diffMs = reset5hDate.getTime() - now;
@@ -206,7 +229,7 @@ function getAIQuotaInfo(modelId) {
 
   // Reset 7j
   let reset7dText = 'Quota complet disponible';
-  if (count7d > 0) {
+  if (usedTokens7d > 0 && reqs7d.length > 0) {
     const oldest7d = Math.min(...reqs7d.map(r => r.timestamp));
     const reset7dDate = new Date(oldest7d + window7dMs);
     const dateStr = reset7dDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
@@ -214,33 +237,38 @@ function getAIQuotaInfo(modelId) {
     reset7dText = `Réinitialisation le ${dateStr} à ${timeStr}`;
   }
 
-  const isBlocked5h = count5h >= limit5h;
-  const isBlocked7d = count7d >= limit7d;
+  const isBlocked5h = usedTokens5h >= limitTokens5h;
+  const isBlocked7d = usedTokens7d >= limitTokens7d;
   const isBlocked = isBlocked5h || isBlocked7d;
 
   let blockReason = '';
   if (isBlocked5h) {
-    blockReason = `Limite d'utilisation sur 5h atteinte pour ${tierConfig.title} (${count5h}/${limit5h} requêtes). Prochaine libération : ${reset5hText}.`;
+    blockReason = `Limite de tokens sur 5h atteinte pour ${tierConfig.title} (${formatTokens(usedTokens5h)} / ${formatTokens(limitTokens5h)} tokens). Prochaine libération : ${reset5hText}.`;
   } else if (isBlocked7d) {
-    blockReason = `Limite hebdomadaire atteinte pour ${tierConfig.title} (${count7d}/${limit7d} requêtes). Prochaine libération : ${reset7dText}.`;
+    blockReason = `Limite hebdomadaire de tokens atteinte pour ${tierConfig.title} (${formatTokens(usedTokens7d)} / ${formatTokens(limitTokens7d)} tokens). Prochaine libération : ${reset7dText}.`;
   }
 
   return {
     tierId: modelObj.tier,
     tierTitle: tierConfig.title,
-    count5h,
-    limit5h,
+    usedTokens5h,
+    limitTokens5h,
     pct5h,
     reset5hText,
     reset5hCountdown,
-    count7d,
-    limit7d,
+    usedTokens7d,
+    limitTokens7d,
     pct7d,
     reset7dText,
     isBlocked,
     isBlocked5h,
     isBlocked7d,
-    blockReason
+    blockReason,
+    // Compatibilité rétroactive
+    count5h: usedTokens5h,
+    limit5h: limitTokens5h,
+    count7d: usedTokens7d,
+    limit7d: limitTokens7d
   };
 }
 
@@ -373,10 +401,28 @@ async function callGeminiAPI(messages, options = {}) {
       throw new Error("Aucune réponse générée par le modèle.");
     }
 
-    // Enregistrement de la requête réussie dans les quotas
-    recordAIUsage(model);
+    const replyText = candidate.content.parts[0].text;
 
-    return candidate.content.parts[0].text;
+    // Extraction des métadonnées officielles de tokens
+    let totalTokens = data.usageMetadata?.totalTokenCount;
+    const promptTokens = data.usageMetadata?.promptTokenCount || 0;
+    const candidatesTokens = data.usageMetadata?.candidatesTokenCount || 0;
+
+    // Estimation de secours si usageMetadata n'est pas fourni par l'API
+    if (typeof totalTokens !== 'number' || totalTokens <= 0) {
+      const estimatedPrompt = Math.ceil(JSON.stringify(payload).length / 4);
+      const estimatedReply = Math.ceil(replyText.length / 4);
+      totalTokens = estimatedPrompt + estimatedReply;
+    }
+
+    // Enregistrement de l'utilisation réelle en tokens dans les quotas
+    recordAIUsage(model, {
+      totalTokens,
+      promptTokens,
+      candidatesTokens
+    });
+
+    return replyText;
   } catch (err) {
     if (err.name === 'AbortError') {
       throw new Error("Le modèle a mis trop de temps à répondre (délai dépassé). Réessayez.");
@@ -478,6 +524,7 @@ ${courseContent.slice(0, 3000)}
 if (typeof window !== 'undefined') {
   window.AI_TIERS = AI_TIERS;
   window.GEMINI_MODELS = GEMINI_MODELS;
+  window.formatTokens = formatTokens;
   window.getGeminiApiKey = getGeminiApiKey;
   window.getSelectedGeminiModel = getSelectedGeminiModel;
   window.setSelectedGeminiModel = setSelectedGeminiModel;
@@ -495,6 +542,7 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     AI_TIERS,
     GEMINI_MODELS,
+    formatTokens,
     getEmbeddedGeminiKey,
     getGeminiApiKey,
     getSelectedGeminiModel,

@@ -2307,10 +2307,12 @@ function updateAIQuotaUI() {
   const info = getAIQuotaInfo(currentModel);
   if (!info) return;
 
-  const applyToBar = (pctElId, barElId, resetElId, pct, count, limit, resetText, iconClass) => {
+  const fmt = (typeof formatTokens === 'function') ? formatTokens : (n) => typeof n === 'number' ? n.toLocaleString('fr-FR') : '0';
+
+  const applyToBar = (pctElId, barElId, resetElId, pct, usedTokens, limitTokens, resetText, iconClass) => {
     const pctEl = document.getElementById(pctElId);
     if (pctEl) {
-      pctEl.innerText = `${pct}% utilisé (${count}/${limit})`;
+      pctEl.innerText = `${pct}% (${fmt(usedTokens)} / ${fmt(limitTokens)} tokens)`;
       if (pct >= 90) pctEl.style.color = '#f87171';
       else if (pct >= 75) pctEl.style.color = '#fb923c';
       else pctEl.style.color = '#94a3b8';
@@ -2329,17 +2331,17 @@ function updateAIQuotaUI() {
   };
 
   // 1. Volet de quotas dans StudyBot
-  applyToBar('aiQuota5hPct', 'aiQuota5hBar', 'aiQuota5hReset', info.pct5h, info.count5h, info.limit5h, info.reset5hText, 'fa-regular fa-clock');
-  applyToBar('aiQuota7dPct', 'aiQuota7dBar', 'aiQuota7dReset', info.pct7d, info.count7d, info.limit7d, info.reset7dText, 'fa-regular fa-calendar-check');
+  applyToBar('aiQuota5hPct', 'aiQuota5hBar', 'aiQuota5hReset', info.pct5h, info.usedTokens5h, info.limitTokens5h, info.reset5hText, 'fa-regular fa-clock');
+  applyToBar('aiQuota7dPct', 'aiQuota7dBar', 'aiQuota7dReset', info.pct7d, info.usedTokens7d, info.limitTokens7d, info.reset7dText, 'fa-regular fa-calendar-check');
 
   // 2. Section quotas dans les Paramètres
-  applyToBar('settingQuota5hPct', 'settingQuota5hBar', 'settingQuota5hReset', info.pct5h, info.count5h, info.limit5h, info.reset5hText, 'fa-regular fa-clock');
-  applyToBar('settingQuota7dPct', 'settingQuota7dBar', 'settingQuota7dReset', info.pct7d, info.count7d, info.limit7d, info.reset7dText, 'fa-regular fa-calendar-check');
+  applyToBar('settingQuota5hPct', 'settingQuota5hBar', 'settingQuota5hReset', info.pct5h, info.usedTokens5h, info.limitTokens5h, info.reset5hText, 'fa-regular fa-clock');
+  applyToBar('settingQuota7dPct', 'settingQuota7dBar', 'settingQuota7dReset', info.pct7d, info.usedTokens7d, info.limitTokens7d, info.reset7dText, 'fa-regular fa-calendar-check');
 
   // 3. Bouton pillule dans l'en-tête StudyBot
   const miniText = document.getElementById('aiHeaderQuotaMiniText');
   if (miniText) {
-    miniText.innerText = `Quotas (${info.count5h}/${info.limit5h})`;
+    miniText.innerText = `Tokens (${fmt(info.usedTokens5h)}/${fmt(info.limitTokens5h)})`;
   }
 }
 
@@ -2931,9 +2933,9 @@ function renderGeminiModelOptions() {
   const currentModel = (typeof getSelectedGeminiModel === 'function') ? getSelectedGeminiModel() : 'gemini-2.5-flash';
 
   const tierGroups = [
-    { id: 'tier_25', label: '⚡ Famille Gemini 2.5 (35 req / 5h — 150 req / 7j)' },
-    { id: 'tier_30', label: '🧠 Famille Gemini 3.0 à 3.5 (25 req / 5h — 100 req / 7j)' },
-    { id: 'tier_36', label: '✨ Famille Gemini 3.6 & 3.7 (15 req / 5h — 60 req / 7j)' }
+    { id: 'tier_25', label: '⚡ Famille Gemini 2.5 (60k tokens / 5h — 250k / 7j)' },
+    { id: 'tier_30', label: '🧠 Famille Gemini 3.0 à 3.5 (40k tokens / 5h — 160k / 7j)' },
+    { id: 'tier_36', label: '✨ Famille Gemini 3.6 & 3.7 (25k tokens / 5h — 100k / 7j)' }
   ];
 
   select.innerHTML = tierGroups.map(group => {
