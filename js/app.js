@@ -107,8 +107,10 @@ function customConfirm(title, message, confirmText = 'Confirmer', cancelText = '
     if (cancelBtn) cancelBtn.innerText = cancelText;
 
     modal.classList.add('active');
+    trapFocusInModal(modal);
 
     const cleanUp = () => {
+      releaseFocusTrap(modal);
       modal.classList.remove('active');
       if (okBtn) okBtn.onclick = null;
       if (cancelBtn) cancelBtn.onclick = null;
@@ -117,6 +119,49 @@ function customConfirm(title, message, confirmText = 'Confirmer', cancelText = '
     if (okBtn) okBtn.onclick = () => { cleanUp(); resolve(true); };
     if (cancelBtn) cancelBtn.onclick = () => { cleanUp(); resolve(false); };
   });
+}
+
+let lastFocusedElement = null;
+function trapFocusInModal(modalEl) {
+  if (!modalEl) return;
+  lastFocusedElement = document.activeElement;
+  document.body.classList.add('modal-open');
+
+  const focusables = modalEl.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
+  if (focusables.length > 0) {
+    focusables[0].focus();
+  }
+
+  modalEl._handleTabTrap = (e) => {
+    if (e.key !== 'Tab') return;
+    const current = modalEl.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
+    if (current.length === 0) return;
+    const first = current[0];
+    const last = current[current.length - 1];
+
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+  modalEl.addEventListener('keydown', modalEl._handleTabTrap);
+}
+
+function releaseFocusTrap(modalEl) {
+  if (modalEl && modalEl._handleTabTrap) {
+    modalEl.removeEventListener('keydown', modalEl._handleTabTrap);
+    delete modalEl._handleTabTrap;
+  }
+  const anyOpenModal = document.querySelector('.modal-backdrop.active, .lightbox-modal.active');
+  if (!anyOpenModal) {
+    document.body.classList.remove('modal-open');
+  }
+  if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+    try { lastFocusedElement.focus(); } catch (e) {}
+  }
 }
 
 function setSync(state, msg) {
@@ -354,12 +399,18 @@ function openProfileModal() {
   const bioInput = document.getElementById('profileBioInput');
   if (bioInput) bioInput.value = (userVault.profile && userVault.profile.bio) ? userVault.profile.bio : '';
   const modal = document.getElementById('profileModal');
-  if (modal) modal.classList.add('active');
+  if (modal) {
+    modal.classList.add('active');
+    trapFocusInModal(modal);
+  }
 }
 
 function closeProfileModal() {
   const modal = document.getElementById('profileModal');
-  if (modal) modal.classList.remove('active');
+  if (modal) {
+    releaseFocusTrap(modal);
+    modal.classList.remove('active');
+  }
 }
 
 function handleAvatarChange(e) {
@@ -591,7 +642,10 @@ async function openShareModal(courseId) {
   const listEl = document.getElementById('recipientsList');
   if (listEl) listEl.innerHTML = '<div style="padding:1.25rem; text-align:center; color:var(--text-sub);"><i class="fa-solid fa-spinner fa-spin"></i> Chargement des camarades...</div>';
   const modal = document.getElementById('shareModal');
-  if (modal) modal.classList.add('active');
+  if (modal) {
+    modal.classList.add('active');
+    trapFocusInModal(modal);
+  }
 
   try {
     const regFile = await ghGetFile('data/users_index.json');
@@ -616,19 +670,15 @@ async function openShareModal(courseId) {
         const row = document.createElement('div');
         row.className = 'recipient-row';
         row.innerHTML = `
-          <input type="checkbox" value="${escapeHtml(u)}" class="share-recipient-cb" id="cb_${escapeHtml(u)}" style="width:18px; height:18px; cursor:pointer;" />
-          ${avatarHTML}
-          <div style="flex:1; min-width:0;">
-            <div style="font-weight:700; color:#fff; font-size:0.9rem;">@${escapeHtml(u)}</div>
-            <div style="font-size:0.75rem; color:var(--text-muted); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${bioText}</div>
-          </div>
+          <input type="checkbox" value="${escapeHtml(u)}" class="share-recipient-cb" id="cb_${escapeHtml(u)}" aria-label="Sélectionner @${escapeHtml(u)}" style="width:18px; height:18px; cursor:pointer;" />
+          <label for="cb_${escapeHtml(u)}" style="display:flex; align-items:center; gap:0.65rem; flex:1; cursor:pointer; margin-bottom:0;">
+            ${avatarHTML}
+            <div style="flex:1; min-width:0;">
+              <div style="font-weight:700; color:#fff; font-size:0.9rem;">@${escapeHtml(u)}</div>
+              <div style="font-size:0.75rem; color:var(--text-muted); text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${bioText}</div>
+            </div>
+          </label>
         `;
-        row.onclick = (e) => {
-          if (e.target.tagName !== 'INPUT') {
-            const cb = row.querySelector('.share-recipient-cb');
-            if (cb) cb.checked = !cb.checked;
-          }
-        };
         listEl.appendChild(row);
       });
     }
@@ -639,7 +689,10 @@ async function openShareModal(courseId) {
 
 function closeShareModal() {
   const modal = document.getElementById('shareModal');
-  if (modal) modal.classList.remove('active');
+  if (modal) {
+    releaseFocusTrap(modal);
+    modal.classList.remove('active');
+  }
   courseToShare = null;
 }
 
@@ -1220,12 +1273,18 @@ function openFocusModal(id, isShared = false) {
   }
 
   const modal = document.getElementById('focusModal');
-  if (modal) modal.classList.add('active');
+  if (modal) {
+    modal.classList.add('active');
+    trapFocusInModal(modal);
+  }
 }
 
 function closeFocusModal() {
   const modal = document.getElementById('focusModal');
-  if (modal) modal.classList.remove('active');
+  if (modal) {
+    releaseFocusTrap(modal);
+    modal.classList.remove('active');
+  }
 }
 
 function printFocusCourse() {
@@ -1281,6 +1340,226 @@ async function compressImageIfNeeded(file) {
   });
 }
 
+function openCourseModal() {
+  editingCourseId = null;
+  pendingFiles = [];
+  renderPendingModalFiles();
+  const mTitle = document.getElementById('mTitle');
+  const mTags = document.getElementById('mTags');
+  const mContent = document.getElementById('mContent');
+  const mSubmitBtn = document.getElementById('mSubmitBtn');
+  if (mTitle) mTitle.value = '';
+  if (mTags) mTags.value = '';
+  if (mContent) mContent.value = '';
+  if (mSubmitBtn) mSubmitBtn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Sauvegarder dans mon classeur';
+  
+  restoreDraftIfExists();
+  handleMarkdownInput();
+
+  const modal = document.getElementById('courseModal');
+  if (modal) {
+    modal.classList.add('active');
+    trapFocusInModal(modal);
+  }
+}
+
+function openEditCourseModal(id) {
+  const course = userVault.courses.find(c => c.id === id);
+  if (!course) return;
+
+  editingCourseId = id;
+  pendingFiles = [];
+  renderPendingModalFiles();
+
+  const mSubject = document.getElementById('mSubject');
+  const mTitle = document.getElementById('mTitle');
+  const mTags = document.getElementById('mTags');
+  const mContent = document.getElementById('mContent');
+  const mSubmitBtn = document.getElementById('mSubmitBtn');
+
+  if (mSubject) mSubject.value = course.subject;
+  if (mTitle) mTitle.value = course.title;
+  if (mTags) mTags.value = (course.tags || []).join(', ');
+  if (mContent) mContent.value = course.content || '';
+  if (mSubmitBtn) mSubmitBtn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Mettre à jour le cours';
+
+  handleMarkdownInput();
+
+  const modal = document.getElementById('courseModal');
+  if (modal) {
+    modal.classList.add('active');
+    trapFocusInModal(modal);
+  }
+}
+
+function closeCourseModal() {
+  editingCourseId = null;
+  const modal = document.getElementById('courseModal');
+  if (modal) {
+    releaseFocusTrap(modal);
+    modal.classList.remove('active');
+  }
+}
+
+function handleModalFiles(e) {
+  Array.from(e.target.files).forEach(f => pendingFiles.push(f));
+  renderPendingModalFiles();
+  e.target.value = '';
+}
+
+function removePendingFile(idx) {
+  pendingFiles.splice(idx, 1);
+  renderPendingModalFiles();
+}
+
+function renderPendingModalFiles() {
+  const box = document.getElementById('mAttachedList');
+  if (!box) return;
+  box.innerHTML = '';
+  pendingFiles.forEach((f, idx) => {
+    const isImg = f.type && f.type.startsWith('image/');
+    const chip = document.createElement('span');
+    chip.style = 'background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 99px; padding: 0.3rem 0.7rem; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 0.4rem;';
+    chip.innerHTML = `
+      <i class="${isImg ? 'fa-solid fa-image' : 'fa-solid fa-file'}" style="color: var(--primary);" aria-hidden="true"></i>
+      <span>${escapeHtml(f.name)}</span>
+      <i class="fa-solid fa-xmark" style="color: var(--accent-rose); cursor: pointer;" onclick="removePendingFile(${idx})" title="Retirer" role="button" tabindex="0"></i>
+    `;
+    box.appendChild(chip);
+  });
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = e => reject(e);
+    reader.readAsDataURL(file);
+  });
+}
+
+async function uploadToUserUploadsFolder(file) {
+  if (typeof ghConfig === 'undefined' || !ghConfig.token) {
+    // Mode local sans GitHub : converti en DataURL
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve({
+        name: file.name,
+        path: reader.result,
+        downloadUrl: reader.result,
+        isImage: file.type && file.type.startsWith('image/'),
+        size: file.size
+      });
+      reader.readAsDataURL(file);
+    });
+  }
+
+  const b64 = await fileToBase64(file);
+  const clean = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+  const filename = `${Date.now()}_${clean}`;
+  const path = `uploads/${currentSession.username}/${filename}`;
+  const url = `https://api.github.com/repos/${ghConfig.owner}/${ghConfig.repo}/contents/${path}`;
+
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      'Authorization': `Bearer ${ghConfig.token}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/vnd.github.v3+json'
+    },
+    body: JSON.stringify({
+      message: `Upload ${currentSession.username}: ${filename}`,
+      content: b64,
+      branch: ghConfig.branch
+    })
+  });
+
+  if (!res.ok) throw new Error("Erreur téléversement GitHub");
+  const data = await res.json();
+  return {
+    name: file.name,
+    path: path,
+    downloadUrl: data.content.download_url,
+    isImage: file.type && file.type.startsWith('image/'),
+    size: file.size
+  };
+}
+
+async function submitCourse() {
+  const subjectEl = document.getElementById('mSubject');
+  const titleEl = document.getElementById('mTitle');
+  const tagsEl = document.getElementById('mTags');
+  const contentEl = document.getElementById('mContent');
+  const btn = document.getElementById('mSubmitBtn');
+
+  const subject = subjectEl ? subjectEl.value : '';
+  const title = titleEl ? titleEl.value.trim() : '';
+  const tagsRaw = tagsEl ? tagsEl.value : '';
+  const tags = tagsRaw.split(',').map(t => t.trim().replace(/^#/, '')).filter(Boolean);
+  const content = contentEl ? contentEl.value.trim() : '';
+
+  if (!title) {
+    showToast("Veuillez renseigner un titre pour votre cours.", "error");
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Enregistrement...';
+  }
+
+  try {
+    const uploadedList = [];
+    for (const file of pendingFiles) {
+      const res = await uploadToUserUploadsFolder(file);
+      uploadedList.push(res);
+    }
+
+    if (editingCourseId) {
+      const target = userVault.courses.find(c => c.id === editingCourseId);
+      if (target) {
+        target.subject = subject;
+        target.title = title;
+        target.tags = tags;
+        target.content = content;
+        if (uploadedList.length > 0) {
+          target.attachments = (target.attachments || []).concat(uploadedList);
+        }
+      }
+      editingCourseId = null;
+      showToast("Cours mis à jour avec succès !", "success");
+    } else {
+      userVault.courses.unshift({
+        id: Date.now(),
+        subject,
+        title,
+        tags,
+        content,
+        attachments: uploadedList,
+        date: new Date().toISOString()
+      });
+      showToast("Cours enregistré dans votre classeur !", "success");
+    }
+
+    if (titleEl) titleEl.value = '';
+    if (tagsEl) tagsEl.value = '';
+    if (contentEl) contentEl.value = '';
+    pendingFiles = [];
+    clearDraft();
+
+    closeCourseModal();
+    renderCourses();
+    triggerAutoSave();
+  } catch (err) {
+    showToast("Erreur lors de l'enregistrement : " + err.message, "error");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up"></i> Sauvegarder dans mon classeur';
+    }
+  }
+}
+
 async function deleteCourseById(courseId) {
   const ok = await customConfirm("Supprimer ce cours", "Êtes-vous sûr de vouloir supprimer définitivement ce cours de votre classeur ?");
   if (!ok) return;
@@ -1302,6 +1581,9 @@ function renderFlashcards() {
   const badge = document.getElementById('fcBadgeLabel');
   const badgeFront = document.getElementById('fcBadgeLabelFront');
   const badgeBack = document.getElementById('fcBadgeLabelBack');
+  const prevBtn = document.getElementById('fcPrevBtn');
+  const delBtn = document.getElementById('fcDeleteBtn');
+  const nextBtn = document.getElementById('fcNextBtn');
 
   if (!cardEl || !frontBox || !backBox) return;
 
@@ -1312,9 +1594,16 @@ function renderFlashcards() {
     if (badge) badge.innerHTML = '<i class="fa-solid fa-layer-group"></i> Discipline';
     if (badgeFront) badgeFront.innerText = "Vide";
     if (badgeBack) badgeBack.innerText = "Vide";
+    if (prevBtn) prevBtn.disabled = true;
+    if (delBtn) delBtn.disabled = true;
+    if (nextBtn) nextBtn.disabled = true;
     cardEl.classList.remove('is-flipped');
     return;
   }
+
+  if (prevBtn) prevBtn.disabled = false;
+  if (delBtn) delBtn.disabled = false;
+  if (nextBtn) nextBtn.disabled = false;
 
   if (fcCursor >= userVault.flashcards.length) fcCursor = 0;
   if (fcCursor < 0) fcCursor = userVault.flashcards.length - 1;
@@ -1487,13 +1776,19 @@ function openLightbox(src) {
   const img = document.getElementById('lightboxImg');
   const modal = document.getElementById('lightboxModal');
   if (img) img.src = src;
-  if (modal) modal.classList.add('active');
+  if (modal) {
+    modal.classList.add('active');
+    trapFocusInModal(modal);
+  }
 }
 
 function closeLightbox() {
   const img = document.getElementById('lightboxImg');
   const modal = document.getElementById('lightboxModal');
-  if (modal) modal.classList.remove('active');
+  if (modal) {
+    releaseFocusTrap(modal);
+    modal.classList.remove('active');
+  }
   if (img) img.src = '';
 }
 
@@ -1554,6 +1849,12 @@ if (typeof window !== 'undefined') {
         prevFlashcard();
       }
     } else if (e.key === 'Escape') {
+      const confirmModal = document.getElementById('customConfirmModal');
+      if (confirmModal && confirmModal.classList.contains('active')) {
+        const cancelBtn = document.getElementById('confirmModalCancel');
+        if (cancelBtn) cancelBtn.click();
+        return;
+      }
       closeCourseModal();
       closeShareModal();
       closeProfileModal();
@@ -1561,6 +1862,33 @@ if (typeof window !== 'undefined') {
       closeFocusModal();
     }
   });
+
+  // Raccourcis Markdown (Ctrl+B, Ctrl+I) et synchronisation de scroll split view
+  const mContentEl = document.getElementById('mContent');
+  const mPreviewEl = document.getElementById('mdPreviewPane');
+  if (mContentEl) {
+    mContentEl.addEventListener('keydown', (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key.toLowerCase() === 'b') {
+          e.preventDefault();
+          insertMd('**', '**', 'texte en gras');
+        } else if (e.key.toLowerCase() === 'i') {
+          e.preventDefault();
+          insertMd('*', '*', 'texte en italique');
+        }
+      }
+    });
+
+    if (mPreviewEl) {
+      mContentEl.addEventListener('scroll', () => {
+        const scrollableH = mContentEl.scrollHeight - mContentEl.clientHeight;
+        if (scrollableH > 0) {
+          const ratio = mContentEl.scrollTop / scrollableH;
+          mPreviewEl.scrollTop = ratio * (mPreviewEl.scrollHeight - mPreviewEl.clientHeight);
+        }
+      }, { passive: true });
+    }
+  }
 
   // Bouton Retour en haut flottant
   window.addEventListener('scroll', () => {
@@ -1587,7 +1915,16 @@ if (typeof window !== 'undefined') {
   // Bindings globaux pour HTML
   window.toggleSearchClear = toggleSearchClear;
   window.clearCourseSearch = clearCourseSearch;
+  window.openCourseModal = openCourseModal;
   window.openEditCourseModal = openEditCourseModal;
+  window.closeCourseModal = closeCourseModal;
+  window.handleModalFiles = handleModalFiles;
+  window.removePendingFile = removePendingFile;
+  window.submitCourse = submitCourse;
+  window.openProfileModal = openProfileModal;
+  window.closeProfileModal = closeProfileModal;
+  window.saveUserProfile = saveUserProfile;
+  window.handleAvatarChange = handleAvatarChange;
   window.getSubjectThemeInfo = getSubjectThemeInfo;
   window.insertMd = insertMd;
   window.insertCodeBlock = insertCodeBlock;
@@ -1604,9 +1941,12 @@ if (typeof window !== 'undefined') {
   window.closeFocusModal = closeFocusModal;
   window.printFocusCourse = printFocusCourse;
   window.exportCourseToPDF = exportCourseToPDF;
+  window.openShareModal = openShareModal;
+  window.closeShareModal = closeShareModal;
   window.switchShareMode = switchShareMode;
   window.copyShareCourseLink = copyShareCourseLink;
   window.toggleSelectAllRecipients = toggleSelectAllRecipients;
+  window.confirmSendShare = confirmSendShare;
   window.scrollToTop = scrollToTop;
 }
 

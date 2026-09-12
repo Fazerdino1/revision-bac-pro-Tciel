@@ -26,13 +26,13 @@
 <body>
 
   <!-- TOASTS NOTIFICATIONS -->
-  <div class="toast-container" id="toastContainer"></div>
+  <div class="toast-container" id="toastContainer" role="region" aria-label="Notifications du système" aria-live="polite" aria-atomic="true"></div>
 
   <!-- MODALE CONFIRMATION PERSONNALISÉE -->
-  <div class="modal-backdrop" id="customConfirmModal">
+  <div class="modal-backdrop" id="customConfirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
     <div class="confirm-dialog-card" onclick="event.stopPropagation()">
       <div style="font-size: 2.2rem; color: var(--accent-orange); margin-bottom: 0.75rem;">
-        <i class="fa-solid fa-triangle-exclamation"></i>
+        <i class="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
       </div>
       <h3 id="confirmModalTitle" style="font-size: 1.15rem; margin-bottom: 0.5rem; color: #fff;">Confirmation</h3>
       <p id="confirmModalMsg" style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.5rem; line-height: 1.5;">Voulez-vous effectuer cette action ?</p>
@@ -165,7 +165,7 @@
 
       <!-- Profil Élève : Anneau Dégradé & Badge Statut En Ligne -->
       <div class="header-right">
-        <div class="user-pill" onclick="openProfileModal()" title="Mon profil élève">
+        <button type="button" class="user-pill" onclick="openProfileModal()" aria-label="Mon profil élève" title="Mon profil élève">
           <div class="avatar-ring-wrapper">
             <div id="headerAvatarContainer"></div>
             <span class="online-status-badge" title="En ligne"></span>
@@ -174,10 +174,10 @@
             <span id="currentUserLabel">Invité</span>
           </div>
           <span class="sync-dot" id="syncDot" title="Statut synchronisation"></span>
-        </div>
+        </button>
 
-        <button class="btn btn-logout-icon" onclick="logout()" title="Se déconnecter">
-          <i class="fa-solid fa-power-off"></i>
+        <button class="btn btn-logout-icon" onclick="logout()" aria-label="Se déconnecter de StudyOS" title="Se déconnecter">
+          <i class="fa-solid fa-power-off" aria-hidden="true"></i>
         </button>
       </div>
     </div>
@@ -188,12 +188,12 @@
     <section id="tab-courses" class="tab-view active">
       
       <!-- Switcher Mes Cours / Cours Reçus -->
-      <div class="view-switcher">
-        <button class="switcher-btn active" id="btnViewMine" onclick="switchCourseSubView('mine')">
+      <div class="view-switcher" role="tablist">
+        <button class="switcher-btn active" id="btnViewMine" onclick="switchCourseSubView('mine')" role="tab" aria-selected="true">
           <i class="fa-solid fa-folder-closed"></i>
           <span>Mes Cours</span>
         </button>
-        <button class="switcher-btn" id="btnViewReceived" onclick="switchCourseSubView('received')">
+        <button class="switcher-btn" id="btnViewReceived" onclick="switchCourseSubView('received')" role="tab" aria-selected="false">
           <i class="fa-solid fa-inbox"></i>
           <span>Cours Reçus</span>
           <span class="badge-count" id="receivedCountBadge">0</span>
@@ -202,17 +202,18 @@
 
       <div class="top-controls">
         <div class="search-box">
-          <i class="fa-solid fa-magnifying-glass search-icon"></i>
+          <label for="courseSearch" class="sr-only">Rechercher un cours ou TP</label>
+          <i class="fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
           <input type="text" id="courseSearch" placeholder="Rechercher un cours, TP, formule, commande..." oninput="renderCourses(); toggleSearchClear(this.value);" />
           <div class="search-kbd-badge" title="Raccourci clavier (Ctrl + K ou /)">
             <kbd class="kbd-key">Ctrl</kbd>
             <kbd class="kbd-key">K</kbd>
           </div>
-          <button type="button" class="search-clear-btn" id="searchClearBtn" onclick="clearCourseSearch()" title="Effacer la recherche">
+          <button type="button" class="search-clear-btn" id="searchClearBtn" onclick="clearCourseSearch()" aria-label="Effacer la recherche" title="Effacer la recherche">
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
-        <button class="btn btn-primary" style="display: none; min-width: 170px;" id="desktopAddBtn" onclick="openCourseModal()">
+        <button class="btn btn-primary" style="display: none; min-width: 170px;" id="desktopAddBtn" onclick="openCourseModal()" aria-label="Créer un nouveau cours">
           <i class="fa-solid fa-plus"></i> Nouveau cours
         </button>
       </div>
@@ -308,18 +309,21 @@
     <section id="tab-flashcards" class="tab-view">
       <div style="max-width: 620px; margin: 0 auto; text-align: center;">
         <div class="card" style="text-align: left; margin-bottom: 1.5rem;">
-          <h3 style="font-size: 1rem; margin-bottom: 0.85rem;"><i class="fa-solid fa-circle-plus" style="color: var(--primary);"></i> Nouvelle Flashcard</h3>
+          <h3 style="font-size: 1rem; margin-bottom: 0.85rem;"><i class="fa-solid fa-circle-plus" style="color: var(--primary);" aria-hidden="true"></i> Nouvelle Flashcard</h3>
           <div class="form-row">
+            <label for="fcSub" class="sr-only">Matière</label>
             <input type="text" class="form-input" id="fcSub" placeholder="Matière (ex: Réseaux, Cyber, Maths...)" />
           </div>
           <div class="form-row">
+            <label for="fcQ" class="sr-only">Question recto</label>
             <input type="text" class="form-input" id="fcQ" placeholder="Question (Recto)" />
           </div>
           <div class="form-row">
+            <label for="fcA" class="sr-only">Réponse verso</label>
             <input type="text" class="form-input" id="fcA" placeholder="Réponse (Verso)" />
           </div>
-          <button class="btn btn-primary" style="width: 100%;" onclick="addFlashcard()">
-            <i class="fa-solid fa-plus"></i> Ajouter à mes flashcards
+          <button class="btn btn-primary" style="width: 100%;" onclick="addFlashcard()" aria-label="Ajouter à mes flashcards">
+            <i class="fa-solid fa-plus" aria-hidden="true"></i> Ajouter à mes flashcards
           </button>
         </div>
 
@@ -329,7 +333,7 @@
         </div>
 
         <!-- SCÈNE 3D FLASHCARD -->
-        <div class="fc-scene" onclick="toggleFlashcardFlip()">
+        <div class="fc-scene" onclick="toggleFlashcardFlip()" role="button" tabindex="0" onkeydown="if(event.key===' '||event.key==='Enter'){event.preventDefault(); toggleFlashcardFlip();}" aria-label="Carte de révision interactive. Cliquez ou appuyez sur Espace pour retourner la carte">
           <div class="fc-card-3d" id="fcInteractiveCard">
             <!-- Face Recto (Question) -->
             <div class="fc-face fc-front">
@@ -362,9 +366,9 @@
         </div>
 
         <div style="display: flex; gap: 0.75rem; margin-top: 1.25rem; max-width: 580px; margin-left: auto; margin-right: auto;">
-          <button class="btn" style="flex: 1;" onclick="prevFlashcard()"><i class="fa-solid fa-arrow-left"></i> Précédente</button>
-          <button class="btn btn-danger" onclick="deleteCurrentFlashcard()"><i class="fa-solid fa-trash-can"></i></button>
-          <button class="btn btn-primary" style="flex: 1;" onclick="nextFlashcard()">Suivante <i class="fa-solid fa-arrow-right"></i></button>
+          <button class="btn" style="flex: 1;" onclick="prevFlashcard()" id="fcPrevBtn" aria-label="Carte précédente"><i class="fa-solid fa-arrow-left"></i> Précédente</button>
+          <button class="btn btn-danger" onclick="deleteCurrentFlashcard()" id="fcDeleteBtn" aria-label="Supprimer cette flashcard" title="Supprimer cette carte"><i class="fa-solid fa-trash-can"></i></button>
+          <button class="btn btn-primary" style="flex: 1;" onclick="nextFlashcard()" id="fcNextBtn" aria-label="Carte suivante">Suivante <i class="fa-solid fa-arrow-right"></i></button>
         </div>
       </div>
     </section>
@@ -375,8 +379,9 @@
         <div class="card">
           <h3 style="font-size: 1.05rem; margin-bottom: 1rem;"><i class="fa-solid fa-list-check" style="color: var(--primary);"></i> Planning & Objectifs de Révision</h3>
           <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+            <label for="todoInputText" class="sr-only">Objectif de révision</label>
             <input type="text" class="form-input" id="todoInputText" placeholder="Ex: Réviser masque sous-réseau /28..." onkeypress="if(event.key==='Enter') createTodo()" />
-            <button class="btn btn-primary" onclick="createTodo()"><i class="fa-solid fa-plus"></i></button>
+            <button class="btn btn-primary" onclick="createTodo()" aria-label="Ajouter l'objectif de révision" title="Ajouter la tâche"><i class="fa-solid fa-plus"></i></button>
           </div>
           <div id="todosFeed"></div>
         </div>
@@ -385,7 +390,7 @@
   </main>
 
   <!-- Bouton mobile (+) -->
-  <button class="fab-add" onclick="openCourseModal()" title="Ajouter un cours"><i class="fa-solid fa-plus"></i></button>
+  <button class="fab-add" onclick="openCourseModal()" aria-label="Créer un nouveau cours" title="Ajouter un cours"><i class="fa-solid fa-plus"></i></button>
 
   <!-- Barre de navigation mobile flottante (Glass Dock) -->
   <nav class="mobile-bar">
@@ -407,11 +412,11 @@
   </nav>
 
   <!-- MODAL DE PROFIL PERSONNEL -->
-  <div class="modal-backdrop" id="profileModal" onclick="closeProfileModal()">
+  <div class="modal-backdrop" id="profileModal" onclick="closeProfileModal()" role="dialog" aria-modal="true" aria-labelledby="profileModalTitle">
     <div class="modal-sheet" onclick="event.stopPropagation()" style="max-width: 500px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
-        <h3 style="font-size: 1.1rem;"><i class="fa-solid fa-user-gear" style="color: var(--primary);"></i> Mon Profil Élève</h3>
-        <button class="btn" style="padding: 0.4rem 0.7rem; min-height: 36px;" onclick="closeProfileModal()"><i class="fa-solid fa-xmark"></i></button>
+        <h3 id="profileModalTitle" style="font-size: 1.1rem;"><i class="fa-solid fa-user-gear" style="color: var(--primary);" aria-hidden="true"></i> Mon Profil Élève</h3>
+        <button class="btn" style="padding: 0.4rem 0.7rem; min-height: 36px;" onclick="closeProfileModal()" aria-label="Fermer mon profil élève" title="Fermer"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
       <div class="avatar-upload-wrap">
@@ -423,31 +428,31 @@
       </div>
 
       <div class="form-row">
-        <label>Identifiant</label>
+        <label for="profileUsernameDisplay">Identifiant</label>
         <input type="text" class="form-input" id="profileUsernameDisplay" disabled style="opacity: 0.7;" />
       </div>
 
       <div class="form-row">
-        <label>Description / Bio</label>
+        <label for="profileBioInput">Description / Bio</label>
         <textarea class="form-input" id="profileBioInput" style="min-height: 90px;" placeholder="Ex: Élève en Terminale CIEL. Option Cybersécurité et Réseaux..."></textarea>
       </div>
 
-      <button class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;" onclick="saveUserProfile()">
-        <i class="fa-solid fa-floppy-disk"></i> Enregistrer mon profil
+      <button class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;" onclick="saveUserProfile()" aria-label="Enregistrer mon profil">
+        <i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Enregistrer mon profil
       </button>
     </div>
   </div>
 
   <!-- MODAL DE CRÉATION DE COURS -->
-  <div class="modal-backdrop" id="courseModal" onclick="closeCourseModal()">
+  <div class="modal-backdrop" id="courseModal" onclick="closeCourseModal()" role="dialog" aria-modal="true" aria-labelledby="courseModalTitle">
     <div class="modal-sheet" onclick="event.stopPropagation()">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
-        <h3 style="font-size: 1.1rem;"><i class="fa-solid fa-pen-to-square" style="color: var(--primary);"></i> Nouveau Cours / TP</h3>
-        <button class="btn" style="padding: 0.4rem 0.7rem; min-height: 36px;" onclick="closeCourseModal()"><i class="fa-solid fa-xmark"></i></button>
+        <h3 id="courseModalTitle" style="font-size: 1.1rem;"><i class="fa-solid fa-pen-to-square" style="color: var(--primary);" aria-hidden="true"></i> Nouveau Cours / TP</h3>
+        <button class="btn" style="padding: 0.4rem 0.7rem; min-height: 36px;" onclick="closeCourseModal()" aria-label="Fermer l'éditeur de cours" title="Fermer"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
       <div class="form-row">
-        <label>Matière (Toutes les matières Bac Pro CIEL)</label>
+        <label for="mSubject">Matière (Toutes les matières Bac Pro CIEL)</label>
         <select class="form-input" id="mSubject">
           <option value="CIEL - Réseaux & Informatique">CIEL - Réseaux & Informatique</option>
           <option value="CIEL - Cybersécurité">CIEL - Cybersécurité</option>
@@ -467,18 +472,18 @@
       </div>
 
       <div class="form-row">
-        <label>Titre de la fiche</label>
+        <label for="mTitle">Titre de la fiche</label>
         <input type="text" class="form-input" id="mTitle" placeholder="Ex: TP Masques IPv4 /28 et Switch Cisco" oninput="triggerDraftSave()" />
       </div>
 
       <div class="form-row">
-        <label>Tags / Mots-clés (séparés par des virgules)</label>
+        <label for="mTags">Tags / Mots-clés (séparés par des virgules)</label>
         <input type="text" class="form-input" id="mTags" placeholder="Ex: #tp, #cisco, #vlan, #terminale" oninput="triggerDraftSave()" />
       </div>
 
       <div class="form-row">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem;">
-          <label style="margin-bottom: 0;">Contenu du cours (Markdown)</label>
+          <label for="mContent" style="margin-bottom: 0;">Contenu du cours (Markdown)</label>
           <div class="md-view-toggles">
             <button type="button" class="btn-md-mode active" id="btnModeSplit" onclick="setEditorMode('split')" title="Vue scindée (Éditeur + Aperçu)">
               <i class="fa-solid fa-table-columns"></i> Split
@@ -567,11 +572,11 @@
   </div>
 
   <!-- MODAL DE PARTAGE DE COURS -->
-  <div class="modal-backdrop" id="shareModal" onclick="closeShareModal()">
+  <div class="modal-backdrop" id="shareModal" onclick="closeShareModal()" role="dialog" aria-modal="true" aria-labelledby="shareModalTitle">
     <div class="modal-sheet" onclick="event.stopPropagation()">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
-        <h3 style="font-size: 1.1rem;"><i class="fa-solid fa-share-nodes" style="color: var(--primary);"></i> Partager un cours</h3>
-        <button class="btn" style="padding: 0.4rem 0.7rem; min-height: 36px;" onclick="closeShareModal()"><i class="fa-solid fa-xmark"></i></button>
+        <h3 id="shareModalTitle" style="font-size: 1.1rem;"><i class="fa-solid fa-share-nodes" style="color: var(--primary);" aria-hidden="true"></i> Partager un cours</h3>
+        <button class="btn" style="padding: 0.4rem 0.7rem; min-height: 36px;" onclick="closeShareModal()" aria-label="Fermer la fenêtre de partage" title="Fermer"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
       <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem;">
@@ -579,11 +584,11 @@
       </p>
 
       <!-- Onglets de partage (Camarades / QR Code Mobile) -->
-      <div class="share-tab-pills">
-        <button type="button" class="share-tab-pill active" id="btnTabShareUsers" onclick="switchShareMode('users')">
+      <div class="share-tab-pills" role="tablist">
+        <button type="button" class="share-tab-pill active" id="btnTabShareUsers" onclick="switchShareMode('users')" role="tab" aria-selected="true">
           <i class="fa-solid fa-users"></i> Par élève
         </button>
-        <button type="button" class="share-tab-pill" id="btnTabShareQR" onclick="switchShareMode('qr')">
+        <button type="button" class="share-tab-pill" id="btnTabShareQR" onclick="switchShareMode('qr')" role="tab" aria-selected="false">
           <i class="fa-solid fa-qrcode"></i> Flash QR Code
         </button>
       </div>
@@ -592,14 +597,14 @@
       <div id="shareModeUsersSection">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
           <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Destinataires :</label>
-          <button type="button" class="btn" style="padding: 0.2rem 0.6rem; min-height: 26px; font-size: 0.72rem;" onclick="toggleSelectAllRecipients()">
+          <button type="button" class="btn" style="padding: 0.2rem 0.6rem; min-height: 26px; font-size: 0.72rem;" onclick="toggleSelectAllRecipients()" aria-label="Sélectionner tous les élèves">
             <i class="fa-solid fa-check-double"></i> Toute la classe
           </button>
         </div>
         <div id="recipientsList" style="max-height: 240px; overflow-y: auto; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 0.5rem; margin-bottom: 1rem;"></div>
 
-        <button class="btn btn-primary" id="btnConfirmShare" style="width: 100%;" onclick="confirmSendShare()">
-          <i class="fa-solid fa-paper-plane"></i> Envoyer le cours aux élèves choisis
+        <button class="btn btn-primary" id="btnConfirmShare" style="width: 100%;" onclick="confirmSendShare()" aria-label="Envoyer le cours aux élèves choisis">
+          <i class="fa-solid fa-paper-plane" aria-hidden="true"></i> Envoyer le cours aux élèves choisis
         </button>
       </div>
 
@@ -610,8 +615,8 @@
         </p>
         <div id="shareQRCodeContainer" style="display: inline-flex; padding: 12px; background: #ffffff; border-radius: var(--radius-md); box-shadow: 0 8px 24px rgba(0,0,0,0.5);"></div>
         <div style="margin-top: 1rem;">
-          <button type="button" class="btn" onclick="copyShareCourseLink()" style="font-size: 0.8rem;">
-            <i class="fa-solid fa-copy"></i> Copier le lien direct
+          <button type="button" class="btn" onclick="copyShareCourseLink()" style="font-size: 0.8rem;" aria-label="Copier le lien direct du cours">
+            <i class="fa-solid fa-copy" aria-hidden="true"></i> Copier le lien direct
           </button>
         </div>
       </div>
@@ -619,13 +624,13 @@
   </div>
 
   <!-- MODAL MODE FOCUS / PLEIN ÉCRAN -->
-  <div class="modal-backdrop" id="focusModal" onclick="closeFocusModal()">
+  <div class="modal-backdrop" id="focusModal" onclick="closeFocusModal()" role="dialog" aria-modal="true" aria-labelledby="focusModalTitle">
     <div class="modal-sheet focus-sheet" onclick="event.stopPropagation()">
       <div class="focus-header">
         <div class="focus-meta" id="focusModalMeta"></div>
         <div class="focus-actions">
-          <button class="btn-card-action" onclick="printFocusCourse()" title="Imprimer ou Exporter en PDF"><i class="fa-solid fa-print"></i></button>
-          <button class="btn-card-action" onclick="closeFocusModal()" title="Quitter le mode Focus"><i class="fa-solid fa-xmark"></i></button>
+          <button class="btn-card-action" onclick="printFocusCourse()" aria-label="Imprimer ou Exporter en PDF" title="Imprimer ou Exporter en PDF"><i class="fa-solid fa-print"></i></button>
+          <button class="btn-card-action" onclick="closeFocusModal()" aria-label="Quitter le mode Focus" title="Quitter le mode Focus"><i class="fa-solid fa-xmark"></i></button>
         </div>
       </div>
       <h2 class="focus-title" id="focusModalTitle"></h2>
@@ -635,18 +640,18 @@
   </div>
 
   <!-- LIGHTBOX SCHÉMAS -->
-  <div class="lightbox-modal" id="lightboxModal" onclick="closeLightbox()">
+  <div class="lightbox-modal" id="lightboxModal" onclick="closeLightbox()" role="dialog" aria-modal="true" aria-label="Aperçu du schéma agrandi">
     <div style="position: absolute; top: 1rem; right: 1rem;">
-      <button class="btn" onclick="closeLightbox()" style="border-radius: 50%; width: 44px; height: 44px;"><i class="fa-solid fa-xmark"></i></button>
+      <button class="btn" onclick="closeLightbox()" style="border-radius: 50%; width: 44px; height: 44px;" aria-label="Fermer la vue grand angle" title="Fermer"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="lightbox-frame" onclick="event.stopPropagation()">
-      <img id="lightboxImg" src="" alt="Aperçu schéma" />
+      <img id="lightboxImg" src="" alt="Aperçu schéma agrandi" />
     </div>
   </div>
 
   <!-- Bouton flottant Retour en Haut -->
-  <button class="back-to-top-btn" id="backToTopBtn" onclick="scrollToTop()" title="Retour en haut de page">
-    <i class="fa-solid fa-arrow-up"></i>
+  <button class="back-to-top-btn" id="backToTopBtn" onclick="scrollToTop()" aria-label="Retour en haut de page" title="Retour en haut de page">
+    <i class="fa-solid fa-arrow-up" aria-hidden="true"></i>
   </button>
 
   <script src="js/crypto.js?v=3.3.0"></script>
