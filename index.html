@@ -18,7 +18,7 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-  <link rel="stylesheet" href="css/styles.css?v=3.5.1" />
+  <link rel="stylesheet" href="css/styles.css?v=3.5.2" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#080c14" />
@@ -768,8 +768,37 @@
           <small id="settingModelEndpointDesc" style="display: block; margin-top: 0.35rem; font-size: 0.78rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;"></small>
         </div>
 
+        <!-- Cartes Quota dans les Paramètres -->
+        <div class="settings-quota-box" id="settingsQuotaBox" style="margin-bottom: 0.85rem;">
+          <div class="ai-quota-card" style="margin-bottom: 0.5rem;">
+            <div class="ai-quota-title-row">
+              <span class="ai-quota-name"><i class="fa-solid fa-gauge-high" style="color: #38bdf8;"></i> Utilisation actuelle (Fenêtre 5h)</span>
+              <span class="ai-quota-percent" id="settingQuota5hPct">0% utilisé</span>
+            </div>
+            <div class="ai-quota-track">
+              <div class="ai-quota-fill" id="settingQuota5hBar" style="width: 0%;"></div>
+            </div>
+            <div class="ai-quota-countdown" id="settingQuota5hReset">
+              <i class="fa-regular fa-clock"></i> Réinitialisation à --:--
+            </div>
+          </div>
+
+          <div class="ai-quota-card">
+            <div class="ai-quota-title-row">
+              <span class="ai-quota-name"><i class="fa-solid fa-calendar-days" style="color: #a855f7;"></i> Limite hebdomadaire (7 jours)</span>
+              <span class="ai-quota-percent" id="settingQuota7dPct">0% utilisé</span>
+            </div>
+            <div class="ai-quota-track">
+              <div class="ai-quota-fill" id="settingQuota7dBar" style="width: 0%;"></div>
+            </div>
+            <div class="ai-quota-countdown" id="settingQuota7dReset">
+              <i class="fa-regular fa-calendar-check"></i> Réinitialisation le -- à --:--
+            </div>
+          </div>
+        </div>
+
         <div class="form-row" style="margin-bottom: 0.5rem;">
-          <small style="display: block; font-size: 0.8rem; color: var(--accent-green);"><i class="fa-solid fa-circle-check"></i> Clé Gemini active & service prêt pour les révisions Bac Pro CIEL.</small>
+          <small style="display: block; font-size: 0.8rem; color: var(--accent-green);"><i class="fa-solid fa-circle-check"></i> Service IA opérationnel avec quotas auto-gérés pour l'ensemble des élèves.</small>
         </div>
       </div>
 
@@ -861,12 +890,46 @@
           </div>
         </div>
         <div style="display: flex; gap: 0.5rem; align-items: center;">
+          <button class="btn btn-quota-pill" id="btnToggleAIQuota" onclick="toggleAIQuotaPanel()" title="Consulter mes quotas d'utilisation" aria-label="Afficher mes quotas d'utilisation">
+            <i class="fa-solid fa-gauge-high"></i> <span id="aiHeaderQuotaMiniText">Quotas</span>
+          </button>
           <button class="btn" style="padding: 0.4rem 0.7rem; min-height: 36px;" onclick="clearAIChatHistory()" aria-label="Effacer la conversation" title="Effacer la conversation">
             <i class="fa-solid fa-trash-can"></i>
           </button>
           <button class="btn" style="padding: 0.4rem 0.7rem; min-height: 36px;" onclick="closeAIAssistantModal()" aria-label="Fermer l'assistant IA" title="Fermer">
             <i class="fa-solid fa-xmark"></i>
           </button>
+        </div>
+      </div>
+
+      <!-- Volet rétractable des Quotas IA (Fenêtre 5h & 7 jours) -->
+      <div class="ai-quota-panel" id="aiQuotaPanel">
+        <div class="ai-quota-panel-inner">
+          <div class="ai-quota-card">
+            <div class="ai-quota-title-row">
+              <span class="ai-quota-name"><i class="fa-solid fa-bolt" style="color: #38bdf8;"></i> Utilisation actuelle (Fenêtre 5h)</span>
+              <span class="ai-quota-percent" id="aiQuota5hPct">0% utilisé</span>
+            </div>
+            <div class="ai-quota-track">
+              <div class="ai-quota-fill" id="aiQuota5hBar" style="width: 0%;"></div>
+            </div>
+            <div class="ai-quota-countdown" id="aiQuota5hReset">
+              <i class="fa-regular fa-clock"></i> Réinitialisation à --:--
+            </div>
+          </div>
+
+          <div class="ai-quota-card">
+            <div class="ai-quota-title-row">
+              <span class="ai-quota-name"><i class="fa-solid fa-calendar-days" style="color: #a855f7;"></i> Limite hebdomadaire (7 jours)</span>
+              <span class="ai-quota-percent" id="aiQuota7dPct">0% utilisé</span>
+            </div>
+            <div class="ai-quota-track">
+              <div class="ai-quota-fill" id="aiQuota7dBar" style="width: 0%;"></div>
+            </div>
+            <div class="ai-quota-countdown" id="aiQuota7dReset">
+              <i class="fa-regular fa-calendar-check"></i> Réinitialisation le -- à --:--
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1022,9 +1085,9 @@
   </button>
 
   <!-- Application logic -->
-  <script src="js/crypto.js?v=3.5.1"></script>
-  <script src="js/github.js?v=3.5.1"></script>
-  <script src="js/ai.js?v=3.5.1"></script>
-  <script src="js/app.js?v=3.5.1"></script>
+  <script src="js/crypto.js?v=3.5.2"></script>
+  <script src="js/github.js?v=3.5.2"></script>
+  <script src="js/ai.js?v=3.5.2"></script>
+  <script src="js/app.js?v=3.5.2"></script>
 </body>
 </html>

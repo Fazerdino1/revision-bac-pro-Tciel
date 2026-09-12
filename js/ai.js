@@ -13,11 +13,44 @@
    1. CONFIGURATION DES MODÈLES & CLÉ API
    ========================================================== */
 
+/* ==========================================================
+   1. CONFIGURATION DES TIERS, MODÈLES & QUOTAS D'UTILISATION
+   ========================================================== */
+
+const AI_TIERS = {
+  tier_25: {
+    id: 'tier_25',
+    title: 'Famille Gemini 2.5',
+    subtitle: 'Vitesse & Révision Quotidienne',
+    icon: 'fa-bolt',
+    limit5h: 35,  // 35 requêtes par fenêtre de 5 heures
+    limit7d: 150  // 150 requêtes sur 7 jours
+  },
+  tier_30: {
+    id: 'tier_30',
+    title: 'Famille Gemini 3.0 à 3.5',
+    subtitle: 'Polyvalence & Synthèses',
+    icon: 'fa-microchip',
+    limit5h: 25,  // 25 requêtes par fenêtre de 5 heures
+    limit7d: 100  // 100 requêtes sur 7 jours
+  },
+  tier_36: {
+    id: 'tier_36',
+    title: 'Famille Gemini 3.6 & 3.7',
+    subtitle: 'Haute Précision & Raisonnement Épreuve',
+    icon: 'fa-wand-magic-sparkles',
+    limit5h: 15,  // 15 requêtes par fenêtre de 5 heures
+    limit7d: 60   // 60 requêtes sur 7 jours
+  }
+};
+
 const GEMINI_MODELS = [
+  // GROUPE 1 : MODÈLES 2.5
   {
     id: 'gemini-2.5-flash',
     name: 'Gemini 2.5 Flash',
     family: '2.5',
+    tier: 'tier_25',
     tag: 'Recommandé',
     desc: 'Le modèle offrant le meilleur rapport vitesse / pertinence pour la révision quotidienne.'
   },
@@ -25,6 +58,7 @@ const GEMINI_MODELS = [
     id: 'gemini-2.5-flash-lite',
     name: 'Gemini 2.5 Flash-Lite',
     family: '2.5',
+    tier: 'tier_25',
     tag: 'Ultra rapide',
     desc: 'Modèle léger à latence minimale, idéal sur connexions lentes ou mobiles.'
   },
@@ -32,59 +66,190 @@ const GEMINI_MODELS = [
     id: 'gemini-2.5-pro',
     name: 'Gemini 2.5 Pro',
     family: '2.5',
+    tier: 'tier_25',
     tag: 'Raisonnement avancé',
     desc: 'Modèle de pointe pour les exercices complexes de routage, logique et calculs électriques.'
   },
+
+  // GROUPE 2 : MODÈLES 3.0 À 3.5
   {
-    id: 'gemini-3.7-flash',
-    name: 'Gemini 3.7 Flash',
-    family: '3',
-    tag: 'Nouvelle génération',
-    desc: 'Dernière génération Gemini 3 : réactivité exceptionnelle et synthèses précises.'
-  },
-  {
-    id: 'gemini-3.6-flash',
-    name: 'Gemini 3.6 Flash',
-    family: '3',
-    tag: 'Gemini 3',
-    desc: 'Excellente compréhension technique des protocoles réseaux et schémas.'
-  },
-  {
-    id: 'gemini-3.5-flash',
-    name: 'Gemini 3.5 Flash',
-    family: '3',
-    tag: 'Gemini 3',
-    desc: 'Modèle multimodal polyvalent de la gamme Gemini 3.'
-  },
-  {
-    id: 'gemini-3.5-flash-lite',
-    name: 'Gemini 3.5 Flash-Lite',
-    family: '3',
-    tag: 'Léger & Rapide',
-    desc: 'Version optimisée de Gemini 3.5 pour des réponses concises et instantanées.'
+    id: 'gemini-3-flash-preview',
+    name: 'Gemini 3 Flash',
+    family: '3.0',
+    tier: 'tier_30',
+    tag: 'Preview',
+    desc: 'Aperçu des performances de base du moteur Gemini 3.'
   },
   {
     id: 'gemini-3.1-flash-lite',
     name: 'Gemini 3.1 Flash-Lite',
-    family: '3',
-    tag: 'Gemini 3',
+    family: '3.1',
+    tier: 'tier_30',
+    tag: 'Léger',
     desc: 'Modèle compact pour les fiches et les flashcards rapides.'
   },
   {
     id: 'gemini-3.1-pro-preview',
     name: 'Gemini 3.1 Pro',
-    family: '3',
+    family: '3.1',
+    tier: 'tier_30',
     tag: 'Expert Pro',
     desc: 'Capacités analytiques poussées pour les sujets d\'examen type épreuves E2/E31.'
   },
   {
-    id: 'gemini-3-flash-preview',
-    name: 'Gemini 3 Flash',
-    family: '3',
-    tag: 'Preview',
-    desc: 'Aperçu des performances de base du moteur Gemini 3.'
+    id: 'gemini-3.5-flash',
+    name: 'Gemini 3.5 Flash',
+    family: '3.5',
+    tier: 'tier_30',
+    tag: 'Polyvalent',
+    desc: 'Modèle multimodal polyvalent de la gamme Gemini 3.5.'
+  },
+  {
+    id: 'gemini-3.5-flash-lite',
+    name: 'Gemini 3.5 Flash-Lite',
+    family: '3.5',
+    tier: 'tier_30',
+    tag: 'Rapide',
+    desc: 'Version optimisée de Gemini 3.5 pour des réponses concises et instantanées.'
+  },
+
+  // GROUPE 3 : MODÈLES 3.6 & 3.7
+  {
+    id: 'gemini-3.6-flash',
+    name: 'Gemini 3.6 Flash',
+    family: '3.6',
+    tier: 'tier_36',
+    tag: 'Avancé',
+    desc: 'Excellente compréhension technique des protocoles réseaux et schémas.'
+  },
+  {
+    id: 'gemini-3.7-flash',
+    name: 'Gemini 3.7 Flash',
+    family: '3.7',
+    tier: 'tier_36',
+    tag: 'Dernière génération',
+    desc: 'Dernière génération Gemini 3.7 : réactivité exceptionnelle et synthèses de pointe.'
   }
 ];
+
+// Récupérer le journal des requêtes (conservé 7 jours glissants)
+function getAIRequestsLog() {
+  if (typeof localStorage === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem('ciel_ai_requests_log');
+    if (!raw) return [];
+    const log = JSON.parse(raw);
+    const now = Date.now();
+    const maxAge = 7 * 24 * 60 * 60 * 1000;
+    return Array.isArray(log) ? log.filter(entry => (now - entry.timestamp) <= maxAge) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function recordAIUsage(modelId) {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    const log = getAIRequestsLog();
+    const modelObj = GEMINI_MODELS.find(m => m.id === modelId) || GEMINI_MODELS[0];
+    log.push({
+      timestamp: Date.now(),
+      model: modelObj.id,
+      tier: modelObj.tier
+    });
+    localStorage.setItem('ciel_ai_requests_log', JSON.stringify(log));
+  } catch (e) {
+    console.warn("Erreur enregistrement quota IA:", e);
+  }
+}
+
+function getAIQuotaInfo(modelId) {
+  const modelObj = GEMINI_MODELS.find(m => m.id === modelId) || GEMINI_MODELS[0];
+  const tierConfig = AI_TIERS[modelObj.tier] || AI_TIERS.tier_25;
+  const log = getAIRequestsLog();
+  const now = Date.now();
+
+  const window5hMs = 5 * 60 * 60 * 1000;
+  const window7dMs = 7 * 24 * 60 * 60 * 1000;
+
+  // Filtrer les requêtes spécifiques à ce tier
+  const tierRequests = log.filter(r => r.tier === modelObj.tier);
+
+  // Fenêtre 5 heures
+  const reqs5h = tierRequests.filter(r => (now - r.timestamp) <= window5hMs);
+  const count5h = reqs5h.length;
+  const limit5h = tierConfig.limit5h;
+  const pct5h = Math.min(100, Math.round((count5h / limit5h) * 100));
+
+  // Fenêtre 7 jours
+  const reqs7d = tierRequests.filter(r => (now - r.timestamp) <= window7dMs);
+  const count7d = reqs7d.length;
+  const limit7d = tierConfig.limit7d;
+  const pct7d = Math.min(100, Math.round((count7d / limit7d) * 100));
+
+  // Reset 5h
+  let reset5hText = 'Quota complet disponible';
+  let reset5hCountdown = '';
+  if (count5h > 0) {
+    const oldest5h = Math.min(...reqs5h.map(r => r.timestamp));
+    const reset5hDate = new Date(oldest5h + window5hMs);
+    const diffMs = reset5hDate.getTime() - now;
+    if (diffMs > 0) {
+      const diffMins = Math.ceil(diffMs / 60000);
+      const hours = Math.floor(diffMins / 60);
+      const mins = diffMins % 60;
+      reset5hCountdown = hours > 0 ? `${hours}h ${mins}min` : `${mins} min`;
+      const timeStr = reset5hDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      reset5hText = `Réinitialisation à ${timeStr} (dans ${reset5hCountdown})`;
+    }
+  }
+
+  // Reset 7j
+  let reset7dText = 'Quota complet disponible';
+  if (count7d > 0) {
+    const oldest7d = Math.min(...reqs7d.map(r => r.timestamp));
+    const reset7dDate = new Date(oldest7d + window7dMs);
+    const dateStr = reset7dDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+    const timeStr = reset7dDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    reset7dText = `Réinitialisation le ${dateStr} à ${timeStr}`;
+  }
+
+  const isBlocked5h = count5h >= limit5h;
+  const isBlocked7d = count7d >= limit7d;
+  const isBlocked = isBlocked5h || isBlocked7d;
+
+  let blockReason = '';
+  if (isBlocked5h) {
+    blockReason = `Limite d'utilisation sur 5h atteinte pour ${tierConfig.title} (${count5h}/${limit5h} requêtes). Prochaine libération : ${reset5hText}.`;
+  } else if (isBlocked7d) {
+    blockReason = `Limite hebdomadaire atteinte pour ${tierConfig.title} (${count7d}/${limit7d} requêtes). Prochaine libération : ${reset7dText}.`;
+  }
+
+  return {
+    tierId: modelObj.tier,
+    tierTitle: tierConfig.title,
+    count5h,
+    limit5h,
+    pct5h,
+    reset5hText,
+    reset5hCountdown,
+    count7d,
+    limit7d,
+    pct7d,
+    reset7dText,
+    isBlocked,
+    isBlocked5h,
+    isBlocked7d,
+    blockReason
+  };
+}
+
+function checkAIQuota(modelId) {
+  const quota = getAIQuotaInfo(modelId);
+  if (quota.isBlocked) {
+    throw new Error(quota.blockReason);
+  }
+}
 
 // Déchiffrement de la clé API intégrée (masque réversible XOR en mémoire vive)
 function getEmbeddedGeminiKey() {
@@ -144,6 +309,10 @@ async function callGeminiAPI(messages, options = {}) {
   }
 
   const model = options.model || getSelectedGeminiModel();
+
+  // Contrôle strict des quotas (5 heures & 7 jours)
+  checkAIQuota(model);
+
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
   // Construction du format contents
@@ -203,6 +372,9 @@ async function callGeminiAPI(messages, options = {}) {
     if (!candidate || !candidate.content?.parts?.[0]?.text) {
       throw new Error("Aucune réponse générée par le modèle.");
     }
+
+    // Enregistrement de la requête réussie dans les quotas
+    recordAIUsage(model);
 
     return candidate.content.parts[0].text;
   } catch (err) {
@@ -304,10 +476,15 @@ ${courseContent.slice(0, 3000)}
    4. EXPORTS GLOBAUX POUR LE SITE
    ========================================================== */
 if (typeof window !== 'undefined') {
+  window.AI_TIERS = AI_TIERS;
   window.GEMINI_MODELS = GEMINI_MODELS;
   window.getGeminiApiKey = getGeminiApiKey;
   window.getSelectedGeminiModel = getSelectedGeminiModel;
   window.setSelectedGeminiModel = setSelectedGeminiModel;
+  window.getAIRequestsLog = getAIRequestsLog;
+  window.recordAIUsage = recordAIUsage;
+  window.getAIQuotaInfo = getAIQuotaInfo;
+  window.checkAIQuota = checkAIQuota;
   window.callGeminiAPI = callGeminiAPI;
   window.generateCourseWithAI = generateCourseWithAI;
   window.enhanceNotesWithAI = enhanceNotesWithAI;
@@ -316,11 +493,16 @@ if (typeof window !== 'undefined') {
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
+    AI_TIERS,
     GEMINI_MODELS,
     getEmbeddedGeminiKey,
     getGeminiApiKey,
     getSelectedGeminiModel,
     setSelectedGeminiModel,
+    getAIRequestsLog,
+    recordAIUsage,
+    getAIQuotaInfo,
+    checkAIQuota,
     callGeminiAPI,
     generateCourseWithAI,
     enhanceNotesWithAI,

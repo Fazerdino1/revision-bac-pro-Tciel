@@ -1954,6 +1954,9 @@ function openSettingsModal() {
     modelSelect.value = currentModel;
     updateModelEndpointDesc(currentModel);
   }
+  if (typeof updateAIQuotaUI === 'function') {
+    updateAIQuotaUI();
+  }
 
   modal.classList.add('active');
   trapFocusInModal(modal);
@@ -2248,6 +2251,9 @@ function openAIAssistantModal() {
   // Mise à jour du sélecteur de modèle direct dans l'en-tête
   renderQuickModelSelect();
 
+  // Mise à jour des jauges de quotas
+  updateAIQuotaUI();
+
   // Rendu des messages existants (ou message de bienvenue)
   renderAIChatMessages();
 
@@ -2266,9 +2272,75 @@ function renderQuickModelSelect() {
   if (!select || typeof GEMINI_MODELS === 'undefined') return;
 
   const currentModel = (typeof getSelectedGeminiModel === 'function') ? getSelectedGeminiModel() : 'gemini-2.5-flash';
-  select.innerHTML = GEMINI_MODELS.map(m => `
-    <option value="${m.id}" ${m.id === currentModel ? 'selected' : ''}>${m.name} (${m.family === '3' ? 'Gemini 3' : '2.5'})</option>
-  `).join('');
+
+  const tierGroups = [
+    { id: 'tier_25', label: '⚡ Famille Gemini 2.5' },
+    { id: 'tier_30', label: '🧠 Famille Gemini 3.0 à 3.5' },
+    { id: 'tier_36', label: '✨ Famille Gemini 3.6 & 3.7' }
+  ];
+
+  select.innerHTML = tierGroups.map(group => {
+    const models = GEMINI_MODELS.filter(m => m.tier === group.id);
+    if (models.length === 0) return '';
+    const options = models.map(m => `
+      <option value="${m.id}" ${m.id === currentModel ? 'selected' : ''}>${m.name} [${m.tag}]</option>
+    `).join('');
+    return `<optgroup label="${group.label}">${options}</optgroup>`;
+  }).join('');
+}
+
+function toggleAIQuotaPanel() {
+  const panel = document.getElementById('aiQuotaPanel');
+  const btn = document.getElementById('btnToggleAIQuota');
+  if (!panel) return;
+  const isOpen = panel.classList.toggle('open');
+  if (btn) {
+    if (isOpen) btn.classList.add('active');
+    else btn.classList.remove('active');
+  }
+  updateAIQuotaUI();
+}
+
+function updateAIQuotaUI() {
+  if (typeof getAIQuotaInfo !== 'function') return;
+  const currentModel = (typeof getSelectedGeminiModel === 'function') ? getSelectedGeminiModel() : 'gemini-2.5-flash';
+  const info = getAIQuotaInfo(currentModel);
+  if (!info) return;
+
+  const applyToBar = (pctElId, barElId, resetElId, pct, count, limit, resetText, iconClass) => {
+    const pctEl = document.getElementById(pctElId);
+    if (pctEl) {
+      pctEl.innerText = `${pct}% utilisé (${count}/${limit})`;
+      if (pct >= 90) pctEl.style.color = '#f87171';
+      else if (pct >= 75) pctEl.style.color = '#fb923c';
+      else pctEl.style.color = '#94a3b8';
+    }
+    const barEl = document.getElementById(barElId);
+    if (barEl) {
+      barEl.style.width = `${pct}%`;
+      barEl.className = 'ai-quota-fill';
+      if (pct >= 90) barEl.classList.add('danger');
+      else if (pct >= 75) barEl.classList.add('warning');
+    }
+    const resetEl = document.getElementById(resetElId);
+    if (resetEl) {
+      resetEl.innerHTML = `<i class="${iconClass}"></i> ${escapeHtml(resetText)}`;
+    }
+  };
+
+  // 1. Volet de quotas dans StudyBot
+  applyToBar('aiQuota5hPct', 'aiQuota5hBar', 'aiQuota5hReset', info.pct5h, info.count5h, info.limit5h, info.reset5hText, 'fa-regular fa-clock');
+  applyToBar('aiQuota7dPct', 'aiQuota7dBar', 'aiQuota7dReset', info.pct7d, info.count7d, info.limit7d, info.reset7dText, 'fa-regular fa-calendar-check');
+
+  // 2. Section quotas dans les Paramètres
+  applyToBar('settingQuota5hPct', 'settingQuota5hBar', 'settingQuota5hReset', info.pct5h, info.count5h, info.limit5h, info.reset5hText, 'fa-regular fa-clock');
+  applyToBar('settingQuota7dPct', 'settingQuota7dBar', 'settingQuota7dReset', info.pct7d, info.count7d, info.limit7d, info.reset7dText, 'fa-regular fa-calendar-check');
+
+  // 3. Bouton pillule dans l'en-tête StudyBot
+  const miniText = document.getElementById('aiHeaderQuotaMiniText');
+  if (miniText) {
+    miniText.innerText = `Quotas (${info.count5h}/${info.limit5h})`;
+  }
 }
 
 function handleQuickModelChange(newModelId) {
@@ -2280,6 +2352,7 @@ function handleQuickModelChange(newModelId) {
     if (settingSelect) settingSelect.value = newModelId;
     if (typeof updateModelEndpointDesc === 'function') updateModelEndpointDesc(newModelId);
 
+    updateAIQuotaUI();
     showToast(`Modèle sélectionné : ${newModelId}`, "info");
   }
 }
@@ -2497,14 +2570,29 @@ async function sendAIAssistantMessage(userText) {
     aiChatHistoryState.push({ role: 'model', text: reply, timestamp: Date.now() });
     renderAIChatMessages();
     scrollAIChatToBottom();
+    if (typeof updateAIQuotaUI === 'function') updateAIQuotaUI();
   } catch (err) {
     const ind = document.getElementById('aiTypingIndicator');
     if (ind) ind.remove();
     console.error("Erreur StudyBot IA:", err);
     showToast(err.message || "Erreur lors de la communication avec Gemini", "error");
+
+    if (typeof updateAIQuotaUI === 'function') updateAIQuotaUI();
+
+    const currentModel = (typeof getSelectedGeminiModel === 'function') ? getSelectedGeminiModel() : '';
+    const quota = (typeof getAIQuotaInfo === 'function') ? getAIQuotaInfo(currentModel) : null;
+    let quotaTip = '';
+    if (quota && quota.isBlocked) {
+      quotaTip = `\n\n💡 **Astuce révision :** Les quotas sont séparés par famille de modèles. Si cette famille est épuisée, sélectionnez un modèle de la **Famille Gemini 2.5** (*Gemini 2.5 Flash*) via le menu du haut pour continuer vos révisions.`;
+      const panel = document.getElementById('aiQuotaPanel');
+      if (panel && !panel.classList.contains('open') && typeof toggleAIQuotaPanel === 'function') {
+        toggleAIQuotaPanel();
+      }
+    }
+
     aiChatHistoryState.push({
       role: 'model',
-      text: `⚠️ **Une erreur est survenue lors de la génération :**\n\n${err.message}\n\n*Vérifiez votre connexion internet ou testez votre clé API dans les Paramètres.*`,
+      text: `⚠️ **Notification :**\n\n${err.message}${quotaTip}`,
       timestamp: Date.now()
     });
     renderAIChatMessages();
@@ -2838,13 +2926,24 @@ function generateFlashcardsForCourse(courseId) {
    ========================================================== */
 function renderGeminiModelOptions() {
   const select = document.getElementById('settingGeminiModel');
-  if (!select) return;
+  if (!select || typeof GEMINI_MODELS === 'undefined') return;
 
-  if (typeof GEMINI_MODELS === 'undefined') return;
+  const currentModel = (typeof getSelectedGeminiModel === 'function') ? getSelectedGeminiModel() : 'gemini-2.5-flash';
 
-  select.innerHTML = GEMINI_MODELS.map(m => `
-    <option value="${m.id}">${m.name} — ${m.badge}</option>
-  `).join('');
+  const tierGroups = [
+    { id: 'tier_25', label: '⚡ Famille Gemini 2.5 (35 req / 5h — 150 req / 7j)' },
+    { id: 'tier_30', label: '🧠 Famille Gemini 3.0 à 3.5 (25 req / 5h — 100 req / 7j)' },
+    { id: 'tier_36', label: '✨ Famille Gemini 3.6 & 3.7 (15 req / 5h — 60 req / 7j)' }
+  ];
+
+  select.innerHTML = tierGroups.map(group => {
+    const models = GEMINI_MODELS.filter(m => m.tier === group.id);
+    if (models.length === 0) return '';
+    const options = models.map(m => `
+      <option value="${m.id}" ${m.id === currentModel ? 'selected' : ''}>${m.name} [${m.tag}] — ${m.desc.slice(0, 48)}...</option>
+    `).join('');
+    return `<optgroup label="${group.label}">${options}</optgroup>`;
+  }).join('');
 }
 
 function updateModelEndpointDesc(modelId) {
@@ -2854,7 +2953,7 @@ function updateModelEndpointDesc(modelId) {
 
   const found = GEMINI_MODELS.find(m => m.id === modelId);
   if (found) {
-    descEl.innerText = `Endpoint API : ${found.endpoint} (${found.desc})`;
+    descEl.innerText = `Endpoint API : ${found.id} (${found.desc})`;
   } else {
     descEl.innerText = `Endpoint API : ${modelId}`;
   }
@@ -2870,6 +2969,14 @@ function handleSettingModelChange(newModelId) {
     if (badge && typeof GEMINI_MODELS !== 'undefined') {
       const modelObj = GEMINI_MODELS.find(m => m.id === newModelId);
       badge.innerText = modelObj ? modelObj.name : newModelId;
+    }
+
+    // Synchroniser le sélecteur rapide de StudyBot
+    const quickSelect = document.getElementById('aiQuickModelSelect');
+    if (quickSelect) quickSelect.value = newModelId;
+
+    if (typeof updateAIQuotaUI === 'function') {
+      updateAIQuotaUI();
     }
 
     showToast(`Modèle actif configuré sur ${newModelId}`, "info");
@@ -3140,6 +3247,8 @@ if (typeof window !== 'undefined') {
     quickSwitchAIModel,
     renderQuickModelSelect,
     handleQuickModelChange,
+    toggleAIQuotaPanel,
+    updateAIQuotaUI,
     retryAIMessage,
     promptSwitchModelForMessage
   };
@@ -3306,6 +3415,8 @@ if (typeof module !== 'undefined' && module.exports) {
     quickSwitchAIModel,
     renderQuickModelSelect,
     handleQuickModelChange,
+    toggleAIQuotaPanel,
+    updateAIQuotaUI,
     retryAIMessage,
     promptSwitchModelForMessage
   };

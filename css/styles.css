@@ -3014,6 +3014,122 @@ textarea.form-input { min-height: 140px; font-family: var(--font-mono); font-siz
   box-shadow: 0 0 12px rgba(168, 85, 247, 0.3);
 }
 
+.ai-quick-model-select optgroup,
+#settingGeminiModel optgroup {
+  background: #0f172a;
+  color: #c084fc;
+  font-weight: 700;
+  font-style: normal;
+  padding: 0.35rem 0;
+}
+.ai-quick-model-select option,
+#settingGeminiModel option {
+  background: #1e293b;
+  color: #f1f5f9;
+  font-weight: 400;
+  padding: 0.3rem 0.5rem;
+}
+
+/* Bouton toggle des quotas dans l'en-tête */
+.btn-quota-pill {
+  background: rgba(56, 189, 248, 0.12) !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+  color: #38bdf8 !important;
+  padding: 0.35rem 0.75rem !important;
+  font-size: 0.78rem !important;
+  border-radius: var(--radius-full) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.4rem !important;
+  transition: all 0.2s ease !important;
+}
+.btn-quota-pill:hover,
+.btn-quota-pill.active {
+  background: rgba(56, 189, 248, 0.25) !important;
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.3) !important;
+  color: #fff !important;
+}
+
+/* Volet déroulant Quotas (StudyBot & Paramètres) */
+.ai-quota-panel {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s cubic-bezier(0.16, 1, 0.3, 1), padding 0.3s ease;
+  background: rgba(10, 15, 29, 0.95);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+.ai-quota-panel.open {
+  max-height: 220px;
+}
+.ai-quota-panel-inner {
+  padding: 0.85rem 1.4rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+@media (max-width: 680px) {
+  .ai-quota-panel-inner {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+}
+
+.ai-quota-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 0.75rem 0.95rem;
+}
+.ai-quota-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.45rem;
+}
+.ai-quota-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.ai-quota-percent {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #94a3b8;
+}
+.ai-quota-track {
+  width: 100%;
+  height: 7px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin-bottom: 0.4rem;
+}
+.ai-quota-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: linear-gradient(90deg, #34d399, #38bdf8);
+  transition: width 0.4s ease;
+}
+.ai-quota-fill.warning {
+  background: linear-gradient(90deg, #facc15, #fb923c);
+}
+.ai-quota-fill.danger {
+  background: linear-gradient(90deg, #f87171, #ef4444);
+}
+.ai-quota-countdown {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
 /* Corps du Chat */
 .ai-chat-body {
   flex: 1 1 auto;
