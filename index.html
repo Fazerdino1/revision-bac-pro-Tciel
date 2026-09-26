@@ -209,7 +209,7 @@
           <label for="courseSearch" class="sr-only">Rechercher un cours ou TP</label>
           <i class="fa-solid fa-magnifying-glass search-icon" aria-hidden="true"></i>
           <input type="text" id="courseSearch" placeholder="Rechercher un cours, TP, formule, commande..." oninput="renderCourses(); toggleSearchClear(this.value);" />
-          <div class="search-kbd-badge" title="Raccourci clavier (Ctrl + K ou /)">
+          <div class="search-kbd-badge" title="Raccourci clavier (Ctrl + K ou /)" onclick="openCommandPalette()" style="cursor: pointer;">
             <kbd class="kbd-key">Ctrl</kbd>
             <kbd class="kbd-key">K</kbd>
           </div>
@@ -217,6 +217,9 @@
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
+        <button type="button" class="btn btn-tool-ip" id="btnOpenIpCalc" onclick="openIpCalcModal()" title="Calculatrice IPv4 & Masques CIDR">
+          <i class="fa-solid fa-calculator"></i> <span class="hide-mobile">Calculateur IP</span>
+        </button>
         <button class="btn btn-primary" style="display: none; min-width: 170px;" id="desktopAddBtn" onclick="openCourseModal()" aria-label="Créer un nouveau cours">
           <i class="fa-solid fa-plus"></i> Nouveau cours
         </button>
@@ -306,6 +309,10 @@
         </div>
 
         <div class="feed-status-controls">
+          <div class="layout-mode-group" role="group" aria-label="Mode d'affichage des cours">
+            <button type="button" class="btn-layout-toggle active" id="btnLayoutGrid" onclick="setCourseLayoutMode('grid')" title="Vue Grille (Cartes)"><i class="fa-solid fa-table-cells-large"></i></button>
+            <button type="button" class="btn-layout-toggle" id="btnLayoutTable" onclick="setCourseLayoutMode('table')" title="Vue Tableau Détaillé"><i class="fa-solid fa-table-list"></i></button>
+          </div>
           <div class="sort-selector-wrap">
             <i class="fa-solid fa-arrow-down-short-wide"></i>
             <select id="courseSortSelect" onchange="renderCourses()" class="sort-select" title="Trier les cours">
@@ -658,6 +665,9 @@
   <!-- MODAL MODE FOCUS / PLEIN ÉCRAN -->
   <div class="modal-backdrop" id="focusModal" onclick="closeFocusModal()" role="dialog" aria-modal="true" aria-labelledby="focusModalTitle">
     <div class="modal-sheet focus-sheet" onclick="event.stopPropagation()">
+      <div class="focus-reading-bar-track">
+        <div class="focus-reading-bar-fill" id="focusReadingProgress"></div>
+      </div>
       <div class="focus-header">
         <div class="focus-meta" id="focusModalMeta"></div>
         <div class="focus-actions">
@@ -666,6 +676,7 @@
         </div>
       </div>
       <h2 class="focus-title" id="focusModalTitle"></h2>
+      <div class="focus-outline-container" id="focusModalOutline"></div>
       <div class="course-body focus-body" id="focusModalBody"></div>
       <div id="focusModalAttachments"></div>
     </div>
@@ -737,6 +748,17 @@
             <input type="checkbox" id="settingConfetti" onchange="toggleSettingConfetti(this.checked)" checked />
             <span class="toggle-slider"></span>
           </label>
+        </div>
+        <div class="form-row" style="margin-top: 1rem; margin-bottom: 0.25rem;">
+          <label for="settingThemeSelect" style="font-size: 0.82rem; font-weight: 600; color: #cbd5e1; display: flex; align-items: center; gap: 0.4rem;">
+            <i class="fa-solid fa-palette" style="color: var(--primary);"></i> Thème visuel de l'interface :
+          </label>
+          <select id="settingThemeSelect" class="form-input" onchange="changeAppTheme(this.value)" style="width: 100%;">
+            <option value="cyber">🌌 Cyber Night (Sombre & Néon / Défaut)</option>
+            <option value="matrix">🛰️ Matrix Terminal (Vert Phosphorique)</option>
+            <option value="midnight">🌌 Midnight Gold (Bleu Nuit & Or)</option>
+            <option value="paper">☀️ Paper White (Clair & Haute Lisibilité)</option>
+          </select>
         </div>
       </div>
 
@@ -851,9 +873,9 @@
           <button type="button" class="btn-viewer-action" id="fileViewerBtnCopy" onclick="copyViewerContent()" title="Copier le texte" style="display: none;">
             <i class="fa-regular fa-copy"></i> <span>Copier</span>
           </button>
-          <a href="#" download id="fileViewerBtnDownload" class="btn-viewer-action" title="Télécharger le fichier">
+          <button type="button" class="btn-viewer-action" id="fileViewerBtnDownload" onclick="triggerFileDownload()" title="Télécharger sur votre appareil">
             <i class="fa-solid fa-download"></i> <span>Télécharger</span>
-          </a>
+          </button>
           <a href="#" target="_blank" rel="noopener noreferrer" id="fileViewerBtnExternal" class="btn-viewer-action" title="Ouvrir dans un nouvel onglet">
             <i class="fa-solid fa-arrow-up-right-from-square"></i>
           </a>
@@ -869,6 +891,70 @@
     </div>
   </div>
 
+  <!-- MODALE CALCULATRICE IPV4 & SOUS-RÉSEAUX CIDR -->
+  <div class="modal-backdrop" id="ipCalcModal" onclick="closeIpCalcModal()" role="dialog" aria-modal="true" aria-labelledby="ipCalcModalTitle">
+    <div class="modal-sheet" onclick="event.stopPropagation()" style="max-width: 600px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h3 id="ipCalcModalTitle" style="font-size: 1.15rem; display: flex; align-items: center; gap: 0.5rem;">
+          <i class="fa-solid fa-calculator" style="color: var(--primary);" aria-hidden="true"></i> Calculateur IPv4 & CIDR
+        </h3>
+        <button class="btn" style="padding: 0.4rem 0.7rem; min-height: 36px;" onclick="closeIpCalcModal()" aria-label="Fermer le calculateur IP" title="Fermer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="ipcalc-input-row">
+        <div class="form-row" style="flex: 1; margin-bottom: 0.75rem;">
+          <label for="ipCalcInput" style="font-size: 0.82rem; font-weight: 600; color: #cbd5e1;">Adresse IP / Masque CIDR :</label>
+          <div style="display: flex; gap: 0.5rem; margin-top: 0.35rem;">
+            <input type="text" id="ipCalcInput" class="form-input" placeholder="Ex: 192.168.1.10/24 ou 10.0.0.1/26" oninput="handleIpCalcInput(this.value)" style="font-family: 'JetBrains Mono', monospace; font-size: 0.95rem;" />
+            <button type="button" class="btn btn-primary" onclick="handleIpCalcInput(document.getElementById('ipCalcInput').value)" title="Calculer"><i class="fa-solid fa-bolt"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ipcalc-presets-bar">
+        <span class="ipcalc-presets-label">Masques fréquents :</span>
+        <button type="button" class="ipcalc-preset-chip" onclick="applyIpCalcPreset('/24')">/24 (254 hôtes)</button>
+        <button type="button" class="ipcalc-preset-chip" onclick="applyIpCalcPreset('/26')">/26 (62 hôtes)</button>
+        <button type="button" class="ipcalc-preset-chip" onclick="applyIpCalcPreset('/27')">/27 (30 hôtes)</button>
+        <button type="button" class="ipcalc-preset-chip" onclick="applyIpCalcPreset('/28')">/28 (14 hôtes)</button>
+        <button type="button" class="ipcalc-preset-chip" onclick="applyIpCalcPreset('/30')">/30 (Routeurs/P2P)</button>
+      </div>
+
+      <div class="ipcalc-results" id="ipCalcResults">
+        <!-- Rendu dynamique par calcSubnet -->
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.25rem;">
+        <button type="button" class="btn" onclick="copyIpCalcMarkdown()" id="btnCopyIpCalcMd" style="font-size: 0.82rem;">
+          <i class="fa-regular fa-copy"></i> Copier la fiche Markdown
+        </button>
+        <button type="button" class="btn btn-primary" onclick="closeIpCalcModal()" style="font-size: 0.82rem;">
+          Fermer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODALE COMMAND PALETTE (CTRL+K) -->
+  <div class="modal-backdrop command-palette-backdrop" id="commandPaletteModal" onclick="closeCommandPalette()" role="dialog" aria-modal="true" aria-labelledby="cmdPaletteSearch">
+    <div class="command-palette-sheet" onclick="event.stopPropagation()">
+      <div class="cmd-search-header">
+        <i class="fa-solid fa-magnifying-glass cmd-search-icon"></i>
+        <input type="text" id="cmdPaletteSearch" class="cmd-search-input" placeholder="Rechercher un cours, changer de vue, de thème ou exécuter une action..." oninput="filterCommandPalette(this.value)" autocomplete="off" />
+        <span class="cmd-esc-badge" onclick="closeCommandPalette()">Échap</span>
+      </div>
+      <div class="cmd-palette-list" id="cmdPaletteList">
+        <!-- Injecté dynamiquement par JS -->
+      </div>
+      <div class="cmd-palette-footer">
+        <span><kbd>↑</kbd> <kbd>↓</kbd> Naviguer</span>
+        <span><kbd>Entrée</kbd> Sélectionner</span>
+        <span><kbd>Échap</kbd> Fermer</span>
+      </div>
+    </div>
+  </div>
 
   <!-- Bouton flottant Retour en Haut -->
   <button class="back-to-top-btn" id="backToTopBtn" onclick="scrollToTop()" aria-label="Retour en haut de page" title="Retour en haut de page">
@@ -876,8 +962,8 @@
   </button>
 
   <!-- Application logic -->
-  <script src="js/crypto.js?v=3.8.0"></script>
-  <script src="js/github.js?v=3.8.0"></script>
-  <script src="js/app.js?v=3.8.0"></script>
+  <script src="js/crypto.js?v=3.9.0"></script>
+  <script src="js/github.js?v=3.9.0"></script>
+  <script src="js/app.js?v=3.9.0"></script>
 </body>
 </html>

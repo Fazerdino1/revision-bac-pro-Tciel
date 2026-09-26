@@ -913,6 +913,133 @@ function toggleCourseFavorite(id) {
   triggerAutoSave();
 }
 
+let courseLayoutMode = 'grid';
+let draggedCourseId = null;
+
+function getCourseStatusInfo(status) {
+  if (status === 'mastered') {
+    return { key: 'mastered', label: 'Maîtrisé', icon: 'fa-circle-check', class: 'status-mastered' };
+  } else if (status === 'learning') {
+    return { key: 'learning', label: 'En cours', icon: 'fa-circle-half-stroke', class: 'status-learning' };
+  } else {
+    return { key: 'todo', label: 'À réviser', icon: 'fa-circle-dot', class: 'status-todo' };
+  }
+}
+
+function cycleCourseStatus(courseId, event) {
+  if (event) event.stopPropagation();
+  const c = userVault.courses.find(x => x.id === courseId);
+  if (!c) return;
+  const nextMap = { 'todo': 'learning', 'learning': 'mastered', 'mastered': 'todo' };
+  const current = c.status || 'todo';
+  c.status = nextMap[current] || 'todo';
+  const info = getCourseStatusInfo(c.status);
+  showToast(`Statut mis à jour : ${info.label}`, 'info');
+  renderCourses();
+  triggerAutoSave();
+}
+
+function setCourseLayoutMode(mode) {
+  courseLayoutMode = mode === 'table' ? 'table' : 'grid';
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('ciel_course_layout_mode', courseLayoutMode);
+  }
+  if (typeof document !== 'undefined') {
+    const btnGrid = document.getElementById('btnLayoutGrid');
+    const btnTable = document.getElementById('btnLayoutTable');
+    if (btnGrid) btnGrid.classList.toggle('active', courseLayoutMode === 'grid');
+    if (btnTable) btnTable.classList.toggle('active', courseLayoutMode === 'table');
+    renderCourses();
+  }
+}
+
+function handleCourseDragStart(e, courseId) {
+  draggedCourseId = courseId;
+  if (e.dataTransfer) {
+    e.dataTransfer.setData('text/plain', String(courseId));
+    e.dataTransfer.effectAllowed = 'move';
+  }
+  const el = e.currentTarget;
+  if (el) el.classList.add('is-dragging');
+}
+
+function handleCourseDragEnd(e) {
+  const el = e.currentTarget;
+  if (el) el.classList.remove('is-dragging');
+  document.querySelectorAll('.folder-chip').forEach(fc => {
+    fc.classList.remove('drag-target-valid', 'drag-target-invalid');
+  });
+}
+
+function handleFolderDragOver(e, folderId) {
+  e.preventDefault();
+  if (!draggedCourseId) return;
+  const course = (userVault.courses || []).find(c => String(c.id) === String(draggedCourseId));
+  if (!course) return;
+
+  const folder = (userVault.folders || []).find(f => f.id === folderId);
+  const chip = e.currentTarget;
+
+  if (folderId === 'all' || folderId === 'unassigned') {
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+    chip.classList.add('drag-target-valid');
+    chip.classList.remove('drag-target-invalid');
+    return;
+  }
+
+  if (folder) {
+    if (checkFolderSubjectMatch(folder.subject, course.subject)) {
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+      chip.classList.add('drag-target-valid');
+      chip.classList.remove('drag-target-invalid');
+    } else {
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'none';
+      chip.classList.add('drag-target-invalid');
+      chip.classList.remove('drag-target-valid');
+    }
+  }
+}
+
+function handleFolderDragLeave(e) {
+  const chip = e.currentTarget;
+  if (chip) chip.classList.remove('drag-target-valid', 'drag-target-invalid');
+}
+
+function handleFolderDrop(e, folderId) {
+  e.preventDefault();
+  const chip = e.currentTarget;
+  if (chip) chip.classList.remove('drag-target-valid', 'drag-target-invalid');
+
+  if (!draggedCourseId) return;
+  const course = (userVault.courses || []).find(c => String(c.id) === String(draggedCourseId));
+  if (!course) return;
+
+  if (folderId === 'unassigned') {
+    course.folderId = null;
+    showToast(`Cours retiré de son dossier`, 'info');
+    renderCourses();
+    renderFoldersBar();
+    triggerAutoSave();
+    return;
+  }
+
+  if (folderId === 'all') return;
+
+  const folder = (userVault.folders || []).find(f => f.id === folderId);
+  if (!folder) return;
+
+  if (!checkFolderSubjectMatch(folder.subject, course.subject)) {
+    showToast(`Impossible : le dossier "${folder.name}" est réservé à la matière "${folder.subject}"`, 'error');
+    return;
+  }
+
+  course.folderId = folder.id;
+  showToast(`Cours rangé dans le dossier "${folder.name}" 📁`, 'success');
+  renderCourses();
+  renderFoldersBar();
+  triggerAutoSave();
+}
+
 function renderCourses() {
   if (typeof document === 'undefined') return;
   const feed = document.getElementById('coursesFeed');
@@ -925,7 +1052,7 @@ function renderCourses() {
   feed.innerHTML = '';
 
   if (currentSubView === 'mine') {
-    let items = userVault.courses.filter(c => {
+    let items = (userVault.courses || []).filter(c => {
       const matchCat = checkSubjectMatch(c.subject, activeFilter);
       const matchSearch = !search || c.title.toLowerCase().includes(search) || (c.content || '').toLowerCase().includes(search);
       const matchTag = !activeTagFilter || (c.tags && c.tags.includes(activeTagFilter));
@@ -964,10 +1091,87 @@ function renderCourses() {
       return;
     }
 
+    // Affichage Mode Tableau Détaillé
+    if (courseLayoutMode === 'table') {
+      let tableHtml = `
+        <div class="courses-table-container" style="grid-column: 1 / -1;">
+          <table class="courses-table-view">
+            <thead>
+              <tr>
+                <th style="width: 40px; text-align: center;">⭐</th>
+                <th style="width: 120px;">Statut</th>
+                <th>Titre & Aperçu</th>
+                <th style="width: 170px;">Matière</th>
+                <th style="width: 140px;">Dossier</th>
+                <th style="width: 110px;">Date</th>
+                <th style="width: 140px; text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      items.forEach(c => {
+        const theme = getSubjectThemeInfo(c.subject);
+        const statusInfo = getCourseStatusInfo(c.status);
+        let folderName = '—';
+        if (c.folderId && userVault.folders) {
+          const fol = userVault.folders.find(f => f.id === c.folderId);
+          if (fol) folderName = `<span style="color: ${fol.color};"><i class="fa-solid fa-folder"></i> ${escapeHtml(fol.name)}</span>`;
+        }
+
+        tableHtml += `
+          <tr class="course-table-row" draggable="true" ondragstart="handleCourseDragStart(event, '${c.id}')" ondragend="handleCourseDragEnd(event)" onclick="openFocusModal(${c.id}, false)">
+            <td style="text-align: center;" onclick="event.stopPropagation()">
+              <button class="btn-card-action btn-action-fav ${c.isFavorite ? 'active' : ''}" onclick="toggleCourseFavorite(${c.id})" title="${c.isFavorite ? 'Retirer des favoris' : 'Marquer comme favori'}">
+                <i class="fa-${c.isFavorite ? 'solid' : 'regular'} fa-star"></i>
+              </button>
+            </td>
+            <td onclick="event.stopPropagation()">
+              <span class="course-status-pill ${statusInfo.class}" onclick="cycleCourseStatus(${c.id}, event)" title="Cliquer pour changer de statut">
+                <i class="fa-solid ${statusInfo.icon}"></i> ${statusInfo.label}
+              </span>
+            </td>
+            <td>
+              <div class="course-table-title">
+                <strong>${escapeHtml(c.title)}</strong>
+              </div>
+              <div style="font-size: 0.78rem; color: var(--text-muted); max-width: 400px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                ${escapeHtml((c.content || '').slice(0, 90))}
+              </div>
+            </td>
+            <td>
+              <span class="badge-sub" style="font-size: 0.72rem; padding: 0.2rem 0.5rem;"><i class="${theme.icon}"></i> ${escapeHtml(c.subject.replace('CIEL - ', ''))}</span>
+            </td>
+            <td>${folderName}</td>
+            <td style="font-size: 0.78rem; color: var(--text-muted);">
+              ${new Date(c.date).toLocaleDateString('fr-FR')}
+            </td>
+            <td style="text-align: right;" onclick="event.stopPropagation()">
+              <div class="card-actions" style="justify-content: flex-end;">
+                <button class="btn-card-action" onclick="openFocusModal(${c.id}, false)" title="Lecture Zen"><i class="fa-solid fa-expand"></i></button>
+                <button class="btn-card-action" onclick="openShareModal(${c.id})" title="Partager"><i class="fa-solid fa-share-nodes"></i></button>
+                <button class="btn-card-action" onclick="openEditCourseModal(${c.id})" title="Modifier"><i class="fa-solid fa-pen-to-square"></i></button>
+                <button class="btn-card-action" onclick="deleteCourseById(${c.id})" title="Supprimer"><i class="fa-solid fa-trash-can"></i></button>
+              </div>
+            </td>
+          </tr>
+        `;
+      });
+
+      tableHtml += `</tbody></table></div>`;
+      feed.innerHTML = tableHtml;
+      return;
+    }
+
+    // Affichage Mode Grille (Cartes classiques)
     items.forEach(c => {
       const card = document.createElement('div');
       const theme = getSubjectThemeInfo(c.subject);
+      const statusInfo = getCourseStatusInfo(c.status);
       card.className = `course-card theme-${theme.key}`;
+      card.setAttribute('draggable', 'true');
+      card.setAttribute('ondragstart', `handleCourseDragStart(event, '${c.id}')`);
+      card.setAttribute('ondragend', `handleCourseDragEnd(event)`);
 
       let attachmentsHTML = buildAttachmentsHTML(c.attachments);
       const parsedContent = (typeof marked !== 'undefined' && marked.parse) ? marked.parse(c.content || '') : (c.content || '');
@@ -988,7 +1192,12 @@ function renderCourses() {
 
       card.innerHTML = `
         <div class="course-card-top">
-          <span class="badge-sub"><i class="${theme.icon}"></i> ${escapeHtml(c.subject)}</span>
+          <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+            <span class="badge-sub"><i class="${theme.icon}"></i> ${escapeHtml(c.subject)}</span>
+            <span class="course-status-pill ${statusInfo.class}" onclick="cycleCourseStatus(${c.id}, event)" title="Cliquer pour changer de statut">
+              <i class="fa-solid ${statusInfo.icon}"></i> ${statusInfo.label}
+            </span>
+          </div>
           <div class="card-actions">
             <button class="btn-card-action btn-action-fav ${c.isFavorite ? 'active' : ''}" onclick="toggleCourseFavorite(${c.id})" title="${c.isFavorite ? 'Retirer des favoris' : 'Marquer comme favori'}">
               <i class="fa-${c.isFavorite ? 'solid' : 'regular'} fa-star"></i>
@@ -1145,6 +1354,67 @@ function buildAttachmentsHTML(attachments) {
 }
 
 let currentViewerContentText = '';
+let currentViewerFileUrl = '';
+let currentViewerFileName = '';
+let isViewerWrapActive = true;
+
+async function triggerFileDownload(fileUrl, fileName) {
+  const targetUrl = fileUrl || currentViewerFileUrl;
+  const targetName = fileName || currentViewerFileName || 'fichier';
+  if (!targetUrl) return;
+
+  try {
+    showToast('Téléchargement en cours...', 'info');
+    if (targetUrl.startsWith('data:')) {
+      const a = document.createElement('a');
+      a.href = targetUrl;
+      a.download = targetName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      showToast('Téléchargement terminé !', 'success');
+      return;
+    }
+
+    const res = await fetch(targetUrl);
+    if (!res.ok) throw new Error('Échec du téléchargement du fichier');
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = targetName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    showToast('Téléchargement terminé !', 'success');
+  } catch (err) {
+    console.error('Erreur téléchargement direct:', err);
+    // Fallback ouverture externe
+    const a = document.createElement('a');
+    a.href = targetUrl;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.download = targetName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+}
+
+function toggleViewerWrap() {
+  const contentEl = document.querySelector('.viewer-text-content');
+  const btn = document.getElementById('btnViewerToggleWrap');
+  if (!contentEl) return;
+  isViewerWrapActive = !isViewerWrapActive;
+  if (isViewerWrapActive) {
+    contentEl.classList.remove('no-wrap');
+    if (btn) btn.innerHTML = '<i class="fa-solid fa-align-left"></i> <span>Retour à la ligne : Activé</span>';
+  } else {
+    contentEl.classList.add('no-wrap');
+    if (btn) btn.innerHTML = '<i class="fa-solid fa-bars"></i> <span>Retour à la ligne : Désactivé</span>';
+  }
+}
 
 async function openFileViewer(fileUrl, fileName, options = {}) {
   if (typeof document === 'undefined') return;
@@ -1154,17 +1424,19 @@ async function openFileViewer(fileUrl, fileName, options = {}) {
   const sizeEl = document.getElementById('fileViewerSize');
   const iconEl = document.getElementById('fileViewerIcon');
   const bodyEl = document.getElementById('fileViewerBody');
-  const btnDownload = document.getElementById('fileViewerBtnDownload');
   const btnExternal = document.getElementById('fileViewerBtnExternal');
   const btnCopy = document.getElementById('fileViewerBtnCopy');
 
   if (!modal || !bodyEl) return;
 
+  currentViewerFileUrl = fileUrl;
+  currentViewerFileName = fileName || 'document';
+
   const ext = (fileName || '').split('.').pop().toLowerCase();
   const isImage = options.isImage || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
   const isPdf = ext === 'pdf';
   const isMd = ext === 'md';
-  const isText = ['txt', 'json', 'py', 'c', 'cpp', 'js', 'html', 'css', 'sh', 'sql', 'csv', 'log', 'ini', 'xml'].includes(ext);
+  const isText = ['txt', 'json', 'py', 'c', 'cpp', 'js', 'html', 'css', 'sh', 'sql', 'csv', 'log', 'ini', 'xml', 'pkt'].includes(ext);
 
   if (titleEl) titleEl.innerText = fileName || 'Document';
   if (metaEl) metaEl.innerText = ext ? ext.toUpperCase() : 'FICHIER';
@@ -1181,10 +1453,6 @@ async function openFileViewer(fileUrl, fileName, options = {}) {
     iconEl.className = getFileIconClass(fileName);
   }
 
-  if (btnDownload) {
-    btnDownload.href = fileUrl;
-    btnDownload.setAttribute('download', fileName || 'document');
-  }
   if (btnExternal) {
     btnExternal.href = fileUrl;
   }
@@ -1242,7 +1510,28 @@ async function openFileViewer(fileUrl, fileName, options = {}) {
         const sanitized = (typeof DOMPurify !== 'undefined' && DOMPurify.sanitize) ? DOMPurify.sanitize(parsed) : parsed;
         bodyEl.innerHTML = `<div class="viewer-markdown-content">${sanitized}</div>`;
       } else {
-        bodyEl.innerHTML = `<pre class="viewer-text-content"><code>${escapeHtml(textContent)}</code></pre>`;
+        const lines = textContent.split('\n');
+        const lineCount = lines.length;
+        const lineNumbersHtml = Array.from({ length: lineCount }, (_, i) => i + 1).join('<br>');
+        bodyEl.innerHTML = `
+          <div class="viewer-text-container">
+            <div class="viewer-text-toolbar">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="viewer-badge">${escapeHtml(ext.toUpperCase())}</span>
+                <span>${lineCount} ligne${lineCount > 1 ? 's' : ''}</span>
+              </div>
+              <div class="viewer-text-toolbar-actions">
+                <button type="button" class="viewer-text-toggle-btn" id="btnViewerToggleWrap" onclick="toggleViewerWrap()">
+                  <i class="fa-solid fa-align-left"></i> <span>Retour à la ligne : ${isViewerWrapActive ? 'Activé' : 'Désactivé'}</span>
+                </button>
+              </div>
+            </div>
+            <div class="viewer-text-wrapper">
+              <div class="viewer-line-numbers">${lineNumbersHtml}</div>
+              <pre class="viewer-text-content ${isViewerWrapActive ? '' : 'no-wrap'}"><code>${escapeHtml(textContent)}</code></pre>
+            </div>
+          </div>
+        `;
       }
 
       if (typeof Prism !== 'undefined') {
@@ -1254,9 +1543,9 @@ async function openFileViewer(fileUrl, fileName, options = {}) {
           <i class="${getFileIconClass(fileName)}" style="font-size: 3.5rem; color: var(--primary); margin-bottom: 1rem; opacity: 0.85;"></i>
           <h4 style="font-size: 1.1rem; color: #f1f5f9; margin-bottom: 0.5rem;">${escapeHtml(fileName)}</h4>
           <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.5rem;">Aperçu direct non disponible pour ce type de fichier.</p>
-          <a href="${fileUrl}" download="${escapeHtml(fileName)}" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+          <button type="button" onclick="triggerFileDownload('${fileUrl}', '${escapeHtml(fileName)}')" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
             <i class="fa-solid fa-download"></i> Télécharger le fichier
-          </a>
+          </button>
         </div>
       `;
     }
@@ -1267,9 +1556,9 @@ async function openFileViewer(fileUrl, fileName, options = {}) {
         <i class="fa-solid fa-circle-exclamation" style="font-size: 3rem; margin-bottom: 1rem;"></i>
         <p style="font-size: 1rem; font-weight: 600;">Erreur lors du chargement de l'aperçu.</p>
         <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.35rem;">Vous pouvez toujours télécharger le fichier directement.</p>
-        <a href="${fileUrl}" download="${escapeHtml(fileName)}" class="btn" style="margin-top: 1rem;">
+        <button type="button" onclick="triggerFileDownload('${fileUrl}', '${escapeHtml(fileName)}')" class="btn" style="margin-top: 1rem;">
           <i class="fa-solid fa-download"></i> Télécharger
-        </a>
+        </button>
       </div>
     `;
   }
@@ -1442,11 +1731,18 @@ function handleMarkdownInput() {
   }
 }
 
+function scrollToFocusHeading(headingId) {
+  const el = document.getElementById(headingId);
+  if (el) {
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
 // Focus Mode & PDF
 function openFocusModal(id, isShared = false) {
   let course;
   if (!isShared) {
-    course = userVault.courses.find(c => c.id === Number(id));
+    course = (userVault.courses || []).find(c => c.id === Number(id));
   } else {
     const shared = allSharedCourses.find(s => s.id === String(id));
     course = shared ? shared.course : null;
@@ -1458,6 +1754,8 @@ function openFocusModal(id, isShared = false) {
   const titleEl = document.getElementById('focusModalTitle');
   const bodyEl = document.getElementById('focusModalBody');
   const attEl = document.getElementById('focusModalAttachments');
+  const outlineEl = document.getElementById('focusModalOutline');
+  const progressFill = document.getElementById('focusReadingProgress');
 
   if (metaEl) {
     metaEl.innerHTML = `<span class="badge-sub"><i class="${theme.icon}"></i> ${escapeHtml(course.subject)}</span>`;
@@ -1467,15 +1765,47 @@ function openFocusModal(id, isShared = false) {
     const parsed = (typeof marked !== 'undefined' && marked.parse) ? marked.parse(course.content || '') : (course.content || '');
     bodyEl.innerHTML = (typeof DOMPurify !== 'undefined' && DOMPurify.sanitize) ? DOMPurify.sanitize(parsed) : parsed;
     if (typeof Prism !== 'undefined') Prism.highlightAllUnder(bodyEl);
+
+    // Génération du sommaire rapide (Table des matières)
+    if (outlineEl) {
+      const headings = bodyEl.querySelectorAll('h1, h2, h3');
+      if (headings.length > 1) {
+        let outlineHtml = '<div class="focus-outline-title"><i class="fa-solid fa-list-ol"></i> Sommaire du cours</div><ul class="focus-outline-list">';
+        headings.forEach((h, idx) => {
+          const hId = `focus-heading-${idx}`;
+          h.id = hId;
+          const prefix = h.tagName === 'H1' ? '• ' : (h.tagName === 'H2' ? '— ' : '› ');
+          outlineHtml += `<li class="focus-outline-item"><a href="javascript:void(0)" onclick="scrollToFocusHeading('${hId}')">${prefix}${escapeHtml(h.innerText)}</a></li>`;
+        });
+        outlineHtml += '</ul>';
+        outlineEl.innerHTML = outlineHtml;
+        outlineEl.style.display = 'block';
+      } else {
+        outlineEl.innerHTML = '';
+        outlineEl.style.display = 'none';
+      }
+    }
   }
+
   if (attEl) {
     attEl.innerHTML = buildAttachmentsHTML(course.attachments);
   }
+
+  if (progressFill) progressFill.style.width = '0%';
 
   const modal = document.getElementById('focusModal');
   if (modal) {
     modal.classList.add('active');
     trapFocusInModal(modal);
+
+    const sheet = modal.querySelector('.modal-sheet');
+    if (sheet && progressFill) {
+      sheet.onscroll = () => {
+        const maxScroll = sheet.scrollHeight - sheet.clientHeight;
+        const progress = maxScroll > 0 ? (sheet.scrollTop / maxScroll) * 100 : 0;
+        progressFill.style.width = `${Math.min(100, Math.max(0, progress))}%`;
+      };
+    }
   }
 }
 
@@ -2067,12 +2397,44 @@ function getFormattedLastLogin(username) {
   }
 }
 
+function changeAppTheme(themeName, saveToVault = true) {
+  const allowed = ['cyber', 'matrix', 'midnight', 'paper'];
+  const theme = allowed.includes(themeName) ? themeName : 'cyber';
+  if (typeof document !== 'undefined') {
+    document.documentElement.setAttribute('data-theme', theme);
+    const select = document.getElementById('settingThemeSelect');
+    if (select) select.value = theme;
+  }
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('ciel_theme', theme);
+  }
+  if (saveToVault && userVault) {
+    if (!userVault.settings) userVault.settings = {};
+    userVault.settings.theme = theme;
+    triggerAutoSave();
+  }
+}
+
+function initTheme() {
+  const savedTheme = (userVault?.settings?.theme) || (typeof localStorage !== 'undefined' && localStorage.getItem('ciel_theme')) || 'cyber';
+  changeAppTheme(savedTheme, false);
+}
+
 function applyUserSettings() {
   const isCompact = userVault.settings?.compactMode || (typeof localStorage !== 'undefined' && localStorage.getItem('ciel_setting_compact') === 'true');
   const feed = document.getElementById('coursesFeed');
   if (feed) {
     if (isCompact) feed.classList.add('compact-mode');
     else feed.classList.remove('compact-mode');
+  }
+
+  // Appliquer le thème
+  initTheme();
+
+  // Appliquer le mode de disposition des cours (grille ou tableau)
+  const savedLayout = (typeof localStorage !== 'undefined' && localStorage.getItem('ciel_course_layout_mode')) || 'grid';
+  if (savedLayout) {
+    setCourseLayoutMode(savedLayout);
   }
 }
 
@@ -2098,6 +2460,12 @@ function openSettingsModal() {
   const confettiToggle = document.getElementById('settingConfetti');
   if (confettiToggle) {
     confettiToggle.checked = userVault.settings?.confetti !== false && localStorage.getItem('ciel_setting_confetti') !== 'false';
+  }
+
+  const themeSelect = document.getElementById('settingThemeSelect');
+  if (themeSelect) {
+    const currentTheme = userVault.settings?.theme || localStorage.getItem('ciel_theme') || 'cyber';
+    themeSelect.value = currentTheme;
   }
 
   modal.classList.add('active');
@@ -2149,6 +2517,394 @@ async function forceVaultSync() {
 }
 
 /* ==========================================================
+   8.2 BIS. OUTIL CALCULATEUR IPV4 & SOUS-RÉSEAUX CIDR
+   ========================================================== */
+function calcSubnet(inputStr) {
+  if (!inputStr || typeof inputStr !== 'string') return null;
+  const parts = inputStr.trim().split('/');
+  const ipStr = parts[0].trim();
+  let prefix = parts.length > 1 ? parseInt(parts[1].trim(), 10) : 24;
+  if (isNaN(prefix) || prefix < 0 || prefix > 32) prefix = 24;
+
+  const octets = ipStr.split('.').map(Number);
+  if (octets.length !== 4 || octets.some(o => isNaN(o) || o < 0 || o > 255)) {
+    return null;
+  }
+
+  // Conversion en entier 32 bits non signé
+  const ipInt = ((octets[0] << 24) | (octets[1] << 16) | (octets[2] << 8) | octets[3]) >>> 0;
+  const maskInt = prefix === 0 ? 0 : ((0xFFFFFFFF << (32 - prefix)) >>> 0);
+  const wildcardInt = (~maskInt) >>> 0;
+  const networkInt = (ipInt & maskInt) >>> 0;
+  const broadcastInt = (networkInt | wildcardInt) >>> 0;
+
+  const intToIp = (num) => [
+    (num >>> 24) & 255,
+    (num >>> 16) & 255,
+    (num >>> 8) & 255,
+    num & 255
+  ].join('.');
+
+  const intToBinary = (num) => [
+    ((num >>> 24) & 255).toString(2).padStart(8, '0'),
+    ((num >>> 16) & 255).toString(2).padStart(8, '0'),
+    ((num >>> 8) & 255).toString(2).padStart(8, '0'),
+    (num & 255).toString(2).padStart(8, '0')
+  ].join('.');
+
+  const totalHosts = Math.pow(2, 32 - prefix);
+  let usableHosts = 0;
+  let firstUsable = '';
+  let lastUsable = '';
+
+  if (prefix === 31) {
+    usableHosts = 2;
+    firstUsable = intToIp(networkInt);
+    lastUsable = intToIp(broadcastInt);
+  } else if (prefix === 32) {
+    usableHosts = 1;
+    firstUsable = intToIp(networkInt);
+    lastUsable = intToIp(networkInt);
+  } else {
+    usableHosts = Math.max(0, totalHosts - 2);
+    firstUsable = intToIp(networkInt + 1);
+    lastUsable = intToIp(broadcastInt - 1);
+  }
+
+  // Classe et type d'adresse (RFC 1918)
+  const firstOctet = octets[0];
+  let ipClass = 'A';
+  if (firstOctet >= 128 && firstOctet <= 191) ipClass = 'B';
+  else if (firstOctet >= 192 && firstOctet <= 223) ipClass = 'C';
+  else if (firstOctet >= 224 && firstOctet <= 239) ipClass = 'D (Multicast)';
+  else if (firstOctet >= 240) ipClass = 'E (Expérimental)';
+
+  let ipType = 'Publique';
+  if (
+    firstOctet === 10 ||
+    (firstOctet === 172 && octets[1] >= 16 && octets[1] <= 31) ||
+    (firstOctet === 192 && octets[1] === 168)
+  ) {
+    ipType = 'Privée (RFC 1918)';
+  } else if (firstOctet === 127) {
+    ipType = 'Loopback locale (127.0.0.1)';
+  } else if (firstOctet === 169 && octets[1] === 254) {
+    ipType = 'APIPA (Auto-IP)';
+  }
+
+  return {
+    inputIp: ipStr,
+    prefix,
+    cidr: `${ipStr}/${prefix}`,
+    network: intToIp(networkInt),
+    netmask: intToIp(maskInt),
+    wildcard: intToIp(wildcardInt),
+    broadcast: intToIp(broadcastInt),
+    firstUsable,
+    lastUsable,
+    totalHosts,
+    usableHosts,
+    ipClass,
+    ipType,
+    binaryIp: intToBinary(ipInt),
+    binaryMask: intToBinary(maskInt),
+    binaryNetwork: intToBinary(networkInt),
+    binaryBroadcast: intToBinary(broadcastInt)
+  };
+}
+
+let lastCalculatedSubnet = null;
+
+function handleIpCalcInput(val) {
+  const result = calcSubnet(val || '192.168.1.1/24');
+  const resContainer = document.getElementById('ipCalcResults');
+  if (!resContainer) return;
+
+  if (!result) {
+    resContainer.innerHTML = `
+      <div style="text-align:center; padding: 1.5rem; color: #f87171;">
+        <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.8rem; margin-bottom: 0.5rem;"></i>
+        <p style="font-size: 0.9rem; font-weight: 600;">Format d'adresse IPv4 ou masque CIDR invalide.</p>
+        <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.25rem;">Exemples valides : 192.168.1.10/24 ou 10.0.0.1/26 ou 172.16.5.0/30</p>
+      </div>
+    `;
+    lastCalculatedSubnet = null;
+    return;
+  }
+
+  lastCalculatedSubnet = result;
+  resContainer.innerHTML = `
+    <div class="ipcalc-results-grid">
+      <div class="ipcalc-card">
+        <div class="ipcalc-card-title">Adresse Réseau</div>
+        <div class="ipcalc-card-value">${result.network}/${result.prefix}</div>
+        <div class="ipcalc-card-sub">Classe ${result.ipClass} • ${result.ipType}</div>
+      </div>
+      <div class="ipcalc-card">
+        <div class="ipcalc-card-title">Masque de sous-réseau</div>
+        <div class="ipcalc-card-value">${result.netmask}</div>
+        <div class="ipcalc-card-sub">Wildcard : ${result.wildcard}</div>
+      </div>
+      <div class="ipcalc-card">
+        <div class="ipcalc-card-title">Première IP Utilisable</div>
+        <div class="ipcalc-card-value">${result.firstUsable}</div>
+        <div class="ipcalc-card-sub">Plage utilisable : ${result.usableHosts.toLocaleString('fr-FR')} hôtes</div>
+      </div>
+      <div class="ipcalc-card">
+        <div class="ipcalc-card-title">Dernière IP Utilisable / Broadcast</div>
+        <div class="ipcalc-card-value">${result.lastUsable}</div>
+        <div class="ipcalc-card-sub">Broadcast : ${result.broadcast}</div>
+      </div>
+    </div>
+    <table class="ipcalc-binary-table">
+      <tr>
+        <td>Binaire IP</td>
+        <td>${result.binaryIp}</td>
+      </tr>
+      <tr>
+        <td>Binaire Masque</td>
+        <td>${result.binaryMask}</td>
+      </tr>
+      <tr>
+        <td>Binaire Réseau</td>
+        <td>${result.binaryNetwork}</td>
+      </tr>
+    </table>
+  `;
+}
+
+function applyIpCalcPreset(cidr) {
+  const input = document.getElementById('ipCalcInput');
+  if (!input) return;
+  const currentVal = input.value.trim() || '192.168.1.1/24';
+  const baseIp = currentVal.split('/')[0] || '192.168.1.1';
+  input.value = `${baseIp}${cidr}`;
+  handleIpCalcInput(input.value);
+}
+
+function openIpCalcModal() {
+  const modal = document.getElementById('ipCalcModal');
+  if (!modal) return;
+  const input = document.getElementById('ipCalcInput');
+  if (input && !input.value) {
+    input.value = '192.168.1.1/24';
+  }
+  handleIpCalcInput(input?.value || '192.168.1.1/24');
+  modal.classList.add('active');
+  trapFocusInModal(modal);
+}
+
+function closeIpCalcModal() {
+  const modal = document.getElementById('ipCalcModal');
+  if (modal) {
+    releaseFocusTrap(modal);
+    modal.classList.remove('active');
+  }
+}
+
+function copyIpCalcMarkdown() {
+  if (!lastCalculatedSubnet) return;
+  const s = lastCalculatedSubnet;
+  const md = `### Fiche Sous-Réseau CIDR : \`${s.cidr}\`
+| Paramètre | Valeur |
+|---|---|
+| **Adresse Réseau** | \`${s.network}/${s.prefix}\` |
+| **Masque de sous-réseau** | \`${s.netmask}\` |
+| **Masque Générique (Wildcard)** | \`${s.wildcard}\` |
+| **Première adresse hôte** | \`${s.firstUsable}\` |
+| **Dernière adresse hôte** | \`${s.lastUsable}\` |
+| **Adresse de Broadcast** | \`${s.broadcast}\` |
+| **Nombre d'hôtes utilisables** | **${s.usableHosts.toLocaleString('fr-FR')}** |
+| **Type / Classe** | Classe ${s.ipClass} (${s.ipType}) |
+`;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(md).then(() => {
+      showToast('Fiche Markdown copiée dans le presse-papier ! 📋', 'success');
+    }).catch(() => {
+      showToast('Erreur lors de la copie', 'error');
+    });
+  } else {
+    showToast('Presse-papier indisponible', 'error');
+  }
+}
+
+/* ==========================================================
+   8.2 TER. COMMAND PALETTE UNIVERSELLE (CTRL+K)
+   ========================================================== */
+let cmdPaletteItems = [];
+let cmdPaletteFilteredItems = [];
+let cmdPaletteSelectedIndex = 0;
+
+function generateCommandPaletteItems() {
+  const items = [];
+
+  // Navigation
+  items.push({ id: 'nav-courses', title: 'Aller aux Cours', category: 'Navigation', icon: 'fa-book-open', action: () => showTab('tab-courses') });
+  items.push({ id: 'nav-flashcards', title: 'Aller aux Flashcards', category: 'Navigation', icon: 'fa-clone', action: () => showTab('tab-flashcards') });
+  items.push({ id: 'nav-todos', title: 'Aller au Planning & Tâches', category: 'Navigation', icon: 'fa-list-check', action: () => showTab('tab-todos') });
+  items.push({ id: 'nav-ipcalc', title: 'Ouvrir la Calculatrice IPv4 & CIDR', category: 'Outils CIEL', icon: 'fa-calculator', action: () => openIpCalcModal() });
+  items.push({ id: 'nav-profile', title: 'Ouvrir Mon Profil Élève', category: 'Navigation', icon: 'fa-user-graduate', action: () => openProfileModal() });
+  items.push({ id: 'nav-settings', title: 'Ouvrir les Paramètres', category: 'Navigation', icon: 'fa-gear', action: () => openSettingsModal() });
+
+  // Quick Actions
+  items.push({ id: 'act-new-course', title: 'Nouveau cours ou TP', category: 'Actions', icon: 'fa-plus', action: () => openCourseModal() });
+  items.push({ id: 'act-new-folder', title: 'Créer un nouveau dossier', category: 'Actions', icon: 'fa-folder-plus', action: () => openCreateFolderModal() });
+  items.push({ id: 'act-sync', title: 'Forcer la synchronisation GitHub', category: 'Actions', icon: 'fa-rotate', action: () => syncUserVault() });
+  items.push({ id: 'act-backup', title: 'Exporter mon coffre (.json)', category: 'Actions', icon: 'fa-download', action: () => exportVaultBackupJSON() });
+
+  // Themes
+  items.push({ id: 'theme-cyber', title: 'Thème : 🌌 Cyber Night (Néon & Sombre)', category: 'Thèmes', icon: 'fa-palette', action: () => changeAppTheme('cyber') });
+  items.push({ id: 'theme-matrix', title: 'Thème : 🛰️ Matrix Terminal (Vert Phosphore)', category: 'Thèmes', icon: 'fa-terminal', action: () => changeAppTheme('matrix') });
+  items.push({ id: 'theme-midnight', title: 'Thème : 🌌 Midnight Gold (Nuit & Or)', category: 'Thèmes', icon: 'fa-moon', action: () => changeAppTheme('midnight') });
+  items.push({ id: 'theme-paper', title: 'Thème : ☀️ Paper White (Clair)', category: 'Thèmes', icon: 'fa-sun', action: () => changeAppTheme('paper') });
+
+  // Layout mode
+  items.push({ id: 'layout-grid', title: 'Affichage : Grille de cartes', category: 'Affichage', icon: 'fa-table-cells-large', action: () => setCourseLayoutMode('grid') });
+  items.push({ id: 'layout-table', title: 'Affichage : Tableau détaillé', category: 'Affichage', icon: 'fa-table-list', action: () => setCourseLayoutMode('table') });
+
+  // Matières
+  const subjects = [
+    { key: 'reseaux', name: 'Réseaux & Informatique', icon: 'fa-network-wired' },
+    { key: 'secu', name: 'Cybersécurité', icon: 'fa-shield-halved' },
+    { key: 'elec', name: 'Électronique & IoT', icon: 'fa-bolt' },
+    { key: 'projet', name: 'Projet CIEL', icon: 'fa-diagram-project' },
+    { key: 'maths', name: 'Mathématiques', icon: 'fa-square-root-variable' },
+    { key: 'physique', name: 'Physique-Chimie', icon: 'fa-atom' },
+    { key: 'francais', name: 'Français', icon: 'fa-feather' },
+    { key: 'hist-geo', name: 'Histoire-Géographie & EMC', icon: 'fa-earth-europe' },
+    { key: 'pse', name: 'PSE', icon: 'fa-heart-pulse' },
+    { key: 'eco', name: 'Économie-Gestion', icon: 'fa-chart-pie' },
+    { key: 'anglais', name: 'Anglais', icon: 'fa-language' },
+    { key: 'allemand', name: 'Allemand', icon: 'fa-comments' },
+    { key: 'arts', name: 'Arts Appliqués', icon: 'fa-palette' },
+    { key: 'eps', name: 'EPS', icon: 'fa-person-running' }
+  ];
+
+  subjects.forEach(s => {
+    items.push({
+      id: `filter-${s.key}`,
+      title: `Filtrer : ${s.name}`,
+      category: 'Matières',
+      icon: s.icon,
+      action: () => { showTab('tab-courses'); setFilter(s.key); }
+    });
+  });
+
+  // Mes cours personnels
+  (userVault.courses || []).forEach(c => {
+    const theme = getSubjectThemeInfo(c.subject);
+    items.push({
+      id: `course-${c.id}`,
+      title: c.title,
+      sub: `${c.subject} • ${new Date(c.date).toLocaleDateString('fr-FR')}`,
+      category: 'Mes Cours',
+      icon: theme.icon,
+      action: () => { showTab('tab-courses'); openFocusModal(c.id, false); }
+    });
+  });
+
+  return items;
+}
+
+function openCommandPalette() {
+  const modal = document.getElementById('commandPaletteModal');
+  const input = document.getElementById('cmdPaletteSearch');
+  if (!modal || !input) return;
+
+  cmdPaletteItems = generateCommandPaletteItems();
+  cmdPaletteSelectedIndex = 0;
+  input.value = '';
+  filterCommandPalette('');
+
+  modal.classList.add('active');
+  trapFocusInModal(modal);
+  setTimeout(() => input.focus(), 50);
+}
+
+function closeCommandPalette() {
+  const modal = document.getElementById('commandPaletteModal');
+  if (modal) {
+    releaseFocusTrap(modal);
+    modal.classList.remove('active');
+  }
+}
+
+function filterCommandPalette(query) {
+  const listEl = document.getElementById('cmdPaletteList');
+  if (!listEl) return;
+
+  const q = (query || '').toLowerCase().trim();
+  let filtered = cmdPaletteItems;
+  if (q) {
+    filtered = cmdPaletteItems.filter(item => {
+      return item.title.toLowerCase().includes(q) ||
+             (item.sub && item.sub.toLowerCase().includes(q)) ||
+             item.category.toLowerCase().includes(q);
+    });
+  }
+
+  cmdPaletteFilteredItems = filtered;
+  cmdPaletteSelectedIndex = 0;
+
+  if (filtered.length === 0) {
+    listEl.innerHTML = `
+      <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+        <i class="fa-solid fa-magnifying-glass" style="font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.4;"></i>
+        <p style="font-size: 0.88rem;">Aucune action ou cours trouvé pour "${escapeHtml(query)}"</p>
+      </div>
+    `;
+    return;
+  }
+
+  // Grouper par catégorie
+  const groups = {};
+  filtered.forEach((item, index) => {
+    if (!groups[item.category]) groups[item.category] = [];
+    groups[item.category].push({ ...item, globalIndex: index });
+  });
+
+  let html = '';
+  Object.keys(groups).forEach(cat => {
+    html += `<div class="cmd-palette-group-title">${escapeHtml(cat)}</div>`;
+    groups[cat].forEach(item => {
+      const isSelected = item.globalIndex === cmdPaletteSelectedIndex;
+      html += `
+        <div class="cmd-palette-item ${isSelected ? 'active' : ''}" id="cmd-item-${item.globalIndex}" onclick="executeCommandItem(${item.globalIndex})">
+          <div class="cmd-palette-item-left">
+            <div class="cmd-palette-item-icon"><i class="fa-solid ${item.icon}"></i></div>
+            <div style="min-width: 0;">
+              <div class="cmd-palette-item-text">${escapeHtml(item.title)}</div>
+              ${item.sub ? `<div class="cmd-palette-item-sub">${escapeHtml(item.sub)}</div>` : ''}
+            </div>
+          </div>
+          <span class="cmd-palette-item-badge">${escapeHtml(item.category)}</span>
+        </div>
+      `;
+    });
+  });
+
+  listEl.innerHTML = html;
+}
+
+function updateCmdPaletteSelection() {
+  document.querySelectorAll('.cmd-palette-item').forEach((el, idx) => {
+    el.classList.toggle('active', idx === cmdPaletteSelectedIndex);
+    if (idx === cmdPaletteSelectedIndex) {
+      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  });
+}
+
+function executeCommandItem(index) {
+  const item = cmdPaletteFilteredItems[index];
+  if (!item) return;
+  closeCommandPalette();
+  if (typeof item.action === 'function') {
+    item.action();
+  }
+}
+
+/* ==========================================================
    8.3 SYSTÈME DE DOSSIERS & ARBORESCENCE STRICTE PAR MATIÈRE
    ========================================================== */
 function renderFoldersBar() {
@@ -2173,7 +2929,7 @@ function renderFoldersBar() {
   // 1. Bouton 'Tous les cours / Racine'
   const isAllActive = activeFolderId === 'all';
   html += `
-    <button type="button" class="folder-chip ${isAllActive ? 'active' : ''}" onclick="setFolderFilter('all')" role="tab" aria-selected="${isAllActive}">
+    <button type="button" class="folder-chip ${isAllActive ? 'active' : ''}" onclick="setFolderFilter('all')" ondragover="handleFolderDragOver(event, 'all')" ondragleave="handleFolderDragLeave(event)" ondrop="handleFolderDrop(event, 'all')" role="tab" aria-selected="${isAllActive}">
       <i class="fa-solid fa-folder-open folder-chip-icon"></i>
       <span class="folder-chip-name">Racine (Tous les cours)</span>
       <span class="folder-chip-count">${totalCourses}</span>
@@ -2193,7 +2949,7 @@ function renderFoldersBar() {
     const theme = getSubjectThemeInfo(f.subject);
     
     html += `
-      <div class="folder-chip ${isActive ? 'active' : ''}" style="--f-color: ${color}; --f-glow: ${color}40;" onclick="setFolderFilter('${f.id}')" role="tab" aria-selected="${isActive}" title="Dossier [${escapeHtml(f.subject)}] : ${escapeHtml(f.name)}">
+      <div class="folder-chip ${isActive ? 'active' : ''}" style="--f-color: ${color}; --f-glow: ${color}40;" onclick="setFolderFilter('${f.id}')" ondragover="handleFolderDragOver(event, '${f.id}')" ondragleave="handleFolderDragLeave(event)" ondrop="handleFolderDrop(event, '${f.id}')" role="tab" aria-selected="${isActive}" title="Dossier [${escapeHtml(f.subject)}] : ${escapeHtml(f.name)}">
         <i class="fa-solid fa-folder folder-chip-icon" style="color: ${color};"></i>
         <span class="folder-chip-name">${escapeHtml(f.name)}</span>
         <span class="folder-chip-sub-badge"><i class="${theme.icon}"></i> ${escapeHtml(f.subject.replace('CIEL - ', ''))}</span>
@@ -2209,7 +2965,7 @@ function renderFoldersBar() {
   if (unassignedCount > 0 && userVault.folders.length > 0) {
     const isUnassignedActive = activeFolderId === 'unassigned';
     html += `
-      <button type="button" class="folder-chip ${isUnassignedActive ? 'active' : ''}" onclick="setFolderFilter('unassigned')" role="tab" aria-selected="${isUnassignedActive}" title="Fichiers libres situés à la racine">
+      <button type="button" class="folder-chip ${isUnassignedActive ? 'active' : ''}" onclick="setFolderFilter('unassigned')" ondragover="handleFolderDragOver(event, 'unassigned')" ondragleave="handleFolderDragLeave(event)" ondrop="handleFolderDrop(event, 'unassigned')" role="tab" aria-selected="${isUnassignedActive}" title="Fichiers libres situés à la racine">
         <i class="fa-regular fa-folder folder-chip-icon"></i>
         <span class="folder-chip-name">Fichiers libres</span>
         <span class="folder-chip-count">${unassignedCount}</span>
@@ -2478,11 +3234,11 @@ if (typeof window !== 'undefined') {
 
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
       e.preventDefault();
-      const searchInput = document.getElementById('courseSearch');
-      if (searchInput) {
-        showTab('tab-courses');
-        searchInput.focus();
-        searchInput.select();
+      const cmdModal = document.getElementById('commandPaletteModal');
+      if (cmdModal && cmdModal.classList.contains('active')) {
+        closeCommandPalette();
+      } else {
+        openCommandPalette();
       }
     } else if (!isInput && e.key.toLowerCase() === 'n') {
       e.preventDefault();
@@ -2512,6 +3268,8 @@ if (typeof window !== 'undefined') {
         if (cancelBtn) cancelBtn.click();
         return;
       }
+      closeCommandPalette();
+      closeIpCalcModal();
       closeFileViewer();
       closeCourseModal();
       closeShareModal();
@@ -2521,6 +3279,31 @@ if (typeof window !== 'undefined') {
       closeMoveCourseModal();
       closeLightbox();
       closeFocusModal();
+    }
+  });
+
+  // Navigation au clavier dans la Command Palette
+  window.addEventListener('DOMContentLoaded', () => {
+    const cmdInput = document.getElementById('cmdPaletteSearch');
+    if (cmdInput) {
+      cmdInput.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          if (cmdPaletteFilteredItems.length > 0) {
+            cmdPaletteSelectedIndex = (cmdPaletteSelectedIndex + 1) % cmdPaletteFilteredItems.length;
+            updateCmdPaletteSelection();
+          }
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          if (cmdPaletteFilteredItems.length > 0) {
+            cmdPaletteSelectedIndex = (cmdPaletteSelectedIndex - 1 + cmdPaletteFilteredItems.length) % cmdPaletteFilteredItems.length;
+            updateCmdPaletteSelection();
+          }
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          executeCommandItem(cmdPaletteSelectedIndex);
+        }
+      });
     }
   });
 
@@ -2602,6 +3385,7 @@ if (typeof window !== 'undefined') {
     clearTagFilter,
     openFocusModal,
     closeFocusModal,
+    scrollToFocusHeading,
     printFocusCourse,
     exportCourseToPDF,
     openShareModal,
@@ -2617,6 +3401,8 @@ if (typeof window !== 'undefined') {
     openFileViewer,
     closeFileViewer,
     copyViewerContent,
+    triggerFileDownload,
+    toggleViewerWrap,
     importSharedCourse,
     deleteSharedCourse,
     deleteCourseById,
@@ -2636,13 +3422,37 @@ if (typeof window !== 'undefined') {
     setFilter,
     switchCourseSubView,
 
-    // Paramètres & Dernière Connexion
+    // Layout Mode & Statuts d'apprentissage & Drag-and-drop
+    getCourseStatusInfo,
+    cycleCourseStatus,
+    setCourseLayoutMode,
+    handleCourseDragStart,
+    handleCourseDragEnd,
+    handleFolderDragOver,
+    handleFolderDragLeave,
+    handleFolderDrop,
+
+    // Thèmes & Paramètres
+    changeAppTheme,
+    initTheme,
     openSettingsModal,
     closeSettingsModal,
     toggleSettingCompactMode,
     toggleSettingConfetti,
     exportVaultBackupJSON,
     forceVaultSync,
+
+    // Calculateur IP & Command Palette
+    calcSubnet,
+    handleIpCalcInput,
+    applyIpCalcPreset,
+    openIpCalcModal,
+    closeIpCalcModal,
+    copyIpCalcMarkdown,
+    openCommandPalette,
+    closeCommandPalette,
+    filterCommandPalette,
+    executeCommandItem,
 
     // Gestion des Dossiers & Matières
     renderFoldersBar,
@@ -2698,6 +3508,8 @@ if (typeof module !== 'undefined' && module.exports) {
     set fcCursor(v) { fcCursor = v; },
     get fcFlipped() { return fcFlipped; },
     set fcFlipped(v) { fcFlipped = v; },
+    get courseLayoutMode() { return courseLayoutMode; },
+    set courseLayoutMode(v) { courseLayoutMode = v; },
 
     // Helpers UI
     escapeHtml,
@@ -2724,7 +3536,9 @@ if (typeof module !== 'undefined' && module.exports) {
     handleAvatarChange,
     saveUserProfile,
 
-    // Paramètres
+    // Paramètres & Thèmes
+    changeAppTheme,
+    initTheme,
     openSettingsModal,
     closeSettingsModal,
     applyUserSettings,
@@ -2748,6 +3562,28 @@ if (typeof module !== 'undefined' && module.exports) {
     openMoveCourseModal,
     closeMoveCourseModal,
     assignCourseToFolder,
+
+    // Layout, Statuts & Drag-and-drop
+    getCourseStatusInfo,
+    cycleCourseStatus,
+    setCourseLayoutMode,
+    handleCourseDragStart,
+    handleCourseDragEnd,
+    handleFolderDragOver,
+    handleFolderDragLeave,
+    handleFolderDrop,
+
+    // Outils Techniques CIEL & Palette
+    calcSubnet,
+    handleIpCalcInput,
+    applyIpCalcPreset,
+    openIpCalcModal,
+    closeIpCalcModal,
+    copyIpCalcMarkdown,
+    openCommandPalette,
+    closeCommandPalette,
+    filterCommandPalette,
+    executeCommandItem,
 
     // Vault & Sync
     loadUserVault,
@@ -2798,6 +3634,9 @@ if (typeof module !== 'undefined' && module.exports) {
     closeLightbox,
     openFileViewer,
     closeFileViewer,
-    copyViewerContent
+    copyViewerContent,
+    triggerFileDownload,
+    toggleViewerWrap,
+    scrollToFocusHeading
   };
 }
