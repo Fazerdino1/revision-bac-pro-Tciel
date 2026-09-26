@@ -1005,9 +1005,6 @@ function renderCourses() {
             <button class="btn-card-action btn-action-share" onclick="openShareModal(${c.id})" title="Partager avec un camarade">
               <i class="fa-solid fa-share-nodes"></i>
             </button>
-            <button class="btn-card-action btn-action-ai-fc" onclick="generateFlashcardsForCourse(${c.id})" title="Générer des flashcards avec l'IA pour ce cours">
-              <i class="fa-solid fa-wand-magic-sparkles" style="color: #c084fc;"></i>
-            </button>
             <button class="btn-card-action btn-action-edit" onclick="openEditCourseModal(${c.id})" title="Modifier ce cours">
               <i class="fa-solid fa-pen-to-square"></i>
             </button>
