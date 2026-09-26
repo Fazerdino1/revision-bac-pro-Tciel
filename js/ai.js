@@ -178,7 +178,8 @@ function recordAIUsage(modelId, tokenUsage = {}) {
       tier: modelObj.tier,
       tokens: tokens,
       promptTokens: tokenUsage.promptTokens || 0,
-      candidatesTokens: tokenUsage.candidatesTokens || 0
+      candidatesTokens: tokenUsage.candidatesTokens || 0,
+      thoughtsTokens: tokenUsage.thoughtsTokens || 0
     });
     localStorage.setItem('ciel_ai_requests_log', JSON.stringify(log));
   } catch (e) {
@@ -362,24 +363,57 @@ async function callGeminiAPI(messages, options = {}) {
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 
-  // Construction du format contents
+  // Construction du format contents avec support multimodal (fichiers attachés)
   let contents = [];
   if (typeof messages === 'string') {
-    contents = [{ role: 'user', parts: [{ text: messages }] }];
+    const parts = [{ text: messages }];
+    // Ajout des fichiers attachés au dernier message utilisateur
+    if (Array.isArray(options.attachedFiles) && options.attachedFiles.length > 0) {
+      options.attachedFiles.forEach(f => {
+        parts.push({ inlineData: { mimeType: f.mimeType, data: f.base64Data } });
+      });
+    }
+    contents = [{ role: 'user', parts }];
   } else if (Array.isArray(messages)) {
-    contents = messages.map(m => ({
-      role: m.role === 'user' ? 'user' : 'model',
-      parts: [{ text: m.text || m.content || '' }]
-    }));
+    contents = messages.map((m, idx) => {
+      const isUser = m.role === 'user';
+      const parts = [{ text: m.text || m.content || '' }];
+      // Fichiers attachés uniquement sur le dernier message user
+      if (isUser && idx === messages.length - 1 && Array.isArray(options.attachedFiles) && options.attachedFiles.length > 0) {
+        options.attachedFiles.forEach(f => {
+          parts.push({ inlineData: { mimeType: f.mimeType, data: f.base64Data } });
+        });
+      }
+      return { role: isUser ? 'user' : 'model', parts };
+    });
+  }
+
+  const generationConfig = {
+    temperature: options.temperature ?? 0.7,
+    maxOutputTokens: options.maxOutputTokens ?? 2048
+  };
+
+  // Ajout du thinkingConfig si demandé
+  if (options.thinkingConfig) {
+    generationConfig.thinkingConfig = {
+      includeThoughts: true
+    };
+    if (options.thinkingConfig.thinkingLevel) {
+      generationConfig.thinkingConfig.thinkingLevel = options.thinkingConfig.thinkingLevel.toUpperCase();
+    }
+    // Le thinking requiert plus de tokens de sortie
+    generationConfig.maxOutputTokens = options.maxOutputTokens ?? 8192;
   }
 
   const payload = {
     contents,
-    generationConfig: {
-      temperature: options.temperature ?? 0.7,
-      maxOutputTokens: options.maxOutputTokens ?? 2048
-    }
+    generationConfig
   };
+
+  // Ajout des tools (Google Search Grounding)
+  if (Array.isArray(options.tools) && options.tools.length > 0) {
+    payload.tools = options.tools;
+  }
 
   if (options.systemInstruction !== false) {
     payload.systemInstruction = {
@@ -387,8 +421,10 @@ async function callGeminiAPI(messages, options = {}) {
     };
   }
 
+  // Timeout plus long si thinking activé (le raisonnement prend du temps)
+  const timeoutMs = options.thinkingConfig ? 90000 : 45000;
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 45000); // 45s timeout
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const res = await fetch(url, {
@@ -416,16 +452,34 @@ async function callGeminiAPI(messages, options = {}) {
 
     const data = await res.json();
     const candidate = data.candidates?.[0];
-    if (!candidate || !candidate.content?.parts?.[0]?.text) {
+    if (!candidate || !candidate.content?.parts) {
       throw new Error("Aucune réponse générée par le modèle.");
     }
 
-    const replyText = candidate.content.parts[0].text;
+    // Extraction des parts : texte réponse et résumés de réflexion (thoughts)
+    let replyText = '';
+    let thoughts = '';
+    for (const part of candidate.content.parts) {
+      if (!part.text) continue;
+      if (part.thought) {
+        thoughts += (thoughts ? '\n' : '') + part.text;
+      } else {
+        replyText += part.text;
+      }
+    }
+
+    if (!replyText) {
+      throw new Error("Aucune réponse textuelle générée par le modèle.");
+    }
+
+    // Extraction des métadonnées de grounding (sources web)
+    const groundingMetadata = candidate.groundingMetadata || null;
 
     // Extraction des métadonnées officielles de tokens
     let totalTokens = data.usageMetadata?.totalTokenCount;
     const promptTokens = data.usageMetadata?.promptTokenCount || 0;
     const candidatesTokens = data.usageMetadata?.candidatesTokenCount || 0;
+    const thoughtsTokens = data.usageMetadata?.thoughtsTokenCount || 0;
 
     // Estimation de secours si usageMetadata n'est pas fourni par l'API
     if (typeof totalTokens !== 'number' || totalTokens <= 0) {
@@ -434,14 +488,18 @@ async function callGeminiAPI(messages, options = {}) {
       totalTokens = estimatedPrompt + estimatedReply;
     }
 
-    // Enregistrement de l'utilisation réelle en tokens dans les quotas
-    recordAIUsage(model, {
-      totalTokens,
-      promptTokens,
-      candidatesTokens
-    });
+    const usageInfo = { totalTokens, promptTokens, candidatesTokens, thoughtsTokens };
 
-    return replyText;
+    // Enregistrement de l'utilisation réelle en tokens dans les quotas
+    recordAIUsage(model, usageInfo);
+
+    // Retour structuré : texte, réflexions, sources web, métadonnées
+    return {
+      text: replyText,
+      thoughts: thoughts || null,
+      groundingMetadata: groundingMetadata,
+      usageMetadata: usageInfo
+    };
   } catch (err) {
     if (err.name === 'AbortError') {
       throw new Error("Le modèle a mis trop de temps à répondre (délai dépassé). Réessayez.");
@@ -480,7 +538,8 @@ La fiche doit impérativement respecter la structure suivante :
 ## 📝 Résumé Express (Flash Mémo)
 (3 phrases à retenir par cœur)`;
 
-  return await callGeminiAPI(prompt, { temperature: 0.6 });
+  const res = await callGeminiAPI(prompt, { temperature: 0.6 });
+  return typeof res === 'object' && res !== null ? res.text : res;
 }
 
 /**
@@ -500,7 +559,8 @@ Tâche : Restructure entièrement ces notes en un cours Markdown clair, professi
 - Si du code ou des commandes sont mentionnés, place-les dans des blocs de code appropriés (\`\`\`bash, \`\`\`c, etc.).
 - Renvoie UNIQUEMENT le texte Markdown amélioré.`;
 
-  return await callGeminiAPI(prompt, { temperature: 0.5 });
+  const res = await callGeminiAPI(prompt, { temperature: 0.5 });
+  return typeof res === 'object' && res !== null ? res.text : res;
 }
 
 /**
@@ -522,7 +582,8 @@ Contenu du cours :
 ${courseContent.slice(0, 3000)}
 """`;
 
-  const rawRes = await callGeminiAPI(prompt, { temperature: 0.4 });
+  const rawResObj = await callGeminiAPI(prompt, { temperature: 0.4 });
+  const rawRes = typeof rawResObj === 'object' && rawResObj !== null ? rawResObj.text : rawResObj;
   try {
     const cleanJson = rawRes.replace(/```json/gi, '').replace(/```/g, '').trim();
     const parsed = JSON.parse(cleanJson);

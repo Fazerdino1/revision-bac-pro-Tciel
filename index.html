@@ -18,7 +18,7 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-  <link rel="stylesheet" href="css/styles.css?v=3.5.4" />
+  <link rel="stylesheet" href="css/styles.css?v=3.6.0" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#080c14" />
@@ -1046,6 +1046,32 @@
         </div>
       </div>
 
+      <!-- Barre d'options avancées IA (Thinking & Recherche Web) -->
+      <div class="ai-options-bar" id="aiOptionsBar">
+        <div class="ai-option-item">
+          <button type="button" class="ai-toggle-btn" id="btnToggleThinking" onclick="toggleAIThinking()" title="Activer le mode Thinking pour visualiser le raisonnement pas-à-pas du modèle">
+            <i class="fa-solid fa-brain"></i>
+            <span>Thinking</span>
+            <span class="ai-toggle-indicator" id="aiThinkingIndicator">OFF</span>
+          </button>
+          <div class="ai-thinking-level-selector" id="aiThinkingLevelWrap" style="display: none;">
+            <select id="aiThinkingLevelSelect" class="ai-mini-select" onchange="handleAIThinkingLevelChange(this.value)" title="Niveau de réflexion">
+              <option value="low">Rapide (Low)</option>
+              <option value="medium" selected>Équilibré (Medium)</option>
+              <option value="high">Approfondi (High)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="ai-option-item">
+          <button type="button" class="ai-toggle-btn" id="btnToggleSearch" onclick="toggleAISearch()" title="Activer la recherche Google en temps réel pour ancrer les réponses avec des sources fiables">
+            <i class="fa-solid fa-globe"></i>
+            <span>Recherche Web</span>
+            <span class="ai-toggle-indicator" id="aiSearchIndicator">OFF</span>
+          </button>
+        </div>
+      </div>
+
       <!-- Corps du Chat IA -->
       <div class="ai-chat-body" id="aiChatBody">
         <div class="ai-chat-history" id="aiChatHistory">
@@ -1075,10 +1101,15 @@
         </div>
       </div>
 
-      <!-- Zone de saisie du message -->
+      <!-- Zone de saisie du message avec support de fichiers -->
       <form class="ai-chat-footer" id="aiChatForm" onsubmit="handleAIChatSubmit(event)">
+        <div class="ai-attached-previews" id="aiAttachedPreviews" style="display: none;"></div>
         <div class="ai-input-wrapper">
-          <textarea id="aiChatInput" class="ai-input" placeholder="Pose ta question sur le programme CIEL, colle un extrait de TP..." rows="1" onkeydown="handleAIChatKeydown(event)"></textarea>
+          <input type="file" id="aiFileInput" style="display: none;" multiple accept="image/*,.pdf,.txt,.md,.c,.cpp,.py,.js,.html,.css,.json,.csv,.ino" onchange="handleAIFileInputChange(event)">
+          <button type="button" class="btn ai-btn-attach" id="btnAIAttach" onclick="triggerAIFileInput()" title="Importer un fichier (Image de schéma, PDF, code C/Python, cours...)" aria-label="Importer un fichier">
+            <i class="fa-solid fa-paperclip"></i>
+          </button>
+          <textarea id="aiChatInput" class="ai-input" placeholder="Pose ta question, décris ton TP ou dépose un document..." rows="1" onkeydown="handleAIChatKeydown(event)"></textarea>
           <button type="submit" class="btn btn-primary ai-btn-send" id="btnAISend" aria-label="Envoyer le message">
             <i class="fa-solid fa-paper-plane" id="aiSendIcon"></i>
           </button>
@@ -1198,9 +1229,9 @@
   </button>
 
   <!-- Application logic -->
-  <script src="js/crypto.js?v=3.5.4"></script>
-  <script src="js/github.js?v=3.5.4"></script>
-  <script src="js/ai.js?v=3.5.4"></script>
-  <script src="js/app.js?v=3.5.4"></script>
+  <script src="js/crypto.js?v=3.6.0"></script>
+  <script src="js/github.js?v=3.6.0"></script>
+  <script src="js/ai.js?v=3.6.0"></script>
+  <script src="js/app.js?v=3.6.0"></script>
 </body>
 </html>

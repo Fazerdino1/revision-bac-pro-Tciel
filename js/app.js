@@ -2242,6 +2242,10 @@ function assignCourseToFolder(folderId) {
    ========================================================== */
 let aiChatHistoryState = [];
 let isAIGenerating = false;
+let aiThinkingEnabled = false;
+let aiThinkingLevel = 'medium';
+let aiSearchEnabled = false;
+let aiAttachedFiles = [];
 
 function openAIAssistantModal() {
   if (typeof document === 'undefined') return;
@@ -2266,6 +2270,9 @@ function openAIAssistantModal() {
   // Mise à jour des jauges de quotas
   updateAIQuotaUI();
 
+  // Mise à jour des boutons d'options Thinking et Recherche
+  updateAIOptionsUI();
+
   // Rendu des messages existants (ou message de bienvenue)
   renderAIChatMessages();
 
@@ -2277,6 +2284,178 @@ function openAIAssistantModal() {
     if (input) input.focus();
     scrollAIChatToBottom();
   }, 100);
+}
+
+function updateAIOptionsUI() {
+  const btnThinking = document.getElementById('btnToggleThinking');
+  const indThinking = document.getElementById('aiThinkingIndicator');
+  const wrapLevel = document.getElementById('aiThinkingLevelWrap');
+  const selLevel = document.getElementById('aiThinkingLevelSelect');
+
+  if (btnThinking && indThinking) {
+    if (aiThinkingEnabled) {
+      btnThinking.classList.add('active');
+      indThinking.innerText = 'ON';
+      if (wrapLevel) wrapLevel.style.display = 'inline-block';
+      if (selLevel) selLevel.value = aiThinkingLevel;
+    } else {
+      btnThinking.classList.remove('active');
+      indThinking.innerText = 'OFF';
+      if (wrapLevel) wrapLevel.style.display = 'none';
+    }
+  }
+
+  const btnSearch = document.getElementById('btnToggleSearch');
+  const indSearch = document.getElementById('aiSearchIndicator');
+  if (btnSearch && indSearch) {
+    if (aiSearchEnabled) {
+      btnSearch.classList.add('active');
+      indSearch.innerText = 'ON';
+    } else {
+      btnSearch.classList.remove('active');
+      indSearch.innerText = 'OFF';
+    }
+  }
+}
+
+function toggleAIThinking() {
+  aiThinkingEnabled = !aiThinkingEnabled;
+  updateAIOptionsUI();
+  if (aiThinkingEnabled) {
+    showToast(`Mode Thinking activé (${aiThinkingLevel.toUpperCase()})`, "info");
+  } else {
+    showToast("Mode Thinking désactivé", "info");
+  }
+}
+
+function handleAIThinkingLevelChange(newLevel) {
+  aiThinkingLevel = newLevel || 'medium';
+  showToast(`Niveau de Thinking : ${aiThinkingLevel.toUpperCase()}`, "info");
+}
+
+function toggleAISearch() {
+  aiSearchEnabled = !aiSearchEnabled;
+  updateAIOptionsUI();
+  if (aiSearchEnabled) {
+    showToast("Recherche Google Web activée", "info");
+  } else {
+    showToast("Recherche Google Web désactivée", "info");
+  }
+}
+
+function triggerAIFileInput() {
+  const fileInput = document.getElementById('aiFileInput');
+  if (fileInput) fileInput.click();
+}
+
+async function handleAIFileInputChange(event) {
+  const files = event.target.files;
+  if (!files || files.length === 0) return;
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    if (file.size > 15 * 1024 * 1024) {
+      showToast(`Le fichier "${file.name}" est trop volumineux (max 15 Mo).`, "error");
+      continue;
+    }
+
+    try {
+      const base64Data = await readFileAsBase64(file);
+      aiAttachedFiles.push({
+        name: file.name,
+        size: file.size,
+        mimeType: file.type || getMimeTypeFromExt(file.name),
+        base64Data: base64Data
+      });
+    } catch (err) {
+      console.error("Erreur lecture fichier IA:", err);
+      showToast(`Impossible de lire "${file.name}"`, "error");
+    }
+  }
+
+  event.target.value = '';
+  renderAttachedPreviews();
+}
+
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      const base64Clean = result.split(',')[1] || result;
+      resolve(base64Clean);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function getMimeTypeFromExt(fileName) {
+  const ext = fileName.split('.').pop().toLowerCase();
+  const mimeMap = {
+    'pdf': 'application/pdf',
+    'txt': 'text/plain',
+    'md': 'text/markdown',
+    'c': 'text/x-c',
+    'cpp': 'text/x-c++',
+    'py': 'text/x-python',
+    'js': 'text/javascript',
+    'html': 'text/html',
+    'css': 'text/css',
+    'json': 'application/json',
+    'csv': 'text/csv',
+    'ino': 'text/plain',
+    'png': 'image/png',
+    'jpg': 'image/jpeg',
+    'jpeg': 'image/jpeg',
+    'webp': 'image/webp',
+    'gif': 'image/gif'
+  };
+  return mimeMap[ext] || 'application/octet-stream';
+}
+
+function removeAttachedFile(index) {
+  if (index >= 0 && index < aiAttachedFiles.length) {
+    aiAttachedFiles.splice(index, 1);
+    renderAttachedPreviews();
+  }
+}
+
+function renderAttachedPreviews() {
+  const container = document.getElementById('aiAttachedPreviews');
+  if (!container) return;
+
+  if (aiAttachedFiles.length === 0) {
+    container.style.display = 'none';
+    container.innerHTML = '';
+    return;
+  }
+
+  container.style.display = 'flex';
+  container.innerHTML = aiAttachedFiles.map((file, idx) => {
+    const isImage = file.mimeType.startsWith('image/');
+    const iconClass = isImage ? 'fa-image' : file.mimeType.includes('pdf') ? 'fa-file-pdf' : 'fa-file-code';
+    const thumbHTML = isImage
+      ? `<img src="data:${file.mimeType};base64,${file.base64Data}" alt="${escapeHtml(file.name)}">`
+      : `<i class="fa-solid ${iconClass}"></i>`;
+
+    return `
+      <div class="ai-attached-chip">
+        ${thumbHTML}
+        <span>${escapeHtml(file.name)}</span>
+        <button type="button" class="ai-attached-chip-remove" onclick="removeAttachedFile(${idx})" title="Supprimer ce fichier">
+          &times;
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleThinkingBlock(btn) {
+  const block = btn.closest('.ai-thinking-block');
+  if (block) {
+    block.classList.toggle('open');
+  }
 }
 
 function renderQuickModelSelect() {
@@ -2450,8 +2629,8 @@ function renderAIChatMessages() {
         <div class="ai-msg-bubble">
           <p><strong>Bonjour ${escapeHtml(username)} ! 👋</strong></p>
           <p>Je suis <strong>StudyBot CIEL</strong>, ton assistant propulsé par Google Gemini. Je suis spécialisé dans le programme du <strong>Bac Pro CIEL</strong> (Cybersécurité, Informatique et Réseaux, Électronique) ainsi que les matières générales.</p>
-          <p>Tu peux me poser une question de cours, me demander d'expliquer un protocole (VLAN, STP, OSPF, DNS, TCP/IP), de résoudre un calcul (Loi d'Ohm, Masque /28, Puissance), ou d'analyser un code Arduino/C/Python.</p>
-          <p style="font-size: 0.84rem; color: var(--text-muted); margin-top: 0.5rem;"><em>💡 Clique sur l'une des suggestions ci-dessous ou écris directement ta question.</em></p>
+          <p>Tu peux me poser une question de cours, me demander d'expliquer un protocole (VLAN, STP, OSPF, DNS, TCP/IP), de résoudre un calcul (Loi d'Ohm, Masque /28, Puissance), ou d'analyser un code Arduino/C/Python ou un document joint 📎.</p>
+          <p style="font-size: 0.84rem; color: var(--text-muted); margin-top: 0.5rem;"><em>💡 Active le mode <strong>Thinking 🧠</strong> pour observer mes étapes de réflexion ou la <strong>Recherche Web 🌐</strong> pour consulter des sources d'examen actualisées.</em></p>
         </div>
       </div>
     `;
@@ -2461,11 +2640,72 @@ function renderAIChatMessages() {
   container.innerHTML = aiChatHistoryState.map((msg, index) => {
     const isUser = msg.role === 'user';
     let formattedText = '';
+    let attachmentsHTML = '';
+    let thinkingHTML = '';
+    let sourcesHTML = '';
+
     if (isUser) {
       formattedText = escapeHtml(msg.text).replace(/\n/g, '<br>');
+      if (Array.isArray(msg.attachments) && msg.attachments.length > 0) {
+        attachmentsHTML = `
+          <div class="ai-user-attachments">
+            ${msg.attachments.map(att => {
+              const isImg = att.mimeType && att.mimeType.startsWith('image/');
+              if (isImg && att.base64Data) {
+                return `
+                  <div>
+                    <img src="data:${att.mimeType};base64,${att.base64Data}" alt="${escapeHtml(att.name)}" class="ai-user-file-thumb" onclick="if(typeof openLightbox==='function') openLightbox('data:${att.mimeType};base64,${att.base64Data}')">
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">${escapeHtml(att.name)}</div>
+                  </div>
+                `;
+              }
+              const iconClass = att.mimeType && att.mimeType.includes('pdf') ? 'fa-file-pdf' : 'fa-file-code';
+              return `
+                <div class="ai-user-file-pill">
+                  <i class="fa-solid ${iconClass}"></i>
+                  <span>${escapeHtml(att.name)}</span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      }
     } else {
       const parsed = (typeof marked !== 'undefined' && marked.parse) ? marked.parse(msg.text) : escapeHtml(msg.text);
       formattedText = (typeof DOMPurify !== 'undefined' && DOMPurify.sanitize) ? DOMPurify.sanitize(parsed) : parsed;
+
+      // Bloc de réflexion Thinking
+      if (msg.thoughts) {
+        thinkingHTML = `
+          <div class="ai-thinking-block">
+            <button type="button" class="ai-thinking-toggle" onclick="toggleThinkingBlock(this)">
+              <span><i class="fa-solid fa-brain"></i> Raisonnement interne du modèle</span>
+              <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            <div class="ai-thinking-content">${escapeHtml(msg.thoughts)}</div>
+          </div>
+        `;
+      }
+
+      // Sources de Grounding Web
+      if (msg.groundingMetadata && Array.isArray(msg.groundingMetadata.groundingChunks) && msg.groundingMetadata.groundingChunks.length > 0) {
+        const validChunks = msg.groundingMetadata.groundingChunks.filter(c => c.web && c.web.uri);
+        if (validChunks.length > 0) {
+          sourcesHTML = `
+            <div class="ai-grounding-sources">
+              <div class="ai-sources-title"><i class="fa-solid fa-globe"></i> Sources Web consultées :</div>
+              <div class="ai-sources-list">
+                ${validChunks.map((chunk, sIdx) => `
+                  <a href="${escapeHtml(chunk.web.uri)}" target="_blank" rel="noopener noreferrer" class="ai-source-chip" title="${escapeHtml(chunk.web.title || chunk.web.uri)}">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    <span>${escapeHtml(chunk.web.title || `Source ${sIdx + 1}`)}</span>
+                  </a>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+      }
     }
 
     const actionBtnHTML = (!isUser) ? `
@@ -2496,7 +2736,10 @@ function renderAIChatMessages() {
           <i class="fa-solid ${isUser ? 'fa-user' : 'fa-wand-magic-sparkles'}"></i>
         </div>
         <div class="ai-msg-bubble">
+          ${attachmentsHTML}
+          ${thinkingHTML}
           ${formattedText}
+          ${sourcesHTML}
           ${actionBtnHTML}
         </div>
       </div>
@@ -2517,7 +2760,9 @@ async function retryAIMessage(botIndex, mode = 'normal', specificModel = null) {
     return;
   }
 
-  const originalUserText = aiChatHistoryState[userIndex].text;
+  const originalUserMsg = aiChatHistoryState[userIndex];
+  const originalUserText = originalUserMsg.text;
+  const originalAttachments = originalUserMsg.attachments || [];
 
   // Tronquer pour repartir avant la réponse du bot
   aiChatHistoryState = aiChatHistoryState.slice(0, userIndex);
@@ -2542,6 +2787,8 @@ async function retryAIMessage(botIndex, mode = 'normal', specificModel = null) {
     showToast(`Régénération avec ${specificModel}...`, "info");
   }
 
+  // Restaurer temporairement les pièces jointes d'origine pour le retry
+  aiAttachedFiles = [...originalAttachments];
   await sendAIAssistantMessage(newPromptText);
 }
 
@@ -2574,10 +2821,10 @@ async function handleAIChatSubmit(event) {
   const input = document.getElementById('aiChatInput');
   if (!input) return;
   const prompt = input.value.trim();
-  if (!prompt) return;
+  if (!prompt && aiAttachedFiles.length === 0) return;
 
   input.value = '';
-  await sendAIAssistantMessage(prompt);
+  await sendAIAssistantMessage(prompt || "Analyse le ou les fichiers ci-joints pour le programme Bac Pro CIEL.");
 }
 
 function handleAIChatKeydown(e) {
@@ -2596,10 +2843,19 @@ function loadAIQuestionSuggestion(text) {
 }
 
 async function sendAIAssistantMessage(userText) {
-  if (!userText || isAIGenerating) return;
+  if ((!userText && aiAttachedFiles.length === 0) || isAIGenerating) return;
 
   isAIGenerating = true;
-  aiChatHistoryState.push({ role: 'user', text: userText, timestamp: Date.now() });
+  const currentAttachments = [...aiAttachedFiles];
+  aiAttachedFiles = [];
+  renderAttachedPreviews();
+
+  aiChatHistoryState.push({
+    role: 'user',
+    text: userText,
+    attachments: currentAttachments.length > 0 ? currentAttachments : undefined,
+    timestamp: Date.now()
+  });
   renderAIChatMessages();
 
   // Indicateur de frappe
@@ -2628,11 +2884,33 @@ async function sendAIAssistantMessage(userText) {
       throw new Error("Module IA (js/ai.js) non disponible.");
     }
 
-    const reply = await callGeminiAPI(aiChatHistoryState);
+    const options = {};
+    if (aiThinkingEnabled) {
+      options.thinkingConfig = { thinkingLevel: aiThinkingLevel };
+    }
+    if (aiSearchEnabled) {
+      options.tools = [{ google_search: {} }];
+    }
+    if (currentAttachments.length > 0) {
+      options.attachedFiles = currentAttachments;
+    }
+
+    const response = await callGeminiAPI(aiChatHistoryState, options);
     const ind = document.getElementById('aiTypingIndicator');
     if (ind) ind.remove();
 
-    aiChatHistoryState.push({ role: 'model', text: reply, timestamp: Date.now() });
+    const replyText = typeof response === 'object' && response !== null ? response.text : response;
+    const replyThoughts = typeof response === 'object' && response !== null ? response.thoughts : null;
+    const replyGrounding = typeof response === 'object' && response !== null ? response.groundingMetadata : null;
+
+    aiChatHistoryState.push({
+      role: 'model',
+      text: replyText,
+      thoughts: replyThoughts,
+      groundingMetadata: replyGrounding,
+      timestamp: Date.now()
+    });
+
     renderAIChatMessages();
     scrollAIChatToBottom();
     if (typeof updateAIQuotaUI === 'function') updateAIQuotaUI();
@@ -3319,7 +3597,16 @@ if (typeof window !== 'undefined') {
     switchStudyBotQuotaTab,
     updateAIQuotaUI,
     retryAIMessage,
-    promptSwitchModelForMessage
+    promptSwitchModelForMessage,
+    updateAIOptionsUI,
+    toggleAIThinking,
+    handleAIThinkingLevelChange,
+    toggleAISearch,
+    triggerAIFileInput,
+    handleAIFileInputChange,
+    removeAttachedFile,
+    renderAttachedPreviews,
+    toggleThinkingBlock
   };
 
   Object.assign(window, globalBindings);
@@ -3359,6 +3646,14 @@ if (typeof module !== 'undefined' && module.exports) {
     set fcCursor(v) { fcCursor = v; },
     get fcFlipped() { return fcFlipped; },
     set fcFlipped(v) { fcFlipped = v; },
+    get aiThinkingEnabled() { return aiThinkingEnabled; },
+    set aiThinkingEnabled(v) { aiThinkingEnabled = v; },
+    get aiThinkingLevel() { return aiThinkingLevel; },
+    set aiThinkingLevel(v) { aiThinkingLevel = v; },
+    get aiSearchEnabled() { return aiSearchEnabled; },
+    set aiSearchEnabled(v) { aiSearchEnabled = v; },
+    get aiAttachedFiles() { return aiAttachedFiles; },
+    set aiAttachedFiles(v) { aiAttachedFiles = v; },
 
     // Helpers UI
     escapeHtml,
@@ -3488,6 +3783,15 @@ if (typeof module !== 'undefined' && module.exports) {
     switchStudyBotQuotaTab,
     updateAIQuotaUI,
     retryAIMessage,
-    promptSwitchModelForMessage
+    promptSwitchModelForMessage,
+    updateAIOptionsUI,
+    toggleAIThinking,
+    handleAIThinkingLevelChange,
+    toggleAISearch,
+    triggerAIFileInput,
+    handleAIFileInputChange,
+    removeAttachedFile,
+    renderAttachedPreviews,
+    toggleThinkingBlock
   };
 }

@@ -3590,6 +3590,289 @@ textarea.form-input { min-height: 140px; font-family: var(--font-mono); font-siz
 }
 
 /* ==========================================================================
+   OPTIONS AVANCÉES STUDYBOT : THINKING, RECHERCHE WEB & FICHIERS
+   ========================================================================== */
+.ai-options-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 1rem;
+  background: rgba(15, 23, 42, 0.65);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-wrap: wrap;
+}
+
+.ai-option-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.ai-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.28rem 0.65rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ai-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f1f5f9;
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.ai-toggle-btn.active {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.45);
+}
+
+.ai-toggle-btn.active#btnToggleThinking {
+  background: rgba(168, 85, 247, 0.16);
+  color: #c084fc;
+  border-color: rgba(168, 85, 247, 0.45);
+}
+
+.ai-toggle-indicator {
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 0.08rem 0.35rem;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #64748b;
+}
+
+.ai-toggle-btn.active .ai-toggle-indicator {
+  background: rgba(56, 189, 248, 0.3);
+  color: #ffffff;
+}
+
+.ai-toggle-btn.active#btnToggleThinking .ai-toggle-indicator {
+  background: rgba(168, 85, 247, 0.35);
+  color: #ffffff;
+}
+
+.ai-mini-select {
+  font-size: 0.72rem;
+  padding: 0.2rem 0.45rem;
+  border-radius: 6px;
+  background: #0f172a;
+  color: #cbd5e1;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+  outline: none;
+}
+
+.ai-mini-select:focus {
+  border-color: #a855f7;
+}
+
+/* Bouton d'attachement de fichiers 📎 */
+.ai-btn-attach {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #94a3b8 !important;
+  padding: 0.5rem 0.75rem !important;
+  border-radius: var(--radius-md) !important;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: 42px;
+}
+
+.ai-btn-attach:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: #f1f5f9 !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+}
+
+/* Prévisualisation des fichiers attachés avant envoi */
+.ai-attached-previews {
+  display: flex;
+  gap: 0.45rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 8px;
+  margin-bottom: 0.45rem;
+  overflow-x: auto;
+  flex-wrap: wrap;
+}
+
+.ai-attached-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  color: #e2e8f0;
+}
+
+.ai-attached-chip img {
+  width: 22px;
+  height: 22px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.ai-attached-chip i {
+  color: #38bdf8;
+}
+
+.ai-attached-chip-remove {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0 0.2rem;
+  font-size: 0.85rem;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.ai-attached-chip-remove:hover {
+  color: #f87171;
+}
+
+/* Fichiers attachés visibles dans le message utilisateur */
+.ai-user-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.ai-user-file-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  color: #f1f5f9;
+}
+
+.ai-user-file-thumb {
+  max-width: 160px;
+  max-height: 120px;
+  border-radius: 6px;
+  margin-top: 0.35rem;
+  display: block;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Bloc de réflexion Thinking (dépliable) */
+.ai-thinking-block {
+  margin-bottom: 0.75rem;
+  border-radius: 8px;
+  background: rgba(168, 85, 247, 0.07);
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  overflow: hidden;
+}
+
+.ai-thinking-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.45rem 0.75rem;
+  background: rgba(168, 85, 247, 0.12);
+  border: none;
+  color: #c084fc;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+  text-align: left;
+}
+
+.ai-thinking-toggle:hover {
+  background: rgba(168, 85, 247, 0.18);
+}
+
+.ai-thinking-toggle i.fa-chevron-down {
+  transition: transform 0.2s;
+}
+
+.ai-thinking-block.open .ai-thinking-toggle i.fa-chevron-down {
+  transform: rotate(180deg);
+}
+
+.ai-thinking-content {
+  display: none;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: #cbd5e1;
+  border-top: 1px solid rgba(168, 85, 247, 0.15);
+  background: rgba(15, 23, 42, 0.5);
+  font-style: italic;
+  max-height: 280px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+.ai-thinking-block.open .ai-thinking-content {
+  display: block;
+}
+
+/* Sources de Grounding Web */
+.ai-grounding-sources {
+  margin-top: 0.75rem;
+  padding-top: 0.55rem;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.ai-sources-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #94a3b8;
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.ai-sources-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.ai-source-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.55rem;
+  background: rgba(56, 189, 248, 0.08);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: var(--radius-full);
+  font-size: 0.72rem;
+  color: #38bdf8;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.ai-source-chip:hover {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: #38bdf8;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
    STYLE D'IMPRESSION & EXPORT PDF SOIGNÉ
    ========================================================================== */
 @media print {
