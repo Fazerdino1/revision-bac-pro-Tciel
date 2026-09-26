@@ -1,12 +1,11 @@
-const CACHE_NAME = 'ciel-hub-cache-v3.6.0';
+const CACHE_NAME = 'ciel-hub-cache-v3.7.0';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
-  './css/styles.css?v=3.6.0',
-  './js/crypto.js?v=3.6.0',
-  './js/github.js?v=3.6.0',
-  './js/ai.js?v=3.6.0',
-  './js/app.js?v=3.6.0',
+  './css/styles.css?v=3.7.0',
+  './js/crypto.js?v=3.7.0',
+  './js/github.js?v=3.7.0',
+  './js/app.js?v=3.7.0',
   './manifest.json'
 ];
 
