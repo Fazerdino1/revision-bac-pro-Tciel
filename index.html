@@ -18,7 +18,7 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
-  <link rel="stylesheet" href="css/styles.css?v=3.7.0" />
+  <link rel="stylesheet" href="css/styles.css?v=3.8.0" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
   <link rel="manifest" href="manifest.json" />
   <meta name="theme-color" content="#080c14" />
@@ -473,7 +473,7 @@
 
       <div class="form-row">
         <label for="mSubject">Matière (Toutes les matières Bac Pro CIEL)</label>
-        <select class="form-input" id="mSubject">
+        <select class="form-input" id="mSubject" onchange="handleSubjectChangeInCourseModal()">
           <option value="CIEL - Réseaux & Informatique">CIEL - Réseaux & Informatique</option>
           <option value="CIEL - Cybersécurité">CIEL - Cybersécurité</option>
           <option value="CIEL - Électronique & IoT">CIEL - Électronique & IoT</option>
@@ -774,6 +774,29 @@
           <input type="text" id="fFolderName" class="form-input" placeholder="Ex: TP Réseaux Cisco, Fiches Épreuves..." required maxlength="40" />
         </div>
 
+        <div class="form-row" style="margin-bottom: 1.2rem;">
+          <label for="fFolderSubject"><i class="fa-solid fa-graduation-cap"></i> Matière associée (Obligatoire) :</label>
+          <select id="fFolderSubject" class="form-input" required>
+            <option value="CIEL - Réseaux & Informatique">CIEL - Réseaux & Informatique</option>
+            <option value="CIEL - Cybersécurité">CIEL - Cybersécurité</option>
+            <option value="CIEL - Électronique & IoT">CIEL - Électronique & IoT</option>
+            <option value="CIEL - Réalisation de Projet">CIEL - Réalisation de Projet (E2/E31)</option>
+            <option value="Mathématiques">Mathématiques</option>
+            <option value="Physique-Chimie">Physique-Chimie</option>
+            <option value="Français">Français</option>
+            <option value="Histoire-Géographie & EMC">Histoire-Géographie & EMC</option>
+            <option value="PSE">Prévention Santé Environnement (PSE)</option>
+            <option value="Économie-Gestion">Économie-Gestion</option>
+            <option value="Anglais (LV1)">Anglais (LV1)</option>
+            <option value="Allemand (LV2)">Allemand (LV2)</option>
+            <option value="Arts Appliqués">Arts Appliqués & Cultures Artistiques</option>
+            <option value="EPS">Éducation Physique & Sportive (EPS)</option>
+          </select>
+          <small style="color: var(--text-muted); font-size: 0.76rem; margin-top: 0.35rem; display: block;">
+            <i class="fa-solid fa-shield-halved"></i> Seuls les cours de cette matière pourront être rangés dans ce dossier.
+          </small>
+        </div>
+
         <div class="form-row" style="margin-bottom: 1.5rem;">
           <label>Couleur du dossier :</label>
           <div class="folder-color-palette" id="folderColorPalette">
@@ -807,6 +830,45 @@
     </div>
   </div>
 
+  <!-- MODALE VISIONNEUSE DE FICHIERS INTÉGRÉE (PLEIN ÉCRAN / LARGE) -->
+  <div class="modal-backdrop modal-viewer-backdrop" id="fileViewerModal" onclick="closeFileViewer()" role="dialog" aria-modal="true" aria-labelledby="fileViewerTitle">
+    <div class="modal-sheet modal-sheet-viewer" onclick="event.stopPropagation()">
+      <div class="viewer-header">
+        <div class="viewer-header-left">
+          <div class="viewer-file-icon" id="fileViewerIconWrap">
+            <i class="fa-solid fa-file" id="fileViewerIcon"></i>
+          </div>
+          <div class="viewer-title-box">
+            <h3 id="fileViewerTitle" class="viewer-file-name">Document</h3>
+            <div class="viewer-file-meta" id="fileViewerMeta">
+              <span class="viewer-badge" id="fileViewerBadgeType">TXT</span>
+              <span id="fileViewerSize"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="viewer-actions">
+          <button type="button" class="btn-viewer-action" id="fileViewerBtnCopy" onclick="copyViewerContent()" title="Copier le texte" style="display: none;">
+            <i class="fa-regular fa-copy"></i> <span>Copier</span>
+          </button>
+          <a href="#" download id="fileViewerBtnDownload" class="btn-viewer-action" title="Télécharger le fichier">
+            <i class="fa-solid fa-download"></i> <span>Télécharger</span>
+          </a>
+          <a href="#" target="_blank" rel="noopener noreferrer" id="fileViewerBtnExternal" class="btn-viewer-action" title="Ouvrir dans un nouvel onglet">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          </a>
+          <button type="button" class="btn-viewer-action btn-viewer-close" onclick="closeFileViewer()" aria-label="Fermer la visionneuse" title="Fermer (Échap)">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="viewer-content-body" id="fileViewerBody">
+        <!-- Rendu dynamique injecté par JS -->
+      </div>
+    </div>
+  </div>
+
 
   <!-- Bouton flottant Retour en Haut -->
   <button class="back-to-top-btn" id="backToTopBtn" onclick="scrollToTop()" aria-label="Retour en haut de page" title="Retour en haut de page">
@@ -814,8 +876,8 @@
   </button>
 
   <!-- Application logic -->
-  <script src="js/crypto.js?v=3.7.0"></script>
-  <script src="js/github.js?v=3.7.0"></script>
-  <script src="js/app.js?v=3.7.0"></script>
+  <script src="js/crypto.js?v=3.8.0"></script>
+  <script src="js/github.js?v=3.8.0"></script>
+  <script src="js/app.js?v=3.8.0"></script>
 </body>
 </html>

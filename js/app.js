@@ -1125,22 +1125,179 @@ function buildAttachmentsHTML(attachments) {
   attachments.forEach(att => {
     const url = att.downloadUrl || att.path;
     const safeUrl = encodeURI(url).replace(/'/g, "%27");
-    if (att.isImage) {
+    const isImg = att.isImage || /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(att.name || '');
+    const iconClass = getFileIconClass(att.name);
+    const sizeVal = att.size ? Number(att.size) : 0;
+    const cleanName = escapeHtml(att.name || 'Fichier').replace(/'/g, "\\'");
+
+    if (isImg) {
       html += `
-        <div class="img-thumb-container" onclick="openLightbox('${safeUrl}')" title="Agrandir le schéma">
+        <div class="img-thumb-container" onclick="openFileViewer('${safeUrl}', '${cleanName}', { isImage: true, size: ${sizeVal} })" title="Agrandir dans la visionneuse intégrée">
           <img src="${safeUrl}" alt="${escapeHtml(att.name)}" loading="lazy" />
         </div>`;
     } else {
-      const iconClass = getFileIconClass(att.name);
       html += `
-        <a href="${safeUrl}" target="_blank" download="${escapeHtml(att.name)}" class="file-badge-download" title="${escapeHtml(att.name)}">
+        <div class="file-badge-download" onclick="openFileViewer('${safeUrl}', '${cleanName}', { isImage: false, size: ${sizeVal} })" style="cursor: pointer;" title="Ouvrir dans la visionneuse intégrée">
           <i class="${iconClass}"></i>
           <span>${escapeHtml(att.name)}</span>
-        </a>`;
+        </div>`;
     }
   });
   html += '</div>';
   return html;
+}
+
+let currentViewerContentText = '';
+
+async function openFileViewer(fileUrl, fileName, options = {}) {
+  if (typeof document === 'undefined') return;
+  const modal = document.getElementById('fileViewerModal');
+  const titleEl = document.getElementById('fileViewerTitle');
+  const metaEl = document.getElementById('fileViewerBadgeType');
+  const sizeEl = document.getElementById('fileViewerSize');
+  const iconEl = document.getElementById('fileViewerIcon');
+  const bodyEl = document.getElementById('fileViewerBody');
+  const btnDownload = document.getElementById('fileViewerBtnDownload');
+  const btnExternal = document.getElementById('fileViewerBtnExternal');
+  const btnCopy = document.getElementById('fileViewerBtnCopy');
+
+  if (!modal || !bodyEl) return;
+
+  const ext = (fileName || '').split('.').pop().toLowerCase();
+  const isImage = options.isImage || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext);
+  const isPdf = ext === 'pdf';
+  const isMd = ext === 'md';
+  const isText = ['txt', 'json', 'py', 'c', 'cpp', 'js', 'html', 'css', 'sh', 'sql', 'csv', 'log', 'ini', 'xml'].includes(ext);
+
+  if (titleEl) titleEl.innerText = fileName || 'Document';
+  if (metaEl) metaEl.innerText = ext ? ext.toUpperCase() : 'FICHIER';
+  if (sizeEl) {
+    if (options.size && options.size > 0) {
+      const kb = (options.size / 1024).toFixed(1);
+      sizeEl.innerText = `${kb} Ko`;
+    } else {
+      sizeEl.innerText = '';
+    }
+  }
+
+  if (iconEl) {
+    iconEl.className = getFileIconClass(fileName);
+  }
+
+  if (btnDownload) {
+    btnDownload.href = fileUrl;
+    btnDownload.setAttribute('download', fileName || 'document');
+  }
+  if (btnExternal) {
+    btnExternal.href = fileUrl;
+  }
+
+  if (btnCopy) btnCopy.style.display = 'none';
+  currentViewerContentText = '';
+
+  bodyEl.innerHTML = `
+    <div style="display: flex; align-items: center; justify-content: center; height: 100%; min-height: 250px; color: var(--text-muted); gap: 0.75rem;">
+      <i class="fa-solid fa-spinner fa-spin" style="font-size: 1.5rem; color: var(--primary);"></i>
+      <span>Chargement du fichier...</span>
+    </div>
+  `;
+
+  modal.classList.add('active');
+  trapFocusInModal(modal);
+
+  try {
+    if (isImage) {
+      bodyEl.innerHTML = `
+        <div class="viewer-img-wrapper">
+          <img src="${fileUrl}" alt="${escapeHtml(fileName)}" class="viewer-img-content" />
+        </div>
+      `;
+    } else if (isPdf) {
+      bodyEl.innerHTML = `
+        <iframe src="${fileUrl}" class="viewer-pdf-frame" title="${escapeHtml(fileName)}"></iframe>
+      `;
+    } else if (isMd || isText) {
+      let textContent = '';
+      if (fileUrl.startsWith('data:')) {
+        const commaIdx = fileUrl.indexOf(',');
+        const header = fileUrl.substring(0, commaIdx);
+        const data = fileUrl.substring(commaIdx + 1);
+        if (header.includes(';base64')) {
+          try {
+            textContent = decodeURIComponent(escape(atob(data)));
+          } catch(e) {
+            textContent = atob(data);
+          }
+        } else {
+          textContent = decodeURIComponent(data);
+        }
+      } else {
+        const response = await fetch(fileUrl);
+        if (!response.ok) throw new Error('Impossible de charger le contenu du fichier');
+        textContent = await response.text();
+      }
+
+      currentViewerContentText = textContent;
+      if (btnCopy) btnCopy.style.display = 'inline-flex';
+
+      if (isMd) {
+        const parsed = (typeof marked !== 'undefined' && marked.parse) ? marked.parse(textContent) : textContent;
+        const sanitized = (typeof DOMPurify !== 'undefined' && DOMPurify.sanitize) ? DOMPurify.sanitize(parsed) : parsed;
+        bodyEl.innerHTML = `<div class="viewer-markdown-content">${sanitized}</div>`;
+      } else {
+        bodyEl.innerHTML = `<pre class="viewer-text-content"><code>${escapeHtml(textContent)}</code></pre>`;
+      }
+
+      if (typeof Prism !== 'undefined') {
+        Prism.highlightAllUnder(bodyEl);
+      }
+    } else {
+      bodyEl.innerHTML = `
+        <div style="text-align: center; margin: auto; padding: 2rem;">
+          <i class="${getFileIconClass(fileName)}" style="font-size: 3.5rem; color: var(--primary); margin-bottom: 1rem; opacity: 0.85;"></i>
+          <h4 style="font-size: 1.1rem; color: #f1f5f9; margin-bottom: 0.5rem;">${escapeHtml(fileName)}</h4>
+          <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1.5rem;">Aperçu direct non disponible pour ce type de fichier.</p>
+          <a href="${fileUrl}" download="${escapeHtml(fileName)}" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+            <i class="fa-solid fa-download"></i> Télécharger le fichier
+          </a>
+        </div>
+      `;
+    }
+  } catch (err) {
+    console.error("Erreur ouverture viewer:", err);
+    bodyEl.innerHTML = `
+      <div style="text-align: center; margin: auto; padding: 2rem; color: #f87171;">
+        <i class="fa-solid fa-circle-exclamation" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+        <p style="font-size: 1rem; font-weight: 600;">Erreur lors du chargement de l'aperçu.</p>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.35rem;">Vous pouvez toujours télécharger le fichier directement.</p>
+        <a href="${fileUrl}" download="${escapeHtml(fileName)}" class="btn" style="margin-top: 1rem;">
+          <i class="fa-solid fa-download"></i> Télécharger
+        </a>
+      </div>
+    `;
+  }
+}
+
+function closeFileViewer() {
+  if (typeof document === 'undefined') return;
+  const modal = document.getElementById('fileViewerModal');
+  if (modal) {
+    releaseFocusTrap(modal);
+    modal.classList.remove('active');
+  }
+}
+
+function copyViewerContent() {
+  if (!currentViewerContentText) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(currentViewerContentText).then(() => {
+      showToast("Contenu copié dans le presse-papier !", "success");
+    }).catch(() => {
+      showToast("Impossible de copier automatiquement.", "error");
+    });
+  } else {
+    showToast("Presse-papier non supporté.", "error");
+  }
 }
 
 // Fonctions Markdown Toolbar, Split-View & Draft Auto-Save
@@ -1995,7 +2152,7 @@ async function forceVaultSync() {
 }
 
 /* ==========================================================
-   8.3 SYSTÈME DE DOSSIERS & RANGEMENT INTUITIF
+   8.3 SYSTÈME DE DOSSIERS & ARBORESCENCE STRICTE PAR MATIÈRE
    ========================================================== */
 function renderFoldersBar() {
   if (typeof document === 'undefined') return;
@@ -2003,30 +2160,46 @@ function renderFoldersBar() {
   if (!container) return;
   if (!userVault.folders) userVault.folders = [];
 
+  // Migration rétrocompatible : s'assurer que chaque dossier possède un subject
+  userVault.folders.forEach(f => {
+    if (!f.subject) {
+      const c = (userVault.courses || []).find(course => course.folderId === f.id);
+      f.subject = c ? c.subject : 'CIEL - Réseaux & Informatique';
+    }
+  });
+
   const totalCourses = (userVault.courses || []).length;
   const unassignedCount = (userVault.courses || []).filter(c => !c.folderId).length;
 
   let html = '';
 
-  // 1. Bouton 'Tous les cours'
+  // 1. Bouton 'Tous les cours / Racine'
   const isAllActive = activeFolderId === 'all';
   html += `
     <button type="button" class="folder-chip ${isAllActive ? 'active' : ''}" onclick="setFolderFilter('all')" role="tab" aria-selected="${isAllActive}">
       <i class="fa-solid fa-folder-open folder-chip-icon"></i>
-      <span class="folder-chip-name">Tous les cours</span>
+      <span class="folder-chip-name">Racine (Tous les cours)</span>
       <span class="folder-chip-count">${totalCourses}</span>
     </button>
   `;
 
-  // 2. Dossiers personnalisés
-  userVault.folders.forEach(f => {
+  // 2. Dossiers personnalisés (filtrés selon la matière active si un filtre est posé)
+  const visibleFolders = userVault.folders.filter(f => {
+    if (!activeFilter || activeFilter === 'all') return true;
+    return checkSubjectMatch(f.subject, activeFilter);
+  });
+
+  visibleFolders.forEach(f => {
     const count = (userVault.courses || []).filter(c => c.folderId === f.id).length;
     const isActive = activeFolderId === f.id;
     const color = f.color || 'var(--primary)';
+    const theme = getSubjectThemeInfo(f.subject);
+    
     html += `
-      <div class="folder-chip ${isActive ? 'active' : ''}" style="--f-color: ${color}; --f-glow: ${color}40;" onclick="setFolderFilter('${f.id}')" role="tab" aria-selected="${isActive}">
+      <div class="folder-chip ${isActive ? 'active' : ''}" style="--f-color: ${color}; --f-glow: ${color}40;" onclick="setFolderFilter('${f.id}')" role="tab" aria-selected="${isActive}" title="Dossier [${escapeHtml(f.subject)}] : ${escapeHtml(f.name)}">
         <i class="fa-solid fa-folder folder-chip-icon" style="color: ${color};"></i>
         <span class="folder-chip-name">${escapeHtml(f.name)}</span>
+        <span class="folder-chip-sub-badge"><i class="${theme.icon}"></i> ${escapeHtml(f.subject.replace('CIEL - ', ''))}</span>
         <span class="folder-chip-count">${count}</span>
         <button type="button" class="folder-chip-menu-btn" onclick="event.stopPropagation(); openEditFolderModal('${f.id}')" title="Gérer ce dossier" aria-label="Gérer le dossier ${escapeHtml(f.name)}">
           <i class="fa-solid fa-ellipsis-vertical"></i>
@@ -2035,13 +2208,13 @@ function renderFoldersBar() {
     `;
   });
 
-  // 3. Bouton 'Non classés'
+  // 3. Bouton 'Cours libres (non classés)'
   if (unassignedCount > 0 && userVault.folders.length > 0) {
     const isUnassignedActive = activeFolderId === 'unassigned';
     html += `
-      <button type="button" class="folder-chip ${isUnassignedActive ? 'active' : ''}" onclick="setFolderFilter('unassigned')" role="tab" aria-selected="${isUnassignedActive}">
+      <button type="button" class="folder-chip ${isUnassignedActive ? 'active' : ''}" onclick="setFolderFilter('unassigned')" role="tab" aria-selected="${isUnassignedActive}" title="Fichiers libres situés à la racine">
         <i class="fa-regular fa-folder folder-chip-icon"></i>
-        <span class="folder-chip-name">Non classés</span>
+        <span class="folder-chip-name">Fichiers libres</span>
         <span class="folder-chip-count">${unassignedCount}</span>
       </button>
     `;
@@ -2057,21 +2230,51 @@ function setFolderFilter(fId) {
   renderCourses();
 }
 
-function updateFolderSelectOptions() {
+function updateFolderSelectOptions(selectedSubject) {
   if (typeof document === 'undefined') return;
   const select = document.getElementById('mFolder');
   if (!select) return;
   if (!userVault.folders) userVault.folders = [];
 
+  const targetSubject = selectedSubject || document.getElementById('mSubject')?.value || '';
   const currentVal = select.value;
-  select.innerHTML = '<option value="">📁 Aucun dossier (Non classé)</option>';
-  userVault.folders.forEach(f => {
+  select.innerHTML = '<option value="">📁 Aucun dossier (Cours libre à la racine)</option>';
+  
+  // RÈGLE STRICTE : Seuls les dossiers de la matière sélectionnée sont proposés
+  const compatibleFolders = userVault.folders.filter(f => {
+    if (!targetSubject) return true;
+    return f.subject === targetSubject || checkSubjectMatch(f.subject, targetSubject);
+  });
+
+  compatibleFolders.forEach(f => {
     const opt = document.createElement('option');
     opt.value = f.id;
-    opt.textContent = `📁 ${f.name}`;
+    opt.textContent = `📁 ${f.name} (${f.subject})`;
     select.appendChild(opt);
   });
-  if (currentVal) select.value = currentVal;
+
+  if (currentVal && compatibleFolders.some(f => f.id === currentVal)) {
+    select.value = currentVal;
+  } else {
+    select.value = '';
+  }
+}
+
+function handleSubjectChangeInCourseModal() {
+  const mSubject = document.getElementById('mSubject');
+  const mFolder = document.getElementById('mFolder');
+  if (!mSubject || !mFolder) return;
+  
+  const prevFolderId = mFolder.value;
+  const prevFolder = userVault.folders?.find(f => f.id === prevFolderId);
+  const newSubject = mSubject.value;
+
+  updateFolderSelectOptions(newSubject);
+
+  if (prevFolder && prevFolder.subject !== newSubject && !checkSubjectMatch(prevFolder.subject, newSubject)) {
+    mFolder.value = '';
+    showToast(`Dossier réinitialisé : "${prevFolder.name}" est strictement réservé à "${prevFolder.subject}".`, "info");
+  }
 }
 
 function openCreateFolderModal(fromCourseModal = false) {
@@ -2081,9 +2284,24 @@ function openCreateFolderModal(fromCourseModal = false) {
   const title = document.getElementById('folderModalTitle');
   const idInput = document.getElementById('fFolderId');
   const nameInput = document.getElementById('fFolderName');
+  const subjectSelect = document.getElementById('fFolderSubject');
+  const submitBtn = document.getElementById('fSubmitBtn');
+
   if (title) title.innerHTML = '<i class="fa-solid fa-folder-plus" style="color: var(--primary);"></i> Nouveau dossier';
   if (idInput) idInput.value = '';
   if (nameInput) nameInput.value = '';
+  if (submitBtn) submitBtn.innerHTML = '<i class="fa-solid fa-check"></i> Créer le dossier';
+
+  // Si on crée depuis le formulaire de cours, pré-sélectionner la matière choisie
+  if (subjectSelect) {
+    const courseSub = document.getElementById('mSubject')?.value;
+    if (fromCourseModal && courseSub) {
+      subjectSelect.value = courseSub;
+    } else if (activeFilter && activeFilter !== 'all') {
+      const foundSub = Array.from(subjectSelect.options).find(opt => checkSubjectMatch(opt.value, activeFilter));
+      if (foundSub) subjectSelect.value = foundSub.value;
+    }
+  }
 
   selectedFolderColor = FOLDER_COLORS[0];
   renderColorPalette();
@@ -2097,7 +2315,8 @@ function openEditFolderModal(folderId) {
   const folder = userVault.folders.find(f => f.id === folderId);
   if (!folder) return;
 
-  customConfirm(`Dossier "${folder.name}" : voulez-vous le SUPPRIMER ?\n\n(Vos cours seront conservés intacts dans votre classeur en tant que non-classés)`, () => {
+  const count = (userVault.courses || []).filter(c => c.folderId === folderId).length;
+  customConfirm(`Dossier "${folder.name}" (${folder.subject || 'Matière'})\nContient ${count} cours.\n\nVoulez-vous SUPPRIMER ce dossier ?\n\n(Vos cours seront conservés intacts en tant que cours libres à la racine)`, () => {
     deleteFolder(folderId);
   });
 }
@@ -2112,7 +2331,7 @@ function deleteFolder(folderId) {
   renderFoldersBar();
   renderCourses();
   triggerAutoSave();
-  showToast("Dossier supprimé (vos cours sont conservés).", "info");
+  showToast("Dossier supprimé (vos cours sont conservés à la racine).", "info");
 }
 
 function closeFolderModal() {
@@ -2141,7 +2360,9 @@ function selectFolderColor(color) {
 function handleFolderSubmit(e) {
   e.preventDefault();
   const nameInput = document.getElementById('fFolderName');
+  const subjectSelect = document.getElementById('fFolderSubject');
   const name = nameInput ? nameInput.value.trim() : '';
+  const subject = subjectSelect ? subjectSelect.value : 'CIEL - Réseaux & Informatique';
   if (!name) return;
 
   if (!userVault.folders) userVault.folders = [];
@@ -2149,6 +2370,7 @@ function handleFolderSubmit(e) {
   const newFolder = {
     id: 'f_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
     name: name,
+    subject: subject,
     color: selectedFolderColor,
     createdAt: new Date().toISOString()
   };
@@ -2157,14 +2379,17 @@ function handleFolderSubmit(e) {
   closeFolderModal();
   renderFoldersBar();
 
-  // Si le formulaire de cours est ouvert, pré-sélectionner le nouveau dossier
-  const mFolder = document.getElementById('mFolder');
-  if (mFolder) {
-    mFolder.value = newFolder.id;
+  // Si le formulaire de cours est ouvert, synchroniser le dossier
+  const mSubject = document.getElementById('mSubject');
+  if (mSubject) {
+    mSubject.value = subject;
+    updateFolderSelectOptions(subject);
+    const mFolder = document.getElementById('mFolder');
+    if (mFolder) mFolder.value = newFolder.id;
   }
 
   triggerAutoSave();
-  showToast(`Dossier "${name}" créé avec succès !`, "success");
+  showToast(`Dossier "${name}" (${subject}) créé avec succès !`, "success");
 }
 
 function openMoveCourseModal(courseId) {
@@ -2177,11 +2402,11 @@ function openMoveCourseModal(courseId) {
   const list = document.getElementById('moveFolderOptionsList');
   if (!modal || !list) return;
 
-  if (sub) sub.innerText = `Déplacer "${course.title}" dans :`;
+  if (sub) sub.innerHTML = `Déplacer <strong>"${escapeHtml(course.title)}"</strong> (${escapeHtml(course.subject)}) dans :`;
 
   let html = `
     <button type="button" class="move-folder-btn ${!course.folderId ? 'current' : ''}" onclick="assignCourseToFolder(null)">
-      <span><i class="fa-regular fa-folder"></i> Aucun dossier (Non classé)</span>
+      <span><i class="fa-regular fa-folder"></i> Racine / Aucun dossier (Cours libre)</span>
       ${!course.folderId ? '<i class="fa-solid fa-check" style="color:var(--accent-green);"></i>' : ''}
     </button>
   `;
@@ -2189,12 +2414,23 @@ function openMoveCourseModal(courseId) {
   if (!userVault.folders) userVault.folders = [];
   userVault.folders.forEach(f => {
     const isCurrent = course.folderId === f.id;
-    html += `
-      <button type="button" class="move-folder-btn ${isCurrent ? 'current' : ''}" onclick="assignCourseToFolder('${f.id}')">
-        <span><i class="fa-solid fa-folder" style="color:${f.color};"></i> ${escapeHtml(f.name)}</span>
-        ${isCurrent ? '<i class="fa-solid fa-check" style="color:var(--accent-green);"></i>' : ''}
-      </button>
-    `;
+    const isSameSubject = !f.subject || f.subject === course.subject || checkSubjectMatch(f.subject, course.subject);
+    
+    if (isSameSubject) {
+      html += `
+        <button type="button" class="move-folder-btn ${isCurrent ? 'current' : ''}" onclick="assignCourseToFolder('${f.id}')">
+          <span><i class="fa-solid fa-folder" style="color:${f.color};"></i> ${escapeHtml(f.name)} <small style="opacity: 0.7; font-size: 0.72rem;">(${escapeHtml(f.subject || '')})</small></span>
+          ${isCurrent ? '<i class="fa-solid fa-check" style="color:var(--accent-green);"></i>' : ''}
+        </button>
+      `;
+    } else {
+      html += `
+        <button type="button" class="move-folder-btn disabled" disabled title="Impossible : ce dossier est strictement réservé à ${escapeHtml(f.subject)}">
+          <span><i class="fa-solid fa-folder-closed" style="opacity: 0.4;"></i> ${escapeHtml(f.name)} <span style="font-size: 0.7rem; color: #f87171; margin-left: 0.35rem;">[Réservé: ${escapeHtml(f.subject)}]</span></span>
+          <i class="fa-solid fa-ban" style="color: #f87171; font-size: 0.8rem;"></i>
+        </button>
+      `;
+    }
   });
 
   list.innerHTML = html;
@@ -2214,13 +2450,26 @@ function closeMoveCourseModal() {
 function assignCourseToFolder(folderId) {
   if (!courseToMoveId) return;
   const course = (userVault.courses || []).find(c => c.id === courseToMoveId);
-  if (course) {
+  if (!course) return;
+
+  if (folderId) {
+    const folder = (userVault.folders || []).find(f => f.id === folderId);
+    if (!folder) return;
+    if (folder.subject && folder.subject !== course.subject && !checkSubjectMatch(folder.subject, course.subject)) {
+      showToast(`Impossible : le dossier "${folder.name}" est strictement réservé à la matière "${folder.subject}".`, "error");
+      return;
+    }
     course.folderId = folderId;
     triggerAutoSave();
     renderFoldersBar();
     renderCourses();
-    const fName = folderId ? (userVault.folders.find(f => f.id === folderId)?.name || 'Dossier') : 'Non classé';
-    showToast(`Cours rangé dans "${fName}"`, "success");
+    showToast(`Cours rangé dans le dossier "${folder.name}" (${folder.subject})`, "success");
+  } else {
+    course.folderId = null;
+    triggerAutoSave();
+    renderFoldersBar();
+    renderCourses();
+    showToast(`Cours déplacé à la racine (cours libre).`, "info");
   }
   closeMoveCourseModal();
 }
@@ -2266,6 +2515,7 @@ if (typeof window !== 'undefined') {
         if (cancelBtn) cancelBtn.click();
         return;
       }
+      closeFileViewer();
       closeCourseModal();
       closeShareModal();
       closeProfileModal();
@@ -2320,7 +2570,6 @@ if (typeof window !== 'undefined') {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').then(reg => {
         console.log('CIEL Service Worker registered:', reg.scope);
-        // Forcer la vérification immédiate de nouvelle version
         reg.update().catch(() => {});
       }).catch(err => {
         console.warn('Service Worker registration failed:', err);
@@ -2368,6 +2617,9 @@ if (typeof window !== 'undefined') {
     showTab,
     openLightbox,
     closeLightbox,
+    openFileViewer,
+    closeFileViewer,
+    copyViewerContent,
     importSharedCourse,
     deleteSharedCourse,
     deleteCourseById,
@@ -2395,10 +2647,11 @@ if (typeof window !== 'undefined') {
     exportVaultBackupJSON,
     forceVaultSync,
 
-    // Gestion des Dossiers
+    // Gestion des Dossiers & Matières
     renderFoldersBar,
     setFolderFilter,
     updateFolderSelectOptions,
+    handleSubjectChangeInCourseModal,
     openCreateFolderModal,
     openEditFolderModal,
     deleteFolder,
@@ -2487,6 +2740,7 @@ if (typeof module !== 'undefined' && module.exports) {
     renderFoldersBar,
     setFolderFilter,
     updateFolderSelectOptions,
+    handleSubjectChangeInCourseModal,
     openCreateFolderModal,
     openEditFolderModal,
     deleteFolder,
@@ -2541,9 +2795,12 @@ if (typeof module !== 'undefined' && module.exports) {
     deleteTodo,
     deleteTodoItem,
 
-    // Navigation & Lightbox
+    // Navigation & Viewers
     showTab,
     openLightbox,
-    closeLightbox
+    closeLightbox,
+    openFileViewer,
+    closeFileViewer,
+    copyViewerContent
   };
 }
